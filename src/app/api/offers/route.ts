@@ -18,35 +18,29 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
 
-  const { data: offers } = await supabase
+  const { data: scored } = await supabase
     .from("scored_offers")
-    .select(`
-      id,
-      score_final,
-      flag,
-      motivo,
-      offer:offer_id (
-        title,
-        company,
-        location,
-        url,
-        source
-      )
-    `)
+    .select("id, score_final, flag, motivo, offer_id")
     .eq("user_id", user.id)
     .order("score_final", { ascending: false })
     .limit(200);
 
-  const flat = (offers ?? []).map((o: any) => ({
+  if (!scored || scored.length === 0) return NextResponse.json({ offers: [] });
+
+  const offerIds = scored.map((o: any) => o.offer_id);
+  const { data: jobOffers } = await supabase
+    .from("job_offers")
+    .select("id, title, company, location, url, source")
+    .in("id", offerIds);
+
+  const jobMap = Object.fromEntries((jobOffers ?? []).map((j: any) => [j.id, j]));
+
+  const flat = scored.map((o: any) => ({
     id: o.id,
     score_final: o.score_final,
     flag: o.flag,
     motivo: o.motivo,
-    title: o.offer?.title,
-    company: o.offer?.company,
-    location: o.offer?.location,
-    url: o.offer?.url,
-    source: o.offer?.source,
+    ...jobMap[o.offer_id],
   }));
 
   return NextResponse.json({ offers: flat });
