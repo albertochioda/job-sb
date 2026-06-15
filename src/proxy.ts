@@ -1,17 +1,57 @@
-import createMiddleware from "next-intl/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { routing } from "./i18n/routing";
 
-const intlMiddleware = createMiddleware(routing);
+const locales = ["it", "en"] as const;
+type Locale = (typeof locales)[number];
+const defaultLocale: Locale = "it";
 
 const protectedRoutes = ["/dashboard", "/onboarding", "/profile"];
 
-export async function middleware(request: NextRequest) {
+function getLocaleFromRequest(request: NextRequest): Locale {
+  // 1. Check if URL already has a locale prefix
+  const pathname = request.nextUrl.pathname;
+  const urlLocale = locales.find(
+    (l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`)
+  );
+  if (urlLocale) return urlLocale;
+
+  // 2. Detect from Accept-Language header
+  const acceptLang = request.headers.get("accept-language") ?? "";
+  const preferred = acceptLang.split(",")[0].split("-")[0].toLowerCase();
+  return (locales.find((l) => l === preferred) as Locale) ?? defaultLocale;
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const pathnameWithoutLocale = pathname.replace(/^\/(it|en)/, "") || "/";
+  // Skip static assets
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    /\.(svg|png|jpg|jpeg|gif|webp|ico|css|js)$/.test(pathname)
+  ) {
+    return NextResponse.next();
+  }
 
+  // Redirect root to locale
+  if (pathname === "/") {
+    const locale = getLocaleFromRequest(request);
+    return NextResponse.redirect(new URL(`/${locale}`, request.url));
+  }
+
+  // If no locale prefix, add one
+  const hasLocale = locales.some(
+    (l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`)
+  );
+  if (!hasLocale) {
+    const locale = getLocaleFromRequest(request);
+    return NextResponse.redirect(
+      new URL(`/${locale}${pathname}`, request.url)
+    );
+  }
+
+  // Auth check for protected routes
+  const pathnameWithoutLocale = pathname.replace(/^\/(it|en)/, "") || "/";
   const isProtected = protectedRoutes.some((route) =>
     pathnameWithoutLocale.startsWith(route)
   );
@@ -40,17 +80,18 @@ export async function middleware(request: NextRequest) {
       }
     );
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      const locale = pathname.match(/^\/(it|en)/)?.[1] ?? routing.defaultLocale;
+      const locale =
+        (pathname.match(/^\/(it|en)/)?.[1] as Locale) ?? defaultLocale;
       return NextResponse.redirect(new URL(`/${locale}/login`, request.url));
     }
-
-    return intlMiddleware(request);
   }
 
-  return intlMiddleware(request);
+  return NextResponse.next();
 }
 
 export const config = {
