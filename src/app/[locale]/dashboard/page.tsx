@@ -17,6 +17,16 @@ export default async function DashboardPage({
 
   if (!user) redirect(`/${locale}/login`);
 
+  // Redirect to onboarding if no search config yet
+  const { data: config } = await supabase
+    .from("search_configs")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .single();
+
+  if (!config) redirect(`/${locale}/onboarding`);
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name")
