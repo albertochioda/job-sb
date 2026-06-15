@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { setRequestLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "@/components/auth/logout-button";
 import Link from "next/link";
+import SearchPanel from "@/components/dashboard/search-panel";
 
 export default async function DashboardPage({
   params,
@@ -17,7 +18,6 @@ export default async function DashboardPage({
 
   if (!user) redirect(`/${locale}/login`);
 
-  // Redirect to onboarding if no search config yet
   const { data: config } = await supabase
     .from("search_configs")
     .select("id")
@@ -33,33 +33,29 @@ export default async function DashboardPage({
     .eq("id", user.id)
     .single();
 
-  const t = await getTranslations({ locale, namespace: "nav" });
-
   return (
     <main className="min-h-screen">
       <nav className="flex items-center justify-between px-6 py-4 border-b">
         <span className="font-bold text-xl">Job SB</span>
         <div className="flex items-center gap-4">
           <Link href={`/${locale}/profile`} className="text-sm text-muted-foreground hover:text-foreground">
-            {t("profile")}
+            Profilo
           </Link>
-          <LogoutButton locale={locale} label={t("logout")} />
+          <LogoutButton locale={locale} label="Esci" />
         </div>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-6 py-16 text-center space-y-4">
-        <h1 className="text-3xl font-bold">
-          Benvenuto{profile?.full_name ? `, ${profile.full_name}` : ""}! 👋
-        </h1>
-        <p className="text-muted-foreground">
-          La dashboard delle offerte arriva allo Sprint 6. Per ora puoi visitare il tuo profilo.
-        </p>
-        <Link
-          href={`/${locale}/profile`}
-          className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-md text-sm font-medium hover:bg-primary/90"
-        >
-          Vai al profilo →
-        </Link>
+      <div className="max-w-3xl mx-auto px-6 py-10">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold">
+            Ciao{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}!
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Queste sono le offerte trovate in base al tuo profilo.
+          </p>
+        </div>
+
+        <SearchPanel locale={locale} />
       </div>
     </main>
   );
