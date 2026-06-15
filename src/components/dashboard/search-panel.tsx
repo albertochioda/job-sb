@@ -172,12 +172,10 @@ export default function SearchPanel({ locale }: { locale: string }) {
           {filteredOffers
             .sort((a, b) => (b.score_final ?? 0) - (a.score_final ?? 0))
             .map((offer) => (
-              <a
+              <div
                 key={offer.id}
-                href={offer.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block border rounded-lg p-4 hover:border-foreground/40 transition-colors space-y-2"
+                onClick={() => offer.url && window.open(offer.url, "_blank", "noopener,noreferrer")}
+                className="block border rounded-lg p-4 hover:border-foreground/40 transition-colors space-y-2 cursor-pointer"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-0.5 min-w-0">
@@ -199,7 +197,7 @@ export default function SearchPanel({ locale }: { locale: string }) {
                   <p className="text-xs text-muted-foreground leading-relaxed">{offer.motivo}</p>
                 )}
                 <p className="text-xs text-muted-foreground/60 uppercase tracking-wide">{offer.source}</p>
-              </a>
+              </div>
             ))}
         </div>
       ) : offers.length === 0 && status.status === "idle" ? (
