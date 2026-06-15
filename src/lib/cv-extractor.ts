@@ -1,7 +1,8 @@
 // Text extraction from PDF and DOCX files
 
 export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
-  const pdfParse = (await import("pdf-parse")).default;
+  const pdfParseModule = await import("pdf-parse");
+  const pdfParse = pdfParseModule.default ?? pdfParseModule;
   const data = await pdfParse(buffer);
   return data.text.trim();
 }
