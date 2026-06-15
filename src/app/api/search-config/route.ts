@@ -7,11 +7,11 @@ export async function PATCH(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const { roles, city, radius_km, min_salary } = body;
+  const { roles, city, geo_id, radius_km, min_salary } = body;
 
   const { error } = await supabase
     .from("search_configs")
-    .update({ roles, city, radius_km, min_salary })
+    .update({ roles, city, geo_id: geo_id || null, radius_km, min_salary })
     .eq("user_id", user.id)
     .eq("is_active", true);
 
