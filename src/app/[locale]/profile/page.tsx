@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "@/components/auth/logout-button";
+import SearchConfigForm from "@/components/profile/search-config-form";
+import Link from "next/link";
 
 export default async function ProfilePage({
   params,
@@ -28,12 +30,22 @@ export default async function ProfilePage({
     .eq("user_id", user.id)
     .single();
 
+  const { data: searchConfig } = await supabase
+    .from("search_configs")
+    .select("id, city, radius_km, min_salary, roles")
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .single();
+
   const t = await getTranslations({ locale, namespace: "nav" });
 
   return (
     <main className="max-w-2xl mx-auto px-6 py-12 space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t("profile")}</h1>
+        <div className="flex items-center gap-4">
+          <Link href={`/${locale}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground">← Dashboard</Link>
+          <h1 className="text-2xl font-bold">{t("profile")}</h1>
+        </div>
         <LogoutButton locale={locale} label={t("logout")} />
       </div>
 
@@ -72,6 +84,7 @@ export default async function ProfilePage({
           </div>
         </div>
       </div>
+      {searchConfig && <SearchConfigForm config={searchConfig} />}
     </main>
   );
 }
