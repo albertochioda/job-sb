@@ -25,7 +25,7 @@ export async function GET() {
       score_final,
       flag,
       motivo,
-      job_offers (
+      offer:offer_id (
         title,
         company,
         location,
@@ -42,11 +42,11 @@ export async function GET() {
     score_final: o.score_final,
     flag: o.flag,
     motivo: o.motivo,
-    title: o.job_offers?.title,
-    company: o.job_offers?.company,
-    location: o.job_offers?.location,
-    url: o.job_offers?.url,
-    source: o.job_offers?.source,
+    title: o.offer?.title,
+    company: o.offer?.company,
+    location: o.offer?.location,
+    url: o.offer?.url,
+    source: o.offer?.source,
   }));
 
   return NextResponse.json({ offers: flat });
