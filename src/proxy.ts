@@ -5,13 +5,11 @@ import { routing } from "./i18n/routing";
 
 const intlMiddleware = createMiddleware(routing);
 
-// Routes that require authentication
 const protectedRoutes = ["/dashboard", "/onboarding", "/profile"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Strip locale prefix to check route
   const pathnameWithoutLocale = pathname.replace(/^\/(it|en)/, "") || "/";
 
   const isProtected = protectedRoutes.some((route) =>
