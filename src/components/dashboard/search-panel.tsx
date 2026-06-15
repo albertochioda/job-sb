@@ -174,8 +174,7 @@ export default function SearchPanel({ locale }: { locale: string }) {
             .map((offer) => (
               <div
                 key={offer.id}
-                onClick={() => offer.url && window.open(offer.url, "_blank", "noopener,noreferrer")}
-                className="block border rounded-lg p-4 hover:border-foreground/40 transition-colors space-y-2 cursor-pointer"
+                className="block border rounded-lg p-4 hover:border-foreground/40 transition-colors space-y-2"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-0.5 min-w-0">
@@ -196,7 +195,20 @@ export default function SearchPanel({ locale }: { locale: string }) {
                 {offer.motivo && (
                   <p className="text-xs text-muted-foreground leading-relaxed">{offer.motivo}</p>
                 )}
-                <p className="text-xs text-muted-foreground/60 uppercase tracking-wide">{offer.source}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground/60 uppercase tracking-wide">{offer.source}</p>
+                  {offer.url && (
+                    <a
+                      href={offer.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-xs text-primary underline hover:no-underline"
+                    >
+                      Apri offerta →
+                    </a>
+                  )}
+                </div>
               </div>
             ))}
         </div>
