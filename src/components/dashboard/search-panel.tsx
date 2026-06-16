@@ -30,7 +30,7 @@ const FLAG_LABELS = {
 };
 
 export default function SearchPanel({ locale: _locale }: { locale: string }) {
-  const { isSearching, progress, completedData, startPolling, cancelSearch } = useSearchPolling();
+  const { initialized, isSearching, progress, completedData, startPolling, cancelSearch } = useSearchPolling();
   const [total, setTotal] = useState(0);
   const [hasError, setHasError] = useState(false);
   const [offers, setOffers] = useState<ScoredOffer[]>([]);
@@ -116,10 +116,10 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
         </div>
         <button
           onClick={startSearch}
-          disabled={loading || isSearching}
+          disabled={!initialized || loading || isSearching}
           className="bg-primary text-primary-foreground px-5 py-2 rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? "Avvio..." : isSearching ? "Ricerca in corso..." : "Avvia ricerca"}
+          {!initialized ? "..." : loading ? "Avvio..." : isSearching ? "Ricerca in corso..." : "Avvia ricerca"}
         </button>
       </div>
 

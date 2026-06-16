@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 
 interface SearchPollingContextType {
+  initialized: boolean;
   isSearching: boolean;
   progress: number;
   completedData: { newOffers: number } | null;
@@ -14,6 +15,7 @@ interface SearchPollingContextType {
 const SearchPollingContext = createContext<SearchPollingContextType | null>(null);
 
 export function SearchPollingProvider({ children }: { children: React.ReactNode }) {
+  const [initialized, setInitialized] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [progress, setProgress] = useState(0);
   const [completedData, setCompletedData] = useState<{ newOffers: number } | null>(null);
@@ -59,19 +61,50 @@ export function SearchPollingProvider({ children }: { children: React.ReactNode 
     }, 5000);
   }, [stopPolling]);
 
-  // Al mount: ripristina ricerca attiva da localStorage
+  // Al mount: Supabase è la fonte di verità — cerca ricerca attiva server-side.
+  // localStorage è solo un hint per rolesCount (stima durata), non per lo stato.
   useEffect(() => {
-    const raw = localStorage.getItem("job_sb_active_search");
-    if (!raw) return;
-    try {
-      const { searchId, rolesCount } = JSON.parse(raw) as { searchId: string; rolesCount: number };
-      if (searchId) {
-        currentSearchIdRef.current = searchId;
-        startPolling(searchId, rolesCount);
+    (async () => {
+      try {
+        const res = await fetch("/api/search/active");
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (data.active?.search_id) {
+          // C'è una ricerca attiva in DB — ripristina polling indipendentemente da localStorage
+          const searchId = data.active.search_id;
+          const raw = localStorage.getItem("job_sb_active_search");
+          let rolesCount = 3;
+          try {
+            const parsed = JSON.parse(raw ?? "{}");
+            if (parsed.searchId === searchId) rolesCount = parsed.rolesCount ?? 3;
+          } catch { /* ignora */ }
+
+          localStorage.setItem("job_sb_active_search", JSON.stringify({ searchId, rolesCount }));
+          currentSearchIdRef.current = searchId;
+          startPolling(searchId, rolesCount);
+        } else {
+          // Nessuna ricerca attiva in DB — pulisci localStorage se stantio
+          localStorage.removeItem("job_sb_active_search");
+        }
+      } catch {
+        // Fallback a localStorage se la fetch fallisce (es. utente non autenticato)
+        const raw = localStorage.getItem("job_sb_active_search");
+        if (raw) {
+          try {
+            const { searchId, rolesCount } = JSON.parse(raw) as { searchId: string; rolesCount: number };
+            if (searchId) {
+              currentSearchIdRef.current = searchId;
+              startPolling(searchId, rolesCount);
+            }
+          } catch {
+            localStorage.removeItem("job_sb_active_search");
+          }
+        }
+      } finally {
+        setInitialized(true);
       }
-    } catch {
-      localStorage.removeItem("job_sb_active_search");
-    }
+    })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // solo al mount
 
@@ -97,7 +130,7 @@ export function SearchPollingProvider({ children }: { children: React.ReactNode 
   }, [stopPolling]);
 
   return (
-    <SearchPollingContext.Provider value={{ isSearching, progress, completedData, dismissCompleted, startPolling, cancelSearch }}>
+    <SearchPollingContext.Provider value={{ initialized, isSearching, progress, completedData, dismissCompleted, startPolling, cancelSearch }}>
       {children}
     </SearchPollingContext.Provider>
   );
