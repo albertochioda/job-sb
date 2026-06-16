@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { saveActiveSearch } from "@/components/search-status-banner";
+import { useSearchPolling } from "@/contexts/search-polling-context";
 
 interface ScoredOffer {
   id: string;
@@ -35,7 +35,8 @@ const FLAG_LABELS = {
   red: "Bassa",
 };
 
-export default function SearchPanel({ locale }: { locale: string }) {
+export default function SearchPanel({ locale: _locale }: { locale: string }) {
+  const { startPolling } = useSearchPolling();
   const [status, setStatus] = useState<SearchStatus>({ status: "idle", progress: 0, total: 0 });
   const [searchId, setSearchId] = useState<string | null>(null);
   const [offers, setOffers] = useState<ScoredOffer[]>([]);
@@ -100,8 +101,8 @@ export default function SearchPanel({ locale }: { locale: string }) {
       setSearchId(data.search_id);
       setStatus({ status: "queued", progress: 0, total: 0 });
 
-      // Salva in localStorage per il polling globale (SearchStatusBanner)
-      saveActiveSearch(data.search_id, rolesCount, locale);
+      // Avvia polling globale (persiste tra navigazioni)
+      startPolling(data.search_id, rolesCount);
     } finally {
       setLoading(false);
     }
