@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { saveActiveSearch } from "@/components/search-status-banner";
 
 interface ScoredOffer {
   id: string;
@@ -12,6 +13,7 @@ interface ScoredOffer {
   flag: "green" | "yellow" | "red";
   motivo: string;
   source: string;
+  is_new?: boolean;
 }
 
 interface SearchStatus {
@@ -39,6 +41,8 @@ export default function SearchPanel({ locale }: { locale: string }) {
   const [offers, setOffers] = useState<ScoredOffer[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<"all" | "green" | "yellow" | "red">("all");
+  const [estimatedMin, setEstimatedMin] = useState<number | null>(null);
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
 
   const fetchOffers = useCallback(async () => {
     const res = await fetch("/api/offers");
@@ -77,6 +81,16 @@ export default function SearchPanel({ locale }: { locale: string }) {
   const startSearch = async () => {
     setLoading(true);
     try {
+      // Fetch roles count for time estimate
+      const cfgRes = await fetch("/api/search-config");
+      let rolesCount = 3; // fallback
+      if (cfgRes.ok) {
+        const cfg = await cfgRes.json();
+        rolesCount = (cfg.roles ?? []).length || 3;
+      }
+      const estimated = Math.max(1, rolesCount * 2);
+      setEstimatedMin(estimated);
+
       const res = await fetch("/api/search/start", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
@@ -85,10 +99,22 @@ export default function SearchPanel({ locale }: { locale: string }) {
       }
       setSearchId(data.search_id);
       setStatus({ status: "queued", progress: 0, total: 0 });
+
+      // Salva in localStorage per il polling globale (SearchStatusBanner)
+      saveActiveSearch(data.search_id, rolesCount, locale);
     } finally {
       setLoading(false);
     }
   };
+
+  const markRead = async (offerId: string) => {
+    if (readIds.has(offerId)) return;
+    setReadIds(prev => new Set([...prev, offerId]));
+    await fetch(`/api/offers/${offerId}/read`, { method: "PATCH" });
+  };
+
+  const isNew = (offer: ScoredOffer) =>
+    offer.is_new === true && !readIds.has(offer.id);
 
   const filteredOffers = filter === "all" ? offers : offers.filter(o => o.flag === filter);
 
@@ -98,9 +124,11 @@ export default function SearchPanel({ locale }: { locale: string }) {
     red: offers.filter(o => o.flag === "red").length,
   };
 
+  const isRunning = status.status === "queued" || status.status === "running";
+
   return (
     <div className="space-y-6">
-      {/* Avvia ricerca */}
+      {/* Header + avvia */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Offerte trovate</h2>
@@ -112,18 +140,29 @@ export default function SearchPanel({ locale }: { locale: string }) {
         </div>
         <button
           onClick={startSearch}
-          disabled={loading || status.status === "queued" || status.status === "running"}
+          disabled={loading || isRunning}
           className="bg-primary text-primary-foreground px-5 py-2 rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Avvio..." : status.status === "running" ? "Ricerca in corso..." : "Avvia ricerca"}
         </button>
       </div>
 
+      {/* Feature 1: banner stima durata (mostrato subito dopo avvio) */}
+      {isRunning && estimatedMin !== null && (
+        <div className="text-sm bg-blue-50 border border-blue-200 text-blue-800 rounded-md px-4 py-3">
+          La ricerca richiederà circa <strong>{estimatedMin} minuti</strong> — puoi navigare liberamente, ti avviseremo al termine.
+        </div>
+      )}
+
       {/* Progress bar */}
-      {(status.status === "queued" || status.status === "running") && (
+      {isRunning && (
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-muted-foreground">
-            <span>{status.status === "queued" ? "In coda..." : `Scansione in corso · ${status.total > 0 ? `${status.total} offerte trovate` : "scraping..."}`}</span>
+            <span>
+              {status.status === "queued"
+                ? "In coda..."
+                : `Scansione in corso · ${status.total > 0 ? `${status.total} offerte trovate` : "scraping..."}`}
+            </span>
             <span>{status.progress}%</span>
           </div>
           <div className="w-full bg-muted rounded-full h-2">
@@ -177,11 +216,19 @@ export default function SearchPanel({ locale }: { locale: string }) {
                 className="block border rounded-lg p-4 hover:border-foreground/40 transition-colors space-y-2"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-0.5 min-w-0">
-                    <p className="font-medium text-sm leading-tight truncate">{offer.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {offer.company} · {offer.location}
-                    </p>
+                  <div className="space-y-0.5 min-w-0 flex items-start gap-2">
+                    {/* Feature 3: badge NUOVA */}
+                    {isNew(offer) && (
+                      <span className="shrink-0 mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-500 text-white leading-none">
+                        NUOVA
+                      </span>
+                    )}
+                    <div>
+                      <p className="font-medium text-sm leading-tight truncate">{offer.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {offer.company} · {offer.location}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="text-sm font-bold tabular-nums">
@@ -202,7 +249,7 @@ export default function SearchPanel({ locale }: { locale: string }) {
                       href={offer.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={() => markRead(offer.id)}
                       className="text-xs text-primary underline hover:no-underline"
                     >
                       Apri offerta →
