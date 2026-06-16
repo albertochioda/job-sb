@@ -7,12 +7,10 @@ const adminSupabase = createAdminClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-import {
-  Document, Packer, Paragraph, TextRun, HeadingLevel,
-  AlignmentType, LevelFormat,
-} from "docx";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+const WORKER_URL = process.env.WORKER_URL!;
+const WORKER_SECRET = process.env.WORKER_SECRET ?? "";
 
 const ADAPT_SYSTEM = `Sei un career coach esperto in ATS. Analizza il CV e la job description e genera contenuti ottimizzati.
 Rispondi SOLO con JSON valido, nessun altro testo.`;
@@ -42,84 +40,31 @@ async function detectLanguage(text: string): Promise<string> {
   return en > it ? "en" : "it";
 }
 
-async function generateDocx(
-  candidateName: string,
+async function callWorkerAdaptCv(
+  userId: string,
+  cvId: string,
+  offerId: string,
   content: {
     profilo_adattato: string;
     bullet_points: string[];
     core_expertise: string[];
     technical_skills: string[];
-    keywords_ats: string[];
-  },
-  offerTitle: string,
-  offerCompany: string,
-  lang: string
-): Promise<Buffer> {
-  const labels = lang === "it"
-    ? { profilo: "Profilo", expertise: "Core Expertise", esperienza: "Risultati Chiave", skills: "Competenze Tecniche", ats: "Keyword ATS" }
-    : { profilo: "Profile", expertise: "Core Expertise", esperienza: "Key Achievements", skills: "Technical Skills", ats: "ATS Keywords" };
-
-  const doc = new Document({
-    numbering: {
-      config: [{
-        reference: "bullets",
-        levels: [{
-          level: 0, format: LevelFormat.BULLET, text: "•", alignment: AlignmentType.LEFT,
-          style: { paragraph: { indent: { left: 720, hanging: 360 } } },
-        }],
-      }],
+  }
+): Promise<string> {
+  const res = await fetch(`${WORKER_URL}/adapt-cv`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(WORKER_SECRET ? { Authorization: `Bearer ${WORKER_SECRET}` } : {}),
     },
-    sections: [{
-      children: [
-        new Paragraph({
-          text: candidateName || "Candidato",
-          heading: HeadingLevel.HEADING_1,
-        }),
-        new Paragraph({
-          text: `${offerTitle} @ ${offerCompany}`,
-          children: [new TextRun({ text: `${offerTitle} @ ${offerCompany}`, italics: true, size: 20, color: "666666" })],
-        }),
-        new Paragraph({ text: "" }),
-
-        // Profilo
-        new Paragraph({ text: labels.profilo, heading: HeadingLevel.HEADING_2 }),
-        new Paragraph({ text: content.profilo_adattato }),
-        new Paragraph({ text: "" }),
-
-        // Core Expertise
-        new Paragraph({ text: labels.expertise, heading: HeadingLevel.HEADING_2 }),
-        ...content.core_expertise.map(t => new Paragraph({
-          numbering: { reference: "bullets", level: 0 },
-          children: [new TextRun(t)],
-        })),
-        new Paragraph({ text: "" }),
-
-        // Bullet points esperienza
-        new Paragraph({ text: labels.esperienza, heading: HeadingLevel.HEADING_2 }),
-        ...content.bullet_points.map(t => new Paragraph({
-          numbering: { reference: "bullets", level: 0 },
-          children: [new TextRun(t)],
-        })),
-        new Paragraph({ text: "" }),
-
-        // Technical Skills
-        new Paragraph({ text: labels.skills, heading: HeadingLevel.HEADING_2 }),
-        ...content.technical_skills.map(t => new Paragraph({
-          numbering: { reference: "bullets", level: 0 },
-          children: [new TextRun(t)],
-        })),
-        new Paragraph({ text: "" }),
-
-        // Keywords ATS
-        new Paragraph({ text: labels.ats, heading: HeadingLevel.HEADING_2 }),
-        new Paragraph({
-          children: [new TextRun({ text: content.keywords_ats.join(" · "), color: "555555", italics: true })],
-        }),
-      ],
-    }],
+    body: JSON.stringify({ user_id: userId, cv_id: cvId, offer_id: offerId, content }),
   });
-
-  return Buffer.from(await Packer.toBuffer(doc));
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? `Worker error ${res.status}`);
+  }
+  const data = await res.json();
+  return data.path as string;
 }
 
 export async function POST(request: NextRequest) {
@@ -191,29 +136,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Errore parsing risposta Claude" }, { status: 500 });
   }
 
-  // Genera .docx
-  const docBuffer = await generateDocx(
-    profile?.full_name || "",
-    parsed,
-    offer.title,
-    offer.company || "",
-    lang,
-  );
-
-  // Upload su Supabase Storage (service role per bucket privato)
-  const fileName = `adapted_cvs/${user.id}/${offer_id}.docx`;
-  const { error: uploadError } = await adminSupabase.storage
-    .from("cvs")
-    .upload(fileName, docBuffer, {
-      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      upsert: true,
+  // Delega la generazione del .docx al worker Python (usa il CV originale come template)
+  let fileName: string;
+  try {
+    fileName = await callWorkerAdaptCv(user.id, cv_id, offer_id, {
+      profilo_adattato: parsed.profilo_adattato,
+      bullet_points: parsed.bullet_points,
+      core_expertise: parsed.core_expertise,
+      technical_skills: parsed.technical_skills,
     });
-
-  if (uploadError) {
-    return NextResponse.json({ error: `Upload fallito: ${uploadError.message}` }, { status: 500 });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: `Generazione .docx fallita: ${msg}` }, { status: 500 });
   }
 
-  // Salva il path (non URL pubblico — bucket privato, download via signed URL)
+  // Salva il path relativo (download via signed URL)
   const { data: saved, error: dbError } = await supabase
     .from("adapted_cvs")
     .upsert({
@@ -234,7 +171,7 @@ export async function POST(request: NextRequest) {
 
   if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
 
-  // Genera URL firmato valido 1 ora per il download immediato (service role)
+  // Genera URL firmato valido 1 ora per il download immediato
   const { data: signed } = await adminSupabase.storage.from("cvs").createSignedUrl(fileName, 3600);
 
   return NextResponse.json({ adapted_cv_id: saved.id, file_url: signed?.signedUrl ?? "", cached: false });
