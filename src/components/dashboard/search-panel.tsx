@@ -30,7 +30,7 @@ const FLAG_LABELS = {
 };
 
 export default function SearchPanel({ locale: _locale }: { locale: string }) {
-  const { isSearching, progress, completedData, startPolling } = useSearchPolling();
+  const { isSearching, progress, completedData, startPolling, cancelSearch } = useSearchPolling();
   const [total, setTotal] = useState(0);
   const [hasError, setHasError] = useState(false);
   const [offers, setOffers] = useState<ScoredOffer[]>([]);
@@ -139,7 +139,15 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                 ? "In coda..."
                 : `Scansione in corso · ${total > 0 ? `${total} offerte trovate` : "scraping..."}`}
             </span>
-            <span>{progress}%</span>
+            <div className="flex items-center gap-3">
+              <span>{progress}%</span>
+              <button
+                onClick={cancelSearch}
+                className="text-xs text-red-500 hover:text-red-700"
+              >
+                Interrompi
+              </button>
+            </div>
           </div>
           <div className="w-full bg-muted rounded-full h-2">
             <div

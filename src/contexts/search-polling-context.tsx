@@ -8,6 +8,7 @@ interface SearchPollingContextType {
   completedData: { newOffers: number } | null;
   dismissCompleted: () => void;
   startPolling: (searchId: string, rolesCount: number) => void;
+  cancelSearch: () => Promise<void>;
 }
 
 const SearchPollingContext = createContext<SearchPollingContextType | null>(null);
@@ -17,6 +18,7 @@ export function SearchPollingProvider({ children }: { children: React.ReactNode 
   const [progress, setProgress] = useState(0);
   const [completedData, setCompletedData] = useState<{ newOffers: number } | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const currentSearchIdRef = useRef<string | null>(null);
 
   const stopPolling = useCallback(() => {
     if (intervalRef.current) {
@@ -27,6 +29,7 @@ export function SearchPollingProvider({ children }: { children: React.ReactNode 
 
   const startPolling = useCallback((searchId: string, rolesCount: number) => {
     localStorage.setItem("job_sb_active_search", JSON.stringify({ searchId, rolesCount }));
+    currentSearchIdRef.current = searchId;
     setIsSearching(true);
     setProgress(0);
     setCompletedData(null);
@@ -40,9 +43,10 @@ export function SearchPollingProvider({ children }: { children: React.ReactNode 
 
         if (data.progress != null) setProgress(data.progress);
 
-        if (data.status === "completed" || data.status === "error") {
+        if (data.status === "completed" || data.status === "error" || data.status === "cancelled") {
           stopPolling();
           localStorage.removeItem("job_sb_active_search");
+          currentSearchIdRef.current = null;
           setIsSearching(false);
           if (data.status === "completed") {
             setProgress(100);
@@ -61,7 +65,10 @@ export function SearchPollingProvider({ children }: { children: React.ReactNode 
     if (!raw) return;
     try {
       const { searchId, rolesCount } = JSON.parse(raw) as { searchId: string; rolesCount: number };
-      if (searchId) startPolling(searchId, rolesCount);
+      if (searchId) {
+        currentSearchIdRef.current = searchId;
+        startPolling(searchId, rolesCount);
+      }
     } catch {
       localStorage.removeItem("job_sb_active_search");
     }
@@ -70,8 +77,27 @@ export function SearchPollingProvider({ children }: { children: React.ReactNode 
 
   const dismissCompleted = useCallback(() => setCompletedData(null), []);
 
+  const cancelSearch = useCallback(async () => {
+    const searchId = currentSearchIdRef.current;
+    if (!searchId) return;
+    try {
+      await fetch("/api/search/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ search_id: searchId }),
+      });
+    } catch {
+      // ignora errori di rete
+    }
+    stopPolling();
+    localStorage.removeItem("job_sb_active_search");
+    currentSearchIdRef.current = null;
+    setIsSearching(false);
+    setProgress(0);
+  }, [stopPolling]);
+
   return (
-    <SearchPollingContext.Provider value={{ isSearching, progress, completedData, dismissCompleted, startPolling }}>
+    <SearchPollingContext.Provider value={{ isSearching, progress, completedData, dismissCompleted, startPolling, cancelSearch }}>
       {children}
     </SearchPollingContext.Provider>
   );
