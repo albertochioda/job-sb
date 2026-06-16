@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+
+const adminSupabase = createAdminClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function GET(
   _request: NextRequest,
@@ -19,11 +25,14 @@ export async function GET(
 
   if (!acv?.file_url) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const { data: signed } = await supabase.storage
+  // Usa service role per generare signed URL (bucket privato)
+  const { data: signed, error } = await adminSupabase.storage
     .from("cvs")
     .createSignedUrl(acv.file_url, 3600);
 
-  if (!signed?.signedUrl) return NextResponse.json({ error: "Impossibile generare link download" }, { status: 500 });
+  if (error || !signed?.signedUrl) {
+    return NextResponse.json({ error: error?.message ?? "Impossibile generare link download" }, { status: 500 });
+  }
 
   return NextResponse.redirect(signed.signedUrl);
 }

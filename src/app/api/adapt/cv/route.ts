@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+
+const adminSupabase = createAdminClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 import {
   Document, Packer, Paragraph, TextRun, HeadingLevel,
   AlignmentType, LevelFormat,
@@ -155,7 +161,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (existing?.file_url) {
-    const { data: signed } = await supabase.storage.from("cvs").createSignedUrl(existing.file_url, 3600);
+    const { data: signed } = await adminSupabase.storage.from("cvs").createSignedUrl(existing.file_url, 3600);
     return NextResponse.json({ adapted_cv_id: existing.id, file_url: signed?.signedUrl ?? existing.file_url, cached: true });
   }
 
@@ -194,9 +200,9 @@ export async function POST(request: NextRequest) {
     lang,
   );
 
-  // Upload su Supabase Storage
+  // Upload su Supabase Storage (service role per bucket privato)
   const fileName = `adapted_cvs/${user.id}/${offer_id}.docx`;
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await adminSupabase.storage
     .from("cvs")
     .upload(fileName, docBuffer, {
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -228,8 +234,8 @@ export async function POST(request: NextRequest) {
 
   if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
 
-  // Genera URL firmato valido 1 ora per il download immediato
-  const { data: signed } = await supabase.storage.from("cvs").createSignedUrl(fileName, 3600);
+  // Genera URL firmato valido 1 ora per il download immediato (service role)
+  const { data: signed } = await adminSupabase.storage.from("cvs").createSignedUrl(fileName, 3600);
 
   return NextResponse.json({ adapted_cv_id: saved.id, file_url: signed?.signedUrl ?? "", cached: false });
 }
