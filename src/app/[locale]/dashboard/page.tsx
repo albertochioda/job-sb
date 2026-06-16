@@ -38,6 +38,9 @@ export default async function DashboardPage({
       <nav className="flex items-center justify-between px-6 py-4 border-b">
         <span className="font-bold text-xl">Job SB</span>
         <div className="flex items-center gap-4">
+          <Link href={`/${locale}/dashboard/adapted-cvs`} className="text-sm text-muted-foreground hover:text-foreground">
+            CV Adattati
+          </Link>
           <Link href={`/${locale}/profile`} className="text-sm text-muted-foreground hover:text-foreground">
             Profilo
           </Link>

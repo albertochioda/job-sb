@@ -20,7 +20,7 @@ export async function GET() {
 
   const { data: scored } = await supabase
     .from("scored_offers")
-    .select("id, score_final, flag, motivo, offer_id, is_new")
+    .select("id, score_final, flag, motivo, offer_id, is_new, cv_id")
     .eq("user_id", user.id)
     .neq("flag", "geo_skip")
     .order("score_final", { ascending: false })
@@ -38,6 +38,8 @@ export async function GET() {
 
   const flat = scored.map((o: any) => ({
     id: o.id,
+    offer_id: o.offer_id,
+    cv_id: o.cv_id,
     score_final: o.score_final,
     flag: o.flag,
     motivo: o.motivo,

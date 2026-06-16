@@ -14,6 +14,8 @@ interface ScoredOffer {
   motivo: string;
   source: string;
   is_new?: boolean;
+  cv_id?: string;
+  offer_id?: string;
 }
 
 
@@ -38,6 +40,8 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
   const [filter, setFilter] = useState<"all" | "green" | "yellow" | "red">("all");
   const [estimatedMin, setEstimatedMin] = useState<number | null>(null);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [adaptingIds, setAdaptingIds] = useState<Set<string>>(new Set());
+  const [adaptedIds, setAdaptedIds] = useState<Set<string>>(new Set());
 
   const fetchOffers = useCallback(async () => {
     const res = await fetch("/api/offers");
@@ -82,6 +86,27 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
       startPolling(data.search_id, rolesCount);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const adaptCv = async (offerId: string, cvId: string) => {
+    if (adaptingIds.has(offerId)) return;
+    setAdaptingIds(prev => new Set([...prev, offerId]));
+    try {
+      const res = await fetch("/api/adapt/cv", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offer_id: offerId, cv_id: cvId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.file_url) {
+        setAdaptedIds(prev => new Set([...prev, offerId]));
+        window.open(data.file_url, "_blank");
+      } else {
+        alert(data.error ?? "Errore generazione CV");
+      }
+    } finally {
+      setAdaptingIds(prev => { const s = new Set(prev); s.delete(offerId); return s; });
     }
   };
 
@@ -228,17 +253,32 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                 )}
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground/60 uppercase tracking-wide">{offer.source}</p>
-                  {offer.url && (
-                    <a
-                      href={offer.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => markRead(offer.id)}
-                      className="text-xs text-primary underline hover:no-underline"
-                    >
-                      Apri offerta →
-                    </a>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {offer.flag === "green" && offer.offer_id && offer.cv_id && (
+                      <button
+                        onClick={() => adaptCv(offer.offer_id!, offer.cv_id!)}
+                        disabled={adaptingIds.has(offer.offer_id)}
+                        className="text-xs text-emerald-600 hover:text-emerald-800 font-medium disabled:opacity-50"
+                      >
+                        {adaptingIds.has(offer.offer_id)
+                          ? "Generazione..."
+                          : adaptedIds.has(offer.offer_id)
+                          ? "✓ CV adattato"
+                          : "Adatta CV"}
+                      </button>
+                    )}
+                    {offer.url && (
+                      <a
+                        href={offer.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => markRead(offer.id)}
+                        className="text-xs text-primary underline hover:no-underline"
+                      >
+                        Apri offerta →
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
