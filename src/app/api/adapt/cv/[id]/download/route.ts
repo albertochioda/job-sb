@@ -25,10 +25,18 @@ export async function GET(
 
   if (!acv?.file_url) return NextResponse.json({ error: "not found" }, { status: 404 });
 
+  // Estrai il path relativo se file_url è un URL completo
+  let filePath = acv.file_url;
+  if (filePath.startsWith("http")) {
+    // es: https://xxx.supabase.co/storage/v1/object/public/cvs/adapted_cvs/...
+    const match = filePath.match(/\/object\/(?:public|sign)\/cvs\/(.+?)(?:\?|$)/);
+    if (match) filePath = match[1];
+  }
+
   // Usa service role per generare signed URL (bucket privato)
   const { data: signed, error } = await adminSupabase.storage
     .from("cvs")
-    .createSignedUrl(acv.file_url, 3600);
+    .createSignedUrl(filePath, 3600);
 
   if (error || !signed?.signedUrl) {
     return NextResponse.json({ error: error?.message ?? "Impossibile generare link download" }, { status: 500 });
