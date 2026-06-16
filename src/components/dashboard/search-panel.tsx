@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchPolling } from "@/contexts/search-polling-context";
 
 interface ScoredOffer {
@@ -16,12 +16,6 @@ interface ScoredOffer {
   is_new?: boolean;
 }
 
-interface SearchStatus {
-  status: "idle" | "queued" | "running" | "completed" | "error";
-  progress: number;
-  total: number;
-  error?: string;
-}
 
 const FLAG_COLORS = {
   green: "bg-green-100 text-green-800 border-green-200",
@@ -36,9 +30,9 @@ const FLAG_LABELS = {
 };
 
 export default function SearchPanel({ locale: _locale }: { locale: string }) {
-  const { startPolling } = useSearchPolling();
-  const [status, setStatus] = useState<SearchStatus>({ status: "idle", progress: 0, total: 0 });
-  const [searchId, setSearchId] = useState<string | null>(null);
+  const { isSearching, progress, completedData, startPolling } = useSearchPolling();
+  const [total, setTotal] = useState(0);
+  const [hasError, setHasError] = useState(false);
   const [offers, setOffers] = useState<ScoredOffer[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<"all" | "green" | "yellow" | "red">("all");
@@ -53,27 +47,14 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
     }
   }, []);
 
-  const pollStatus = useCallback(async (id: string) => {
-    const res = await fetch(`/api/search/status?search_id=${id}`);
-    if (!res.ok) return;
-    const data = await res.json();
-    setStatus({
-      status: data.status,
-      progress: data.progress ?? 0,
-      total: data.total ?? 0,
-      error: data.error,
-    });
-    if (data.status === "completed") {
-      await fetchOffers();
-    }
-  }, [fetchOffers]);
-
+  // Ricarica offerte quando il context segnala completamento
+  const prevIsSearching = useRef(false);
   useEffect(() => {
-    if (!searchId) return;
-    if (status.status === "completed" || status.status === "error") return;
-    const interval = setInterval(() => pollStatus(searchId), 5000);
-    return () => clearInterval(interval);
-  }, [searchId, status.status, pollStatus]);
+    if (prevIsSearching.current && !isSearching && completedData) {
+      fetchOffers();
+    }
+    prevIsSearching.current = isSearching;
+  }, [isSearching, completedData, fetchOffers]);
 
   useEffect(() => {
     fetchOffers();
@@ -81,16 +62,15 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
 
   const startSearch = async () => {
     setLoading(true);
+    setHasError(false);
     try {
-      // Fetch roles count for time estimate
       const cfgRes = await fetch("/api/search-config");
-      let rolesCount = 3; // fallback
+      let rolesCount = 3;
       if (cfgRes.ok) {
         const cfg = await cfgRes.json();
         rolesCount = (cfg.roles ?? []).length || 3;
       }
-      const estimated = Math.max(1, rolesCount * 2);
-      setEstimatedMin(estimated);
+      setEstimatedMin(Math.max(1, rolesCount * 2));
 
       const res = await fetch("/api/search/start", { method: "POST" });
       const data = await res.json();
@@ -98,10 +78,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
         alert(data.error ?? "Errore avvio ricerca");
         return;
       }
-      setSearchId(data.search_id);
-      setStatus({ status: "queued", progress: 0, total: 0 });
-
-      // Avvia polling globale (persiste tra navigazioni)
+      setTotal(0);
       startPolling(data.search_id, rolesCount);
     } finally {
       setLoading(false);
@@ -125,8 +102,6 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
     red: offers.filter(o => o.flag === "red").length,
   };
 
-  const isRunning = status.status === "queued" || status.status === "running";
-
   return (
     <div className="space-y-6">
       {/* Header + avvia */}
@@ -141,47 +116,47 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
         </div>
         <button
           onClick={startSearch}
-          disabled={loading || isRunning}
+          disabled={loading || isSearching}
           className="bg-primary text-primary-foreground px-5 py-2 rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? "Avvio..." : status.status === "running" ? "Ricerca in corso..." : "Avvia ricerca"}
+          {loading ? "Avvio..." : isSearching ? "Ricerca in corso..." : "Avvia ricerca"}
         </button>
       </div>
 
-      {/* Feature 1: banner stima durata (mostrato subito dopo avvio) */}
-      {isRunning && estimatedMin !== null && (
+      {/* Banner stima durata */}
+      {isSearching && estimatedMin !== null && (
         <div className="text-sm bg-blue-50 border border-blue-200 text-blue-800 rounded-md px-4 py-3">
           La ricerca richiederà circa <strong>{estimatedMin} minuti</strong> — puoi navigare liberamente, ti avviseremo al termine.
         </div>
       )}
 
-      {/* Progress bar */}
-      {isRunning && (
+      {/* Progress bar — usa progress dal context, in sync col banner header */}
+      {isSearching && (
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>
-              {status.status === "queued"
+              {progress === 0
                 ? "In coda..."
-                : `Scansione in corso · ${status.total > 0 ? `${status.total} offerte trovate` : "scraping..."}`}
+                : `Scansione in corso · ${total > 0 ? `${total} offerte trovate` : "scraping..."}`}
             </span>
-            <span>{status.progress}%</span>
+            <span>{progress}%</span>
           </div>
           <div className="w-full bg-muted rounded-full h-2">
             <div
               className="bg-primary h-2 rounded-full transition-all duration-500"
-              style={{ width: `${status.progress}%` }}
+              style={{ width: `${progress}%` }}
             />
           </div>
         </div>
       )}
 
-      {status.status === "completed" && (
+      {completedData && (
         <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-4 py-2">
-          Ricerca completata — {status.total} offerte analizzate e salvate.
+          Ricerca completata — {completedData.newOffers} offerte analizzate e salvate.
         </div>
       )}
 
-      {status.status === "error" && (
+      {hasError && (
         <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-4 py-2">
           Errore durante la ricerca. Riprova tra qualche minuto.
         </div>
@@ -260,7 +235,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
               </div>
             ))}
         </div>
-      ) : offers.length === 0 && status.status === "idle" ? (
+      ) : offers.length === 0 && !isSearching && !completedData ? (
         <div className="text-center py-16 text-muted-foreground">
           <p className="text-lg">Nessuna offerta ancora.</p>
           <p className="text-sm mt-1">Clicca &quot;Avvia ricerca&quot; per trovare le offerte in base al tuo profilo.</p>
