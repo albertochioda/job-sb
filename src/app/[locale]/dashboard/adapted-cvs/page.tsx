@@ -76,9 +76,7 @@ export default async function AdaptedCvsPage({
                   </div>
                   {acv.file_url && (
                     <a
-                      href={acv.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href={`/api/adapt/cv/${acv.id}/download`}
                       className="shrink-0 bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-md hover:bg-primary/90"
                     >
                       Scarica .docx

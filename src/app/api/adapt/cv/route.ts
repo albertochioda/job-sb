@@ -155,7 +155,8 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (existing?.file_url) {
-    return NextResponse.json({ adapted_cv_id: existing.id, file_url: existing.file_url, cached: true });
+    const { data: signed } = await supabase.storage.from("cvs").createSignedUrl(existing.file_url, 3600);
+    return NextResponse.json({ adapted_cv_id: existing.id, file_url: signed?.signedUrl ?? existing.file_url, cached: true });
   }
 
   const lang = await detectLanguage(offer.description || "");
@@ -206,16 +207,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Upload fallito: ${uploadError.message}` }, { status: 500 });
   }
 
-  const { data: { publicUrl } } = supabase.storage.from("cvs").getPublicUrl(fileName);
-
-  // Salva in adapted_cvs
+  // Salva il path (non URL pubblico — bucket privato, download via signed URL)
   const { data: saved, error: dbError } = await supabase
     .from("adapted_cvs")
     .upsert({
       user_id: user.id,
       offer_id,
       cv_id,
-      file_url: publicUrl,
+      file_url: fileName,
       profilo_adattato: parsed.profilo_adattato,
       bullet_points: parsed.bullet_points,
       core_expertise: parsed.core_expertise,
@@ -229,7 +228,10 @@ export async function POST(request: NextRequest) {
 
   if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
 
-  return NextResponse.json({ adapted_cv_id: saved.id, file_url: publicUrl, cached: false });
+  // Genera URL firmato valido 1 ora per il download immediato
+  const { data: signed } = await supabase.storage.from("cvs").createSignedUrl(fileName, 3600);
+
+  return NextResponse.json({ adapted_cv_id: saved.id, file_url: signed?.signedUrl ?? "", cached: false });
 }
 
 export async function GET() {
