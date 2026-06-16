@@ -16,6 +16,7 @@ export default function OnboardingWizard({ locale }: Props) {
   const [roles, setRoles] = useState<string[]>([]);
   const [newRole, setNewRole] = useState("");
   const [city, setCity] = useState("");
+  const [country, setCountry] = useState("Italia");
   const [radiusKm, setRadiusKm] = useState(50);
   const [minSalary, setMinSalary] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -64,7 +65,7 @@ export default function OnboardingWizard({ locale }: Props) {
     const res = await fetch("/api/search-config", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cv_id: cvId, roles, city, radius_km: radiusKm, min_salary: minSalary ? parseInt(minSalary) : null }),
+      body: JSON.stringify({ cv_id: cvId, roles, city, country, radius_km: radiusKm, min_salary: minSalary ? parseInt(minSalary) : null }),
     });
     setSaving(false);
     if (res.ok) router.push(`/${locale}/dashboard`);
@@ -195,6 +196,18 @@ export default function OnboardingWizard({ locale }: Props) {
           </div>
           <div className="space-y-4">
             <div className="space-y-1">
+              <label className="text-sm font-medium">Paese</label>
+              <select
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring bg-background"
+              >
+                {[["Italia","🇮🇹"],["France","🇫🇷"],["Deutschland","🇩🇪"],["España","🇪🇸"],["Nederland","🇳🇱"],["Polska","🇵🇱"]].map(([val, flag]) => (
+                  <option key={val} value={val}>{flag} {val}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
               <label className="text-sm font-medium">Città</label>
               <input
                 value={city}
@@ -242,7 +255,7 @@ export default function OnboardingWizard({ locale }: Props) {
           </div>
           <div className="border rounded-lg p-4 space-y-2 text-sm">
             <p><span className="text-muted-foreground">Ruoli:</span> {roles.join(", ")}</p>
-            {city && <p><span className="text-muted-foreground">Città:</span> {city} (+{radiusKm} km)</p>}
+            {city && <p><span className="text-muted-foreground">Città:</span> {city}, {country} (+{radiusKm} km)</p>}
             {minSalary && <p><span className="text-muted-foreground">RAL minima:</span> €{parseInt(minSalary).toLocaleString()}</p>}
           </div>
           <button

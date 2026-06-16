@@ -69,6 +69,7 @@ export async function POST() {
     config: {
       roles: config.roles ?? [],
       city: config.city ?? "",
+      country: (config as { country?: string }).country ?? "Italia",
       radius_km: config.radius_km ?? 50,
       min_salary: config.min_salary ?? 0,
       languages: config.languages ?? ["it"],

@@ -2,9 +2,15 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 
+const COUNTRIES = [
+  ["Italia", "🇮🇹"], ["France", "🇫🇷"], ["Deutschland", "🇩🇪"],
+  ["España", "🇪🇸"], ["Nederland", "🇳🇱"], ["Polska", "🇵🇱"],
+] as const;
+
 interface SearchConfig {
   id: string;
   city: string;
+  country?: string;
   radius_km: number;
   min_salary: number;
   roles: string[];
@@ -17,6 +23,7 @@ interface GeoHit {
 
 export default function SearchConfigForm({ config }: { config: SearchConfig }) {
   const [city, setCity] = useState(config.city ?? "");
+  const [country, setCountry] = useState(config.country ?? "Italia");
   const [geoId, setGeoId] = useState((config as { geo_id?: string }).geo_id ?? "");
   const [radius, setRadius] = useState(config.radius_km ?? 50);
   const [minSalary, setMinSalary] = useState(config.min_salary ?? 0);
@@ -69,7 +76,7 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
     const res = await fetch("/api/search-config", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ city, geo_id: geoId, radius_km: radius, min_salary: minSalary, roles }),
+      body: JSON.stringify({ city, country, geo_id: geoId, radius_km: radius, min_salary: minSalary, roles }),
     });
     setSaving(false);
     if (res.ok) {
@@ -86,6 +93,18 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
       <h2 className="font-semibold text-lg">Configurazione ricerca</h2>
 
       <div className="grid gap-4 text-sm">
+        <div className="space-y-1">
+          <label className="text-muted-foreground">Paese</label>
+          <select
+            value={country}
+            onChange={e => setCountry(e.target.value)}
+            className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            {COUNTRIES.map(([val, flag]) => (
+              <option key={val} value={val}>{flag} {val}</option>
+            ))}
+          </select>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <label className="text-muted-foreground">Città</label>
