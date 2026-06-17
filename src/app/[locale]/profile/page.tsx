@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "@/components/auth/logout-button";
 import SearchConfigForm from "@/components/profile/search-config-form";
+import CvUploadSection from "@/components/profile/cv-upload-section";
 import Link from "next/link";
 
 export default async function ProfilePage({
@@ -33,6 +34,13 @@ export default async function ProfilePage({
   const { data: searchConfig } = await supabase
     .from("search_configs")
     .select("id, city, radius_km, min_salary, roles")
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .single();
+
+  const { data: activeCv } = await supabase
+    .from("cvs")
+    .select("id, file_name, file_type, created_at")
     .eq("user_id", user.id)
     .eq("is_active", true)
     .single();
@@ -84,6 +92,7 @@ export default async function ProfilePage({
           </div>
         </div>
       </div>
+      <CvUploadSection currentCv={activeCv ?? null} />
       {searchConfig && <SearchConfigForm config={searchConfig} />}
     </main>
   );
