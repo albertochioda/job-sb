@@ -145,9 +145,9 @@ export async function POST(request: NextRequest) {
   }
 
   // Genera signed URL del CV originale (1h) — il worker lo scarica direttamente
-  const { data: cvSigned } = await adminSupabase.storage.from("cvs").createSignedUrl(cvFilePath, 3600);
-  if (!cvSigned?.signedUrl) {
-    return NextResponse.json({ error: "Impossibile accedere al file CV originale" }, { status: 500 });
+  const { data: cvSigned, error: signError } = await adminSupabase.storage.from("cvs").createSignedUrl(cvFilePath, 3600);
+  if (signError || !cvSigned?.signedUrl) {
+    return NextResponse.json({ error: `CV originale non accessibile — path: ${cvFilePath} — ${signError?.message ?? "signed URL vuoto"}` }, { status: 500 });
   }
 
   // Delega la generazione del .docx al worker Python (usa il CV originale come template)
