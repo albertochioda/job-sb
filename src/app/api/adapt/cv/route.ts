@@ -30,6 +30,8 @@ technical_skills = SOLO tool/software/metodologie, NON lingue parlate.
   "exp1_bullets": ["<5 bullet esperienza più recente, max 130 chars ciascuno>"],
   "exp2_bullets": ["<5 bullet seconda esperienza, max 130 chars ciascuno>"],
   "exp3_bullets": ["<5 bullet terza esperienza, max 130 chars ciascuno>"],
+  "exp4_bullets": ["<5 bullet quarta esperienza se presente, altrimenti lista vuota>"],
+  "exp5_bullets": ["<5 bullet quinta esperienza se presente, altrimenti lista vuota>"],
   "core_expertise": ["<5 competenze chiave, max 100 chars>"],
   "technical_skills": ["<3 righe tool/software/metodologie, NO lingue parlate, max 60 chars>"],
   "keywords_ats": ["<6-10 keyword ATS dalla JD presenti nel CV>"],
@@ -56,6 +58,8 @@ async function callWorkerAdaptCv(
     exp1_bullets: string[];
     exp2_bullets: string[];
     exp3_bullets: string[];
+    exp4_bullets: string[];
+    exp5_bullets: string[];
     core_expertise: string[];
     technical_skills: string[];
   },
@@ -156,6 +160,8 @@ export async function POST(request: NextRequest) {
     exp1_bullets: string[];
     exp2_bullets: string[];
     exp3_bullets: string[];
+    exp4_bullets: string[];
+    exp5_bullets: string[];
     core_expertise: string[];
     technical_skills: string[];
     keywords_ats: string[];
@@ -187,6 +193,8 @@ export async function POST(request: NextRequest) {
       exp1_bullets: parsed.exp1_bullets ?? [],
       exp2_bullets: parsed.exp2_bullets ?? [],
       exp3_bullets: parsed.exp3_bullets ?? [],
+      exp4_bullets: parsed.exp4_bullets ?? [],
+      exp5_bullets: parsed.exp5_bullets ?? [],
       core_expertise: parsed.core_expertise,
       technical_skills: parsed.technical_skills,
     }, template_id, cv.extracted_text ?? "");
