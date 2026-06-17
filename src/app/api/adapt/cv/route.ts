@@ -22,13 +22,16 @@ ${cvText.slice(0, 3000)}
 JOB DESCRIPTION (${lang}):
 ${jdText.slice(0, 3000)}
 
-Genera SOLO JSON valido:
+Genera SOLO JSON valido. I bullet devono essere divisi per esperienza (5 per ognuna, in ordine cronologico inverso dal CV).
+technical_skills = SOLO tool/software/metodologie, NON lingue parlate.
 {
-  "titolo": ["<titolo professionale adattato alla JD, max 60 chars, es. 'Plant Manager | Lean & Continuous Improvement'>"],
+  "titolo": ["<titolo professionale adattato alla JD, max 60 chars>"],
   "profilo_adattato": "<3 frasi, max 500 chars>",
-  "bullet_points": ["<13-15 bullet esperienze lavorative, max 130 chars ciascuno>"],
+  "exp1_bullets": ["<5 bullet esperienza più recente, max 130 chars ciascuno>"],
+  "exp2_bullets": ["<5 bullet seconda esperienza, max 130 chars ciascuno>"],
+  "exp3_bullets": ["<5 bullet terza esperienza, max 130 chars ciascuno>"],
   "core_expertise": ["<5 competenze chiave, max 100 chars>"],
-  "technical_skills": ["<3 righe skill tecniche, max 60 chars>"],
+  "technical_skills": ["<3 righe tool/software/metodologie, NO lingue parlate, max 60 chars>"],
   "keywords_ats": ["<6-10 keyword ATS dalla JD presenti nel CV>"],
   "note_strategiche": "<max 300 chars>"
 }
@@ -50,7 +53,9 @@ async function callWorkerAdaptCv(
   content: {
     titolo: string[];
     profilo_adattato: string;
-    bullet_points: string[];
+    exp1_bullets: string[];
+    exp2_bullets: string[];
+    exp3_bullets: string[];
     core_expertise: string[];
     technical_skills: string[];
   },
@@ -148,7 +153,9 @@ export async function POST(request: NextRequest) {
   let parsed: {
     titolo: string[];
     profilo_adattato: string;
-    bullet_points: string[];
+    exp1_bullets: string[];
+    exp2_bullets: string[];
+    exp3_bullets: string[];
     core_expertise: string[];
     technical_skills: string[];
     keywords_ats: string[];
@@ -177,7 +184,9 @@ export async function POST(request: NextRequest) {
     fileName = await callWorkerAdaptCv(user.id, cvFilePath, cvSignedUrl, offer_id, lang, {
       titolo: parsed.titolo ?? [],
       profilo_adattato: parsed.profilo_adattato,
-      bullet_points: parsed.bullet_points,
+      exp1_bullets: parsed.exp1_bullets ?? [],
+      exp2_bullets: parsed.exp2_bullets ?? [],
+      exp3_bullets: parsed.exp3_bullets ?? [],
       core_expertise: parsed.core_expertise,
       technical_skills: parsed.technical_skills,
     }, template_id, cv.extracted_text ?? "");
@@ -195,7 +204,7 @@ export async function POST(request: NextRequest) {
       cv_id,
       file_url: fileName,
       profilo_adattato: parsed.profilo_adattato,
-      bullet_points: parsed.bullet_points,
+      bullet_points: [...(parsed.exp1_bullets ?? []), ...(parsed.exp2_bullets ?? []), ...(parsed.exp3_bullets ?? [])],
       core_expertise: parsed.core_expertise,
       technical_skills: parsed.technical_skills,
       keywords_ats: parsed.keywords_ats,
