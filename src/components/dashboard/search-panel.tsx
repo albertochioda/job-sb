@@ -211,6 +211,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
             <option value="two_column">Due colonne</option>
             <option value="bold_header">Header grassetto</option>
             <option value="minimal_smart">Minimal Smart</option>
+            <option value="bioscibex">Bioscibex (classico)</option>
           </select>
         </div>
       )}
