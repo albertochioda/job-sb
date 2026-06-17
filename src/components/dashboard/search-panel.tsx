@@ -42,6 +42,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [adaptingIds, setAdaptingIds] = useState<Set<string>>(new Set());
   const [adaptedIds, setAdaptedIds] = useState<Set<string>>(new Set());
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
 
   const fetchOffers = useCallback(async () => {
     const res = await fetch("/api/offers");
@@ -93,10 +94,12 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
     if (adaptingIds.has(offerId)) return;
     setAdaptingIds(prev => new Set([...prev, offerId]));
     try {
+      const body: Record<string, string> = { offer_id: offerId };
+      if (selectedTemplate) body.template_id = selectedTemplate;
       const res = await fetch("/api/adapt/cv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ offer_id: offerId }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (res.ok && data.file_url) {
@@ -192,6 +195,23 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
       {hasError && (
         <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-4 py-2">
           Errore durante la ricerca. Riprova tra qualche minuto.
+        </div>
+      )}
+
+      {/* Selezione template CV */}
+      {offers.some(o => o.flag === "green") && (
+        <div className="flex items-center gap-3 text-sm">
+          <span className="text-muted-foreground shrink-0">Template CV:</span>
+          <select
+            value={selectedTemplate}
+            onChange={(e) => setSelectedTemplate(e.target.value)}
+            className="border rounded-md px-2 py-1 text-sm bg-background"
+          >
+            <option value="">Il mio CV originale</option>
+            <option value="two_column">Due colonne</option>
+            <option value="bold_header">Header grassetto</option>
+            <option value="minimal_smart">Minimal Smart</option>
+          </select>
         </div>
       )}
 
