@@ -42,7 +42,8 @@ async function detectLanguage(text: string): Promise<string> {
 
 async function callWorkerAdaptCv(
   userId: string,
-  cvId: string,
+  cvFilePath: string,
+  cvSignedUrl: string,
   offerId: string,
   content: {
     profilo_adattato: string;
@@ -57,7 +58,7 @@ async function callWorkerAdaptCv(
       "Content-Type": "application/json",
       ...(WORKER_SECRET ? { Authorization: `Bearer ${WORKER_SECRET}` } : {}),
     },
-    body: JSON.stringify({ user_id: userId, cv_id: cvId, offer_id: offerId, content }),
+    body: JSON.stringify({ user_id: userId, cv_file_path: cvFilePath, cv_signed_url: cvSignedUrl, offer_id: offerId, content }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -90,11 +91,18 @@ export async function POST(request: NextRequest) {
   // Carica offerta e CV
   const [{ data: offer }, { data: cv }, { data: profile }] = await Promise.all([
     supabase.from("job_offers").select("title, company, description").eq("id", offer_id).single(),
-    supabase.from("cvs").select("extracted_text").eq("id", cv_id).eq("user_id", user.id).single(),
+    supabase.from("cvs").select("extracted_text, file_url").eq("id", cv_id).eq("user_id", user.id).single(),
     supabase.from("profiles").select("full_name").eq("id", user.id).single(),
   ]);
 
   if (!offer || !cv) return NextResponse.json({ error: "Offerta o CV non trovati" }, { status: 404 });
+
+  // Normalizza file_url: accetta path relativo o URL completo legacy
+  let cvFilePath = cv.file_url as string;
+  if (cvFilePath.startsWith("http")) {
+    const m = cvFilePath.match(/\/object\/(?:public|sign)\/cvs\/(.+?)(?:\?|$)/);
+    if (m) cvFilePath = m[1];
+  }
 
   // Controlla se già adattato (riusa)
   const { data: existing } = await supabase
@@ -136,10 +144,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Errore parsing risposta Claude" }, { status: 500 });
   }
 
+  // Genera signed URL del CV originale (1h) — il worker lo scarica direttamente
+  const { data: cvSigned } = await adminSupabase.storage.from("cvs").createSignedUrl(cvFilePath, 3600);
+  if (!cvSigned?.signedUrl) {
+    return NextResponse.json({ error: "Impossibile accedere al file CV originale" }, { status: 500 });
+  }
+
   // Delega la generazione del .docx al worker Python (usa il CV originale come template)
   let fileName: string;
   try {
-    fileName = await callWorkerAdaptCv(user.id, cv_id, offer_id, {
+    fileName = await callWorkerAdaptCv(user.id, cvFilePath, cvSigned.signedUrl, offer_id, {
       profilo_adattato: parsed.profilo_adattato,
       bullet_points: parsed.bullet_points,
       core_expertise: parsed.core_expertise,
