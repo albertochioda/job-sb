@@ -24,8 +24,9 @@ ${jdText.slice(0, 3000)}
 
 Genera SOLO JSON valido:
 {
+  "titolo": ["<titolo professionale adattato alla JD, max 60 chars, es. 'Plant Manager | Lean & Continuous Improvement'>"],
   "profilo_adattato": "<3 frasi, max 500 chars>",
-  "bullet_points": ["<13-15 bullet, max 130 chars ciascuno>"],
+  "bullet_points": ["<13-15 bullet esperienze lavorative, max 130 chars ciascuno>"],
   "core_expertise": ["<5 competenze chiave, max 100 chars>"],
   "technical_skills": ["<3 righe skill tecniche, max 60 chars>"],
   "keywords_ats": ["<6-10 keyword ATS dalla JD presenti nel CV>"],
@@ -46,6 +47,7 @@ async function callWorkerAdaptCv(
   cvSignedUrl: string,
   offerId: string,
   content: {
+    titolo: string[];
     profilo_adattato: string;
     bullet_points: string[];
     core_expertise: string[];
@@ -132,6 +134,7 @@ export async function POST(request: NextRequest) {
 
   const raw = (message.content[0] as { text: string }).text.trim();
   let parsed: {
+    titolo: string[];
     profilo_adattato: string;
     bullet_points: string[];
     core_expertise: string[];
@@ -156,6 +159,7 @@ export async function POST(request: NextRequest) {
   let fileName: string;
   try {
     fileName = await callWorkerAdaptCv(user.id, cvFilePath, cvSigned.signedUrl, offer_id, {
+      titolo: parsed.titolo ?? [],
       profilo_adattato: parsed.profilo_adattato,
       bullet_points: parsed.bullet_points,
       core_expertise: parsed.core_expertise,
