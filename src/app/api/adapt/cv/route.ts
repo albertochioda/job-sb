@@ -46,6 +46,7 @@ async function callWorkerAdaptCv(
   cvFilePath: string,
   cvSignedUrl: string,
   offerId: string,
+  language: string,
   content: {
     titolo: string[];
     profilo_adattato: string;
@@ -60,7 +61,7 @@ async function callWorkerAdaptCv(
       "Content-Type": "application/json",
       ...(WORKER_SECRET ? { Authorization: `Bearer ${WORKER_SECRET}` } : {}),
     },
-    body: JSON.stringify({ user_id: userId, cv_file_path: cvFilePath, cv_signed_url: cvSignedUrl, offer_id: offerId, content }),
+    body: JSON.stringify({ user_id: userId, cv_file_path: cvFilePath, cv_signed_url: cvSignedUrl, offer_id: offerId, language, content }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -158,7 +159,7 @@ export async function POST(request: NextRequest) {
   // Delega la generazione del .docx al worker Python (usa il CV originale come template)
   let fileName: string;
   try {
-    fileName = await callWorkerAdaptCv(user.id, cvFilePath, cvSigned.signedUrl, offer_id, {
+    fileName = await callWorkerAdaptCv(user.id, cvFilePath, cvSigned.signedUrl, offer_id, lang, {
       titolo: parsed.titolo ?? [],
       profilo_adattato: parsed.profilo_adattato,
       bullet_points: parsed.bullet_points,
