@@ -1,7 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 import { useSearchPolling } from "@/contexts/search-polling-context";
+
+const CV_TEMPLATES = [
+  { id: "",             label: "Il mio CV",       badge: "Personale",    badgeColor: "bg-blue-100 text-blue-700",   preview: null },
+  { id: "professional", label: "Professional",     badge: "Individual",   badgeColor: "bg-violet-100 text-violet-700", preview: "/templates/preview_professional.png" },
+  { id: "two_column",   label: "Due colonne",      badge: "Individual",   badgeColor: "bg-violet-100 text-violet-700", preview: "/templates/preview_two_column.png" },
+  { id: "bold_header",  label: "Header grassetto", badge: "Individual",   badgeColor: "bg-violet-100 text-violet-700", preview: "/templates/preview_bold_header.png" },
+  { id: "minimal_smart",label: "Minimal Smart",    badge: "Professional", badgeColor: "bg-amber-100 text-amber-700",   preview: "/templates/preview_minimal_smart.png" },
+];
 
 interface ScoredOffer {
   id: string;
@@ -198,21 +207,46 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
         </div>
       )}
 
-      {/* Selezione template CV */}
+      {/* Selettore template CV a card */}
       {offers.some(o => o.flag === "green") && (
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-muted-foreground shrink-0">Template CV:</span>
-          <select
-            value={selectedTemplate}
-            onChange={(e) => setSelectedTemplate(e.target.value)}
-            className="border rounded-md px-2 py-1 text-sm bg-background"
-          >
-            <option value="">Il mio CV originale</option>
-            <option value="two_column">Due colonne</option>
-            <option value="bold_header">Header grassetto</option>
-            <option value="minimal_smart">Minimal Smart</option>
-            <option value="bioscibex">Bioscibex (classico)</option>
-          </select>
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Template CV per &quot;Adatta CV&quot;</p>
+          <div className="grid grid-cols-5 gap-2">
+            {CV_TEMPLATES.map((tpl) => {
+              const selected = selectedTemplate === tpl.id;
+              return (
+                <button
+                  key={tpl.id || "own"}
+                  onClick={() => setSelectedTemplate(tpl.id)}
+                  className={`flex flex-col items-center rounded-lg border-2 p-2 text-center transition-all ${
+                    selected
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-border hover:border-foreground/40"
+                  }`}
+                >
+                  {tpl.preview ? (
+                    <div className="w-full aspect-[3/4] overflow-hidden rounded mb-1.5 bg-muted">
+                      <Image
+                        src={tpl.preview}
+                        alt={tpl.label}
+                        width={120}
+                        height={160}
+                        className="w-full h-full object-cover object-top"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full aspect-[3/4] rounded mb-1.5 bg-muted flex items-center justify-center">
+                      <span className="text-2xl">📄</span>
+                    </div>
+                  )}
+                  <span className="text-xs font-medium leading-tight">{tpl.label}</span>
+                  <span className={`mt-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${tpl.badgeColor}`}>
+                    {tpl.badge}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
