@@ -73,8 +73,8 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { offer_id, cv_id } = await request.json();
-  if (!offer_id || !cv_id) return NextResponse.json({ error: "missing fields" }, { status: 400 });
+  const { offer_id } = await request.json();
+  if (!offer_id) return NextResponse.json({ error: "missing fields" }, { status: 400 });
 
   // Verifica offerta green
   const { data: scored } = await supabase
@@ -88,14 +88,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Adattamento disponibile solo per offerte con compatibilità Alta (verde)" }, { status: 400 });
   }
 
-  // Carica offerta e CV
+  // Carica offerta, CV attivo dell'utente e profilo
   const [{ data: offer }, { data: cv }, { data: profile }] = await Promise.all([
     supabase.from("job_offers").select("title, company, description").eq("id", offer_id).single(),
-    supabase.from("cvs").select("extracted_text, file_url").eq("id", cv_id).eq("user_id", user.id).single(),
+    supabase.from("cvs").select("id, extracted_text, file_url").eq("user_id", user.id).eq("is_active", true).single(),
     supabase.from("profiles").select("full_name").eq("id", user.id).single(),
   ]);
 
   if (!offer || !cv) return NextResponse.json({ error: "Offerta o CV non trovati" }, { status: 404 });
+
+  const cv_id = cv.id;
 
   // Normalizza file_url: accetta path relativo o URL completo legacy
   let cvFilePath = cv.file_url as string;

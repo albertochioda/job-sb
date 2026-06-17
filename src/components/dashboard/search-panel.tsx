@@ -89,14 +89,14 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
     }
   };
 
-  const adaptCv = async (offerId: string, cvId: string) => {
+  const adaptCv = async (offerId: string) => {
     if (adaptingIds.has(offerId)) return;
     setAdaptingIds(prev => new Set([...prev, offerId]));
     try {
       const res = await fetch("/api/adapt/cv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ offer_id: offerId, cv_id: cvId }),
+        body: JSON.stringify({ offer_id: offerId }),
       });
       const data = await res.json();
       if (res.ok && data.file_url) {
@@ -254,9 +254,9 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground/60 uppercase tracking-wide">{offer.source}</p>
                   <div className="flex items-center gap-3">
-                    {offer.flag === "green" && offer.offer_id && offer.cv_id && (
+                    {offer.flag === "green" && offer.offer_id && (
                       <button
-                        onClick={() => adaptCv(offer.offer_id!, offer.cv_id!)}
+                        onClick={() => adaptCv(offer.offer_id!)}
                         disabled={adaptingIds.has(offer.offer_id)}
                         className="text-xs text-emerald-600 hover:text-emerald-800 font-medium disabled:opacity-50"
                       >
