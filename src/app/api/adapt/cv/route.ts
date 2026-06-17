@@ -54,7 +54,8 @@ async function callWorkerAdaptCv(
     core_expertise: string[];
     technical_skills: string[];
   },
-  templateId?: string
+  templateId?: string,
+  cvText?: string,
 ): Promise<string> {
   const res = await fetch(`${WORKER_URL}/adapt-cv`, {
     method: "POST",
@@ -70,6 +71,7 @@ async function callWorkerAdaptCv(
       language,
       content,
       ...(templateId ? { template_id: templateId } : {}),
+      ...(cvText ? { cv_text: cvText } : {}),
     }),
   });
   if (!res.ok) {
@@ -178,7 +180,7 @@ export async function POST(request: NextRequest) {
       bullet_points: parsed.bullet_points,
       core_expertise: parsed.core_expertise,
       technical_skills: parsed.technical_skills,
-    }, template_id);
+    }, template_id, cv.extracted_text ?? "");
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: `Generazione .docx fallita: ${msg}` }, { status: 500 });
