@@ -60,8 +60,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "upload_failed", message: "Errore caricamento file" }, { status: 500 });
     }
 
-    const { data: { publicUrl } } = admin.storage.from("cvs").getPublicUrl(fileName);
-
     // Call Claude haiku to extract roles
     let suggestedRoles: string[] = [];
     if (extractedText && process.env.ANTHROPIC_API_KEY) {
@@ -92,7 +90,7 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: user.id,
         file_name: file.name,
-        file_url: publicUrl,
+        file_url: fileName,
         file_type: fileType,
         extracted_text: extractedText,
         suggested_roles: suggestedRoles,
