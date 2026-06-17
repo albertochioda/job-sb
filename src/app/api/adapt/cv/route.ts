@@ -64,7 +64,7 @@ async function callWorkerAdaptCv(
     throw new Error(err.error ?? `Worker error ${res.status}`);
   }
   const data = await res.json();
-  return data.path as string;
+  return data.file_path as string;
 }
 
 export async function POST(request: NextRequest) {
