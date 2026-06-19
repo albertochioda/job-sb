@@ -174,15 +174,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Errore parsing risposta Claude" }, { status: 500 });
   }
 
-  // Se non si usa un template hardcoded, serve il signed URL del CV dell'utente
-  let cvSignedUrl: string | null = null;
-  if (!template_id) {
-    const { data: cvSigned, error: signError } = await adminSupabase.storage.from("cvs").createSignedUrl(cvFilePath, 3600);
-    if (signError || !cvSigned?.signedUrl) {
-      return NextResponse.json({ error: `CV originale non accessibile — path: ${cvFilePath} — ${signError?.message ?? "signed URL vuoto"}` }, { status: 500 });
-    }
-    cvSignedUrl = cvSigned.signedUrl;
+  // Genera sempre il signed URL del CV originale (serve sia per adattamento diretto
+  // sia per estrarre la foto profilo quando si usa un template hardcoded)
+  const { data: cvSigned, error: signError } = await adminSupabase.storage.from("cvs").createSignedUrl(cvFilePath, 3600);
+  if (signError || !cvSigned?.signedUrl) {
+    return NextResponse.json({ error: `CV originale non accessibile — path: ${cvFilePath} — ${signError?.message ?? "signed URL vuoto"}` }, { status: 500 });
   }
+  const cvSignedUrl: string = cvSigned.signedUrl;
 
   // Delega la generazione del .docx al worker Python
   let fileName: string;
