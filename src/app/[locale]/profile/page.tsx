@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "@/components/auth/logout-button";
 import SearchConfigForm from "@/components/profile/search-config-form";
 import CvUploadSection from "@/components/profile/cv-upload-section";
+import PhotoUploadSection from "@/components/profile/photo-upload-section";
 import Link from "next/link";
 
 export default async function ProfilePage({
@@ -21,7 +22,7 @@ export default async function ProfilePage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, email, language, created_at")
+    .select("full_name, email, language, created_at, photo_url")
     .eq("id", user.id)
     .single();
 
@@ -92,6 +93,7 @@ export default async function ProfilePage({
           </div>
         </div>
       </div>
+      <PhotoUploadSection currentPhotoUrl={profile?.photo_url ?? null} />
       <CvUploadSection currentCv={activeCv ?? null} />
       {searchConfig && <SearchConfigForm config={searchConfig} />}
     </main>

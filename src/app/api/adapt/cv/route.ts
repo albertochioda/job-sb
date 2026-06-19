@@ -65,6 +65,7 @@ async function callWorkerAdaptCv(
   },
   templateId?: string,
   cvText?: string,
+  photoUrl?: string | null,
 ): Promise<string> {
   const res = await fetch(`${WORKER_URL}/adapt-cv`, {
     method: "POST",
@@ -81,6 +82,7 @@ async function callWorkerAdaptCv(
       content,
       ...(templateId ? { template_id: templateId } : {}),
       ...(cvText ? { cv_text: cvText } : {}),
+      ...(photoUrl ? { photo_url: photoUrl } : {}),
     }),
   });
   if (!res.ok) {
@@ -115,7 +117,7 @@ export async function POST(request: NextRequest) {
   const [{ data: offer }, { data: cv }, { data: profile }] = await Promise.all([
     supabase.from("job_offers").select("title, company, description").eq("id", offer_id).single(),
     supabase.from("cvs").select("id, extracted_text, file_url").eq("user_id", user.id).eq("is_active", true).single(),
-    supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+    supabase.from("profiles").select("full_name, photo_url").eq("id", user.id).single(),
   ]);
 
   if (!offer || !cv) return NextResponse.json({ error: "Offerta o CV non trovati" }, { status: 404 });
@@ -195,7 +197,7 @@ export async function POST(request: NextRequest) {
       exp5_bullets: parsed.exp5_bullets ?? [],
       core_expertise: parsed.core_expertise,
       technical_skills: parsed.technical_skills,
-    }, template_id, cv.extracted_text ?? "");
+    }, template_id, cv.extracted_text ?? "", profile?.photo_url ?? null);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: `Generazione .docx fallita: ${msg}` }, { status: 500 });
