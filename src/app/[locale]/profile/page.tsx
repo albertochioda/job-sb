@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import LogoutButton from "@/components/auth/logout-button";
 import SearchConfigForm from "@/components/profile/search-config-form";
 import CvUploadSection from "@/components/profile/cv-upload-section";
@@ -45,6 +46,17 @@ export default async function ProfilePage({
     .eq("user_id", user.id)
     .eq("is_active", true)
     .single();
+
+  // Signed URL per anteprima foto (funziona con bucket privato)
+  let photoPreviewUrl: string | null = null;
+  if (profile?.photo_url) {
+    const pathMatch = profile.photo_url.match(/\/photos\/(.+?)(?:\?|$)/);
+    if (pathMatch) {
+      const admin = createAdminClient();
+      const { data: photoSigned } = await admin.storage.from("photos").createSignedUrl(pathMatch[1], 3600);
+      photoPreviewUrl = photoSigned?.signedUrl ?? null;
+    }
+  }
 
   const t = await getTranslations({ locale, namespace: "nav" });
 
@@ -93,7 +105,7 @@ export default async function ProfilePage({
           </div>
         </div>
       </div>
-      <PhotoUploadSection currentPhotoUrl={profile?.photo_url ?? null} />
+      <PhotoUploadSection currentPhotoUrl={photoPreviewUrl} />
       <CvUploadSection currentCv={activeCv ?? null} />
       {searchConfig && <SearchConfigForm config={searchConfig} />}
     </main>
