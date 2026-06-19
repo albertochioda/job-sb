@@ -184,6 +184,22 @@ export async function POST(request: NextRequest) {
   }
   const cvSignedUrl: string = cvSigned.signedUrl;
 
+  // Genera signed URL per la foto profilo (funziona anche con bucket privato)
+  let photoSignedUrl: string | null = null;
+  if (profile?.photo_url) {
+    // Estrai il path relativo dall'URL memorizzato: tutto dopo "/photos/"
+    const photoPathMatch = profile.photo_url.match(/\/photos\/(.+?)(?:\?|$)/);
+    if (photoPathMatch) {
+      const { data: photoSigned } = await adminSupabase.storage
+        .from("photos")
+        .createSignedUrl(photoPathMatch[1], 3600);
+      photoSignedUrl = photoSigned?.signedUrl ?? null;
+    }
+    if (!photoSignedUrl) {
+      console.warn("[adapt-cv] impossibile generare signed URL per la foto — CV senza foto");
+    }
+  }
+
   // Delega la generazione del .docx al worker Python
   let fileName: string;
   try {
@@ -197,7 +213,7 @@ export async function POST(request: NextRequest) {
       exp5_bullets: parsed.exp5_bullets ?? [],
       core_expertise: parsed.core_expertise,
       technical_skills: parsed.technical_skills,
-    }, template_id, cv.extracted_text ?? "", profile?.photo_url ?? null);
+    }, template_id, cv.extracted_text ?? "", photoSignedUrl);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: `Generazione .docx fallita: ${msg}` }, { status: 500 });
