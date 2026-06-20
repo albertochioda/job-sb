@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import LogoutButton from "@/components/auth/logout-button";
 import Link from "next/link";
-import SearchPanel from "@/components/dashboard/search-panel";
+import LogoutButton from "@/components/auth/logout-button";
+import ApplicationsPanel from "@/components/dashboard/applications-panel";
 
-export default async function DashboardPage({
+export default async function ApplicationsPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
@@ -15,31 +15,26 @@ export default async function DashboardPage({
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
   if (!user) redirect(`/${locale}/login`);
 
-  const { data: config } = await supabase
-    .from("search_configs")
-    .select("id")
+  const { data: applications } = await supabase
+    .from("applications")
+    .select(`
+      id, status, notes, applied_at, created_at,
+      offer_id, adapted_cv_id,
+      job_offers (id, title, company, location, url),
+      adapted_cvs (id, file_url, language)
+    `)
     .eq("user_id", user.id)
-    .eq("is_active", true)
-    .single();
-
-  if (!config) redirect(`/${locale}/onboarding`);
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user.id)
-    .single();
+    .order("created_at", { ascending: false });
 
   return (
     <main className="min-h-screen">
       <nav className="flex items-center justify-between px-6 py-4 border-b">
         <span className="font-bold text-xl">Job SB</span>
         <div className="flex items-center gap-4">
-          <Link href={`/${locale}/dashboard/applications`} className="text-sm text-muted-foreground hover:text-foreground">
-            Candidature
+          <Link href={`/${locale}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground">
+            Dashboard
           </Link>
           <Link href={`/${locale}/dashboard/adapted-cvs`} className="text-sm text-muted-foreground hover:text-foreground">
             CV Adattati
@@ -51,17 +46,15 @@ export default async function DashboardPage({
         </div>
       </nav>
 
-      <div className="max-w-3xl mx-auto px-6 py-10">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold">
-            Ciao{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}!
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Queste sono le offerte trovate in base al tuo profilo.
+      <div className="max-w-3xl mx-auto px-6 py-10 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Candidature</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Traccia lo stato delle tue candidature.
           </p>
         </div>
 
-        <SearchPanel locale={locale} />
+        <ApplicationsPanel initial={(applications ?? []) as any} />
       </div>
     </main>
   );

@@ -52,6 +52,8 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [adaptingIds, setAdaptingIds] = useState<Set<string>>(new Set());
   const [adaptedIds, setAdaptedIds] = useState<Set<string>>(new Set());
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [savingAppIds, setSavingAppIds] = useState<Set<string>>(new Set());
   const [selectedTemplate, setSelectedTemplate] = useState<string>("professional");
   const [hoveredTemplate, setHoveredTemplate] = useState<string | null>(null);
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
@@ -137,6 +139,21 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
       }
     } finally {
       setAdaptingIds(prev => { const s = new Set(prev); s.delete(offerId); return s; });
+    }
+  };
+
+  const saveApplication = async (offerId: string, adaptedCvId?: string) => {
+    if (savingAppIds.has(offerId) || savedIds.has(offerId)) return;
+    setSavingAppIds(prev => new Set([...prev, offerId]));
+    try {
+      const res = await fetch("/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offer_id: offerId, adapted_cv_id: adaptedCvId ?? null }),
+      });
+      if (res.ok) setSavedIds(prev => new Set([...prev, offerId]));
+    } finally {
+      setSavingAppIds(prev => { const s = new Set(prev); s.delete(offerId); return s; });
     }
   };
 
@@ -349,6 +366,15 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground/60 uppercase tracking-wide">{offer.source}</p>
                   <div className="flex items-center gap-3">
+                    {offer.offer_id && (
+                      <button
+                        onClick={() => saveApplication(offer.offer_id!)}
+                        disabled={savingAppIds.has(offer.offer_id) || savedIds.has(offer.offer_id)}
+                        className="text-xs text-muted-foreground hover:text-foreground font-medium disabled:opacity-50"
+                      >
+                        {savedIds.has(offer.offer_id) ? "✓ Salvata" : savingAppIds.has(offer.offer_id) ? "..." : "Salva"}
+                      </button>
+                    )}
                     {offer.flag === "green" && offer.offer_id && (
                       <button
                         onClick={() => adaptCv(offer.offer_id!)}
