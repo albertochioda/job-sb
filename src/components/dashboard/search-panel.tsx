@@ -5,7 +5,8 @@ import Image from "next/image";
 import { useSearchPolling } from "@/contexts/search-polling-context";
 
 const CV_TEMPLATES = [
-  { id: "",             label: "Il mio CV",       badge: "Personale",    badgeColor: "bg-blue-100 text-blue-700",   preview: null },
+  // TODO: riattivare 'Il mio CV' quando implementiamo l'onboarding guidato per il riconoscimento paragrafi.
+  // { id: "",             label: "Il mio CV",       badge: "Personale",    badgeColor: "bg-blue-100 text-blue-700",   preview: null },
   { id: "professional", label: "Professional",     badge: "Individual",   badgeColor: "bg-violet-100 text-violet-700", preview: "/templates/preview_professional.png" },
   { id: "two_column",   label: "Due colonne",      badge: "Individual",   badgeColor: "bg-violet-100 text-violet-700", preview: "/templates/preview_two_column.png" },
   { id: "bold_header",  label: "Header grassetto", badge: "Individual",   badgeColor: "bg-violet-100 text-violet-700", preview: "/templates/preview_bold_header.png" },
@@ -51,7 +52,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [adaptingIds, setAdaptingIds] = useState<Set<string>>(new Set());
   const [adaptedIds, setAdaptedIds] = useState<Set<string>>(new Set());
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("professional");
 
   const fetchOffers = useCallback(async () => {
     const res = await fetch("/api/offers");
@@ -231,7 +232,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                         alt={tpl.label}
                         width={120}
                         height={160}
-                        className="w-full h-full object-cover object-top"
+                        className="w-full h-full object-cover object-top transition-transform duration-200 hover:scale-110"
                       />
                     </div>
                   ) : (
