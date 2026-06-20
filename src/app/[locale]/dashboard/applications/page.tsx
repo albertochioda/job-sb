@@ -17,16 +17,30 @@ export default async function ApplicationsPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect(`/${locale}/login`);
 
-  const { data: applications } = await supabase
-    .from("applications")
-    .select(`
-      id, status, notes, applied_at, created_at,
-      offer_id, adapted_cv_id,
-      job_offers (id, title, company, location, url),
-      adapted_cvs (id, file_url, language)
-    `)
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  const [{ data: applications }, { data: adaptedCvs }] = await Promise.all([
+    supabase
+      .from("applications")
+      .select(`id, status, notes, applied_at, created_at, offer_id, adapted_cv_id,
+        job_offers (id, title, company, location, url),
+        adapted_cvs (id, file_url, language)`)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("adapted_cvs")
+      .select("id, offer_id, file_url, language")
+      .eq("user_id", user.id),
+  ]);
+
+  // Mappa offer_id → adapted_cv per mostrare il link anche senza adapted_cv_id nell'application
+  const adaptedByOffer = Object.fromEntries(
+    (adaptedCvs ?? []).map((a: { id: string; offer_id: string; file_url: string; language: string }) => [a.offer_id, a])
+  );
+
+  // Merge: se l'application non ha adapted_cvs diretto, usa quello trovato per offer_id
+  const enriched = (applications ?? []).map((app: any) => ({
+    ...app,
+    adapted_cvs: app.adapted_cvs ?? adaptedByOffer[app.offer_id] ?? null,
+  }));
 
   return (
     <main className="min-h-screen">
@@ -54,7 +68,7 @@ export default async function ApplicationsPage({
           </p>
         </div>
 
-        <ApplicationsPanel initial={(applications ?? []) as any} />
+        <ApplicationsPanel initial={enriched as any} />
       </div>
     </main>
   );

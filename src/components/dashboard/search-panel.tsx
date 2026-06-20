@@ -94,6 +94,22 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
     fetchOffers();
   }, [fetchOffers]);
 
+  // Pre-popola adaptedIds e savedIds con dati già presenti in DB
+  useEffect(() => {
+    fetch("/api/adapt/cv").then(r => r.ok ? r.json() : null).then(data => {
+      if (data?.adapted_cvs?.length) {
+        const ids = new Set<string>(data.adapted_cvs.map((a: { offer_id: string }) => a.offer_id));
+        setAdaptedIds(ids);
+      }
+    });
+    fetch("/api/applications").then(r => r.ok ? r.json() : null).then(data => {
+      if (data?.applications?.length) {
+        const ids = new Set<string>(data.applications.map((a: { offer_id: string }) => a.offer_id));
+        setSavedIds(ids);
+      }
+    });
+  }, []);
+
   const startSearch = async () => {
     setLoading(true);
     setHasError(false);
