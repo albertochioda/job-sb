@@ -39,8 +39,8 @@ interface Application {
   id: string;
   status: Status;
   notes: string | null;
-  applied_at: string | null;
   created_at: string;
+  status_dates: Partial<Record<Status, string>>;
   offer_id: string;
   adapted_cv_id: string | null;
   job_offers: JobOffer | null;
@@ -58,9 +58,13 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
     ? applications
     : applications.filter(a => a.status === filterStatus);
 
+  const counts = Object.fromEntries(
+    STATUSES.map(s => [s, applications.filter(a => a.status === s).length])
+  ) as Record<Status, number>;
+
   const updateApplication = useCallback(async (
     id: string,
-    patch: { status?: Status; notes?: string; applied_at?: string | null }
+    patch: { status?: Status; notes?: string; status_dates?: Partial<Record<Status, string>> }
   ) => {
     setSavingId(id);
     const res = await fetch(`/api/applications/${id}`, {
@@ -73,6 +77,22 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
     }
     setSavingId(null);
   }, []);
+
+  const handleStatusChange = (app: Application, newStatus: Status) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const newDates = {
+      ...app.status_dates,
+      // Imposta la data solo se non era già presente
+      ...(app.status_dates[newStatus] ? {} : { [newStatus]: today }),
+    };
+    updateApplication(app.id, { status: newStatus, status_dates: newDates });
+  };
+
+  const handleDateChange = (app: Application, status: Status, date: string) => {
+    const newDates = { ...app.status_dates, [status]: date || undefined };
+    if (!date) delete newDates[status];
+    updateApplication(app.id, { status_dates: newDates });
+  };
 
   const deleteApplication = useCallback(async (id: string) => {
     setDeletingId(id);
@@ -87,13 +107,12 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
     setEditingNotes(prev => { const n = { ...prev }; delete n[app.id]; return n; });
   };
 
-  const counts = Object.fromEntries(
-    STATUSES.map(s => [s, applications.filter(a => a.status === s).length])
-  ) as Record<Status, number>;
+  const fmtDate = (d: string) =>
+    new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" });
 
   return (
     <div className="space-y-6">
-      {/* Filtri status */}
+      {/* Filtri */}
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setFilterStatus("all")}
@@ -122,15 +141,14 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
-          <p className="text-lg">Nessuna candidatura{filterStatus !== "all" ? ` con status "${STATUS_LABELS[filterStatus as Status]}"` : ""}.</p>
-          <p className="text-sm mt-1">
-            Dalla dashboard clicca &quot;Salva candidatura&quot; su un&apos;offerta per aggiungerla al tracker.
-          </p>
+          <p className="text-lg">Nessuna candidatura{filterStatus !== "all" ? ` in stato "${STATUS_LABELS[filterStatus as Status]}"` : ""}.</p>
+          <p className="text-sm mt-1">Dalla dashboard clicca &quot;Salva&quot; su un&apos;offerta per aggiungerla al tracker.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {filtered.map(app => (
             <div key={app.id} className="border rounded-lg p-5 space-y-4">
+
               {/* Header */}
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-0.5 min-w-0">
@@ -140,18 +158,11 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
                   <p className="text-xs text-muted-foreground">
                     {app.job_offers?.company} · {app.job_offers?.location}
                   </p>
-                  <p className="text-xs text-muted-foreground/60">
-                    Salvata il {new Date(app.created_at).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })}
-                  </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-3 shrink-0">
                   {app.job_offers?.url && (
-                    <a
-                      href={app.job_offers.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary underline hover:no-underline"
-                    >
+                    <a href={app.job_offers.url} target="_blank" rel="noopener noreferrer"
+                      className="text-xs text-primary underline hover:no-underline">
                       Apri →
                     </a>
                   )}
@@ -170,7 +181,7 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
                 {STATUSES.map(s => (
                   <button
                     key={s}
-                    onClick={() => updateApplication(app.id, { status: s })}
+                    onClick={() => handleStatusChange(app, s)}
                     disabled={savingId === app.id}
                     className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors disabled:opacity-50 ${
                       app.status === s
@@ -183,30 +194,41 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
                 ))}
               </div>
 
-              {/* Data candidatura (visibile solo se status != salvata) */}
-              {app.status !== "saved" && (
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-muted-foreground shrink-0">Data candidatura:</label>
-                  <input
-                    type="date"
-                    defaultValue={app.applied_at?.slice(0, 10) ?? ""}
-                    onBlur={e => updateApplication(app.id, { applied_at: e.target.value || null })}
-                    className="text-xs border rounded px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-              )}
+              {/* Cronologia date per status */}
+              <div className="space-y-1.5 pt-1">
+                {STATUSES.map(s => {
+                  const hasDate = !!app.status_dates?.[s];
+                  const isActive = app.status === s;
+                  // Mostra solo gli status che hanno una data o sono quello attivo
+                  if (!hasDate && !isActive) return null;
+                  return (
+                    <div key={s} className="flex items-center gap-2">
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${STATUS_COLORS[s]}`}>
+                        {STATUS_LABELS[s]}
+                      </span>
+                      <input
+                        type="date"
+                        value={app.status_dates?.[s] ?? ""}
+                        onChange={e => handleDateChange(app, s, e.target.value)}
+                        className="text-xs border rounded px-2 py-0.5 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                      {hasDate && (
+                        <span className="text-xs text-muted-foreground">{fmtDate(app.status_dates[s]!)}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
 
               {/* Note */}
-              <div className="space-y-1.5">
-                <textarea
-                  value={editingNotes[app.id] ?? app.notes ?? ""}
-                  onChange={e => setEditingNotes(prev => ({ ...prev, [app.id]: e.target.value }))}
-                  onBlur={() => app.id in editingNotes && saveNotes(app)}
-                  placeholder="Note libere (colloquio, contatto, feedback...)"
-                  rows={2}
-                  className="w-full text-xs border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-primary resize-none text-muted-foreground placeholder:text-muted-foreground/50"
-                />
-              </div>
+              <textarea
+                value={editingNotes[app.id] ?? app.notes ?? ""}
+                onChange={e => setEditingNotes(prev => ({ ...prev, [app.id]: e.target.value }))}
+                onBlur={() => app.id in editingNotes && saveNotes(app)}
+                placeholder="Note libere (colloquio, contatto, feedback...)"
+                rows={2}
+                className="w-full text-xs border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-primary resize-none text-muted-foreground placeholder:text-muted-foreground/50"
+              />
 
               {/* CV adattato */}
               {app.adapted_cvs?.file_url && (

@@ -20,7 +20,7 @@ export default async function ApplicationsPage({
   const [{ data: applications }, { data: adaptedCvs }] = await Promise.all([
     supabase
       .from("applications")
-      .select(`id, status, notes, applied_at, created_at, offer_id, adapted_cv_id,
+      .select(`id, status, notes, created_at, status_dates, offer_id, adapted_cv_id,
         job_offers (id, title, company, location, url),
         adapted_cvs (id, file_url, language)`)
       .eq("user_id", user.id)

@@ -10,11 +10,15 @@ export async function PUT(
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const { status, notes, applied_at } = await request.json();
+  const { status, notes, status_dates } = await request.json();
+
+  const patch: Record<string, unknown> = { notes };
+  if (status) patch.status = status;
+  if (status_dates) patch.status_dates = status_dates;
 
   const { error } = await supabase
     .from("applications")
-    .update({ status, notes, applied_at })
+    .update(patch)
     .eq("id", id)
     .eq("user_id", user.id);
 

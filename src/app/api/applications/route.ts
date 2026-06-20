@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("applications")
     .select(`
-      id, status, notes, applied_at, created_at,
+      id, status, notes, created_at, status_dates,
       offer_id, adapted_cv_id,
       job_offers (id, title, company, location, url),
       adapted_cvs (id, file_url, language)
@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
 
   if (existing) return NextResponse.json({ application_id: existing.id, already_saved: true });
 
+  const today = new Date().toISOString().slice(0, 10);
   const { data, error } = await supabase
     .from("applications")
     .insert({
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
       offer_id,
       adapted_cv_id: adapted_cv_id ?? null,
       status: "saved",
+      status_dates: { saved: today },
     })
     .select("id")
     .single();
