@@ -2,23 +2,23 @@
 
 import { useState, useCallback } from "react";
 
-const STATUSES = ["salvata", "candidata", "colloquio", "offerta", "rifiutata"] as const;
+const STATUSES = ["saved", "applied", "interview", "offer", "rejected"] as const;
 type Status = typeof STATUSES[number];
 
 const STATUS_LABELS: Record<Status, string> = {
-  salvata:    "Salvata",
-  candidata:  "Candidata",
-  colloquio:  "Colloquio",
-  offerta:    "Offerta",
-  rifiutata:  "Rifiutata",
+  saved:     "Salvata",
+  applied:   "Candidata",
+  interview: "Colloquio",
+  offer:     "Offerta",
+  rejected:  "Rifiutata",
 };
 
 const STATUS_COLORS: Record<Status, string> = {
-  salvata:   "bg-muted text-muted-foreground border-border",
-  candidata: "bg-blue-50 text-blue-700 border-blue-200",
-  colloquio: "bg-amber-50 text-amber-700 border-amber-200",
-  offerta:   "bg-green-50 text-green-700 border-green-200",
-  rifiutata: "bg-red-50 text-red-600 border-red-200",
+  saved:     "bg-muted text-muted-foreground border-border",
+  applied:   "bg-blue-50 text-blue-700 border-blue-200",
+  interview: "bg-amber-50 text-amber-700 border-amber-200",
+  offer:     "bg-green-50 text-green-700 border-green-200",
+  rejected:  "bg-red-50 text-red-600 border-red-200",
 };
 
 interface JobOffer {
@@ -184,7 +184,7 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
               </div>
 
               {/* Data candidatura (visibile solo se status != salvata) */}
-              {app.status !== "salvata" && (
+              {app.status !== "saved" && (
                 <div className="flex items-center gap-2">
                   <label className="text-xs text-muted-foreground shrink-0">Data candidatura:</label>
                   <input

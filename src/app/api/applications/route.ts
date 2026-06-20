@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       offer_id,
       adapted_cv_id: adapted_cv_id ?? null,
-      status: "salvata",
+      status: "saved",
     })
     .select("id")
     .single();
