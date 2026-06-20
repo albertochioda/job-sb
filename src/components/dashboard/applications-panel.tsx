@@ -213,7 +213,13 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
                         className="text-xs border rounded px-2 py-0.5 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
                       />
                       {hasDate && (
-                        <span className="text-xs text-muted-foreground">{fmtDate(app.status_dates[s]!)}</span>
+                        <button
+                          onClick={() => handleDateChange(app, s, "")}
+                          className="text-[10px] text-red-400 hover:text-red-600 leading-none"
+                          title="Rimuovi data"
+                        >
+                          ✕
+                        </button>
                       )}
                     </div>
                   );
