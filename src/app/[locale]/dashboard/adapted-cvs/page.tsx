@@ -34,6 +34,9 @@ export default async function AdaptedCvsPage({
           <Link href={`/${locale}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground">
             Dashboard
           </Link>
+          <Link href={`/${locale}/dashboard/applications`} className="text-sm text-muted-foreground hover:text-foreground">
+            Candidature
+          </Link>
           <Link href={`/${locale}/profile`} className="text-sm text-muted-foreground hover:text-foreground">
             Profilo
           </Link>
