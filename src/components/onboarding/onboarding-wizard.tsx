@@ -124,7 +124,7 @@ export default function OnboardingWizard({ locale }: Props) {
         <div className="space-y-6">
           <div>
             <h1 className="text-2xl font-bold">Carica il tuo CV</h1>
-            <p className="text-muted-foreground mt-1 text-sm">PDF o .docx — max 5MB</p>
+            <p className="text-muted-foreground mt-1 text-sm">Formato supportato: solo Word (.docx). Il supporto PDF arriverà presto.</p>
           </div>
           <div
             onDrop={handleDrop}
@@ -144,7 +144,7 @@ export default function OnboardingWizard({ locale }: Props) {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".pdf,.docx"
+            accept=".docx"
             className="hidden"
             onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
           />

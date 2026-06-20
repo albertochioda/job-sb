@@ -5,7 +5,6 @@ import { extractText } from "@/lib/cv-extractor";
 import Anthropic from "@anthropic-ai/sdk";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,14 +28,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "file_too_large", message: "Il file supera i 5MB" }, { status: 400 });
     }
 
-    // Validate type
-    const isDocx = file.name.endsWith(".docx");
+    // Validate type — solo .docx accettato
+    const isDocx = file.name.endsWith(".docx") &&
+      (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || file.type === "application/octet-stream" || file.type === "");
     const isPdf = file.type === "application/pdf" || file.name.endsWith(".pdf");
-    if (!isPdf && !isDocx) {
-      return NextResponse.json({ error: "invalid_type", message: "Usa PDF o .docx" }, { status: 400 });
+    if (isPdf) {
+      return NextResponse.json({ error: "invalid_type", message: "Formato non supportato. Carica il tuo CV in formato Word (.docx)." }, { status: 400 });
+    }
+    if (!isDocx) {
+      return NextResponse.json({ error: "invalid_type", message: "Formato non supportato. Carica il tuo CV in formato Word (.docx)." }, { status: 400 });
     }
 
-    const fileType = isPdf ? "pdf" : "docx";
+    const fileType = "docx";
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // Extract text

@@ -76,10 +76,12 @@ export default function CvUploadSection({ currentCv }: { currentCv: CvInfo | nul
         <p className="text-xs text-green-700">CV aggiornato. La prossima ricerca userà questo CV.</p>
       )}
 
+      <p className="text-xs text-muted-foreground">Formato supportato: solo Word (.docx). Il supporto PDF arriverà presto.</p>
+
       <input
         ref={inputRef}
         type="file"
-        accept=".pdf,.docx"
+        accept=".docx"
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
