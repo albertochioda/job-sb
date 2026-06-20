@@ -53,6 +53,23 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
   const [adaptingIds, setAdaptingIds] = useState<Set<string>>(new Set());
   const [adaptedIds, setAdaptedIds] = useState<Set<string>>(new Set());
   const [selectedTemplate, setSelectedTemplate] = useState<string>("professional");
+  const [hoveredTemplate, setHoveredTemplate] = useState<string | null>(null);
+  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
+
+  const POPUP_W = 280;
+  const POPUP_H = 373;
+
+  const handleTemplateMouseEnter = (tplId: string, tplPreview: string | null, e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!tplPreview) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    let left = rect.left + rect.width / 2 - POPUP_W / 2;
+    let top = rect.top - POPUP_H - 10;
+    if (top < 8) top = rect.bottom + 10;
+    if (left < 8) left = 8;
+    if (left + POPUP_W > window.innerWidth - 8) left = window.innerWidth - POPUP_W - 8;
+    setHoveredTemplate(tplId);
+    setPopupStyle({ left, top, width: POPUP_W });
+  };
 
   const fetchOffers = useCallback(async () => {
     const res = await fetch("/api/offers");
@@ -219,20 +236,22 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                 <button
                   key={tpl.id || "own"}
                   onClick={() => setSelectedTemplate(tpl.id)}
-                  className={`relative flex flex-col items-center rounded-lg border-2 p-2 text-center transition-all hover:z-10 ${
+                  onMouseEnter={(e) => handleTemplateMouseEnter(tpl.id, tpl.preview, e)}
+                  onMouseLeave={() => setHoveredTemplate(null)}
+                  className={`flex flex-col items-center rounded-lg border-2 p-2 text-center transition-all ${
                     selected
                       ? "border-primary bg-primary/5 shadow-sm"
                       : "border-border hover:border-foreground/40"
                   }`}
                 >
                   {tpl.preview ? (
-                    <div className="w-full aspect-[3/4] rounded mb-1.5 bg-muted overflow-hidden">
+                    <div className="w-full aspect-[3/4] overflow-hidden rounded mb-1.5 bg-muted">
                       <Image
                         src={tpl.preview}
                         alt={tpl.label}
                         width={120}
                         height={160}
-                        className="w-full h-full object-cover object-top transition-transform duration-200 hover:scale-150"
+                        className="w-full h-full object-cover object-top"
                       />
                     </div>
                   ) : (
@@ -250,6 +269,26 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
           </div>
         </div>
       )}
+
+      {/* Popup anteprima template — fixed, fuori dal flusso */}
+      {hoveredTemplate && (() => {
+        const tpl = CV_TEMPLATES.find(t => t.id === hoveredTemplate);
+        if (!tpl?.preview) return null;
+        return (
+          <div
+            className="fixed z-50 pointer-events-none rounded-xl shadow-2xl border border-border overflow-hidden transition-opacity duration-150 opacity-100"
+            style={popupStyle}
+          >
+            <Image
+              src={tpl.preview}
+              alt={tpl.label}
+              width={POPUP_W}
+              height={POPUP_H}
+              className="w-full h-auto object-cover object-top"
+            />
+          </div>
+        );
+      })()}
 
       {/* Filtri */}
       {offers.length > 0 && (
