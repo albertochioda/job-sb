@@ -151,7 +151,13 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ offer_id: offerId, adapted_cv_id: adaptedCvId ?? null }),
       });
-      if (res.ok) setSavedIds(prev => new Set([...prev, offerId]));
+      const data = await res.json();
+      if (res.ok) {
+        setSavedIds(prev => new Set([...prev, offerId]));
+      } else {
+        console.error("[applications] save error:", data);
+        alert(data.error ?? "Errore salvataggio candidatura");
+      }
     } finally {
       setSavingAppIds(prev => { const s = new Set(prev); s.delete(offerId); return s; });
     }
