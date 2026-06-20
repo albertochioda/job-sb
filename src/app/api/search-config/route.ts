@@ -8,7 +8,7 @@ export async function GET() {
 
   const { data } = await supabase
     .from("search_configs")
-    .select("roles, city, country, radius_km, min_salary")
+    .select("roles, city, country, radius_km, min_salary, work_mode")
     .eq("user_id", user.id)
     .eq("is_active", true)
     .single();
@@ -22,11 +22,11 @@ export async function PATCH(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const { roles, city, country, geo_id, radius_km, min_salary } = body;
+  const { roles, city, country, geo_id, radius_km, min_salary, work_mode } = body;
 
   const { error } = await supabase
     .from("search_configs")
-    .update({ roles, city, country: country || "Italia", geo_id: geo_id || null, radius_km, min_salary })
+    .update({ roles, city, country: country || "Italia", geo_id: geo_id || null, radius_km, min_salary, work_mode: work_mode || "nessuna_preferenza" })
     .eq("user_id", user.id)
     .eq("is_active", true);
 
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const { cv_id, roles, city, country, radius_km, min_salary } = body;
+  const { cv_id, roles, city, country, radius_km, min_salary, work_mode } = body;
 
   if (!cv_id || !roles?.length) {
     return NextResponse.json({ error: "missing_fields", message: "cv_id e roles sono obbligatori" }, { status: 400 });
@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
       country: country || "Italia",
       radius_km: radius_km || 50,
       min_salary: min_salary || null,
+      work_mode: work_mode || "nessuna_preferenza",
       is_active: true,
     })
     .select("id")

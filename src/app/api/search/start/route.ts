@@ -72,6 +72,7 @@ export async function POST() {
       country: (config as { country?: string }).country ?? "Italia",
       radius_km: config.radius_km ?? 50,
       min_salary: config.min_salary ?? 0,
+      work_mode: (config as { work_mode?: string }).work_mode ?? "nessuna_preferenza",
       languages: config.languages ?? ["it"],
     },
     cv_text: cv.extracted_text ?? "",

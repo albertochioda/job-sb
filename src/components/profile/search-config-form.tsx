@@ -13,6 +13,7 @@ interface SearchConfig {
   country?: string;
   radius_km: number;
   min_salary: number;
+  work_mode?: string;
   roles: string[];
 }
 
@@ -27,6 +28,7 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
   const [geoId, setGeoId] = useState((config as { geo_id?: string }).geo_id ?? "");
   const [radius, setRadius] = useState(config.radius_km ?? 50);
   const [minSalary, setMinSalary] = useState(config.min_salary ?? 0);
+  const [workMode, setWorkMode] = useState(config.work_mode ?? "nessuna_preferenza");
   const [rolesText, setRolesText] = useState((config.roles ?? []).join("\n"));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -76,7 +78,7 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
     const res = await fetch("/api/search-config", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ city, country, geo_id: geoId, radius_km: radius, min_salary: minSalary, roles }),
+      body: JSON.stringify({ city, country, geo_id: geoId, radius_km: radius, min_salary: minSalary, work_mode: workMode, roles }),
     });
     setSaving(false);
     if (res.ok) {
@@ -153,6 +155,20 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
             step={5000}
             className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
           />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-muted-foreground">Modalità di lavoro</label>
+          <select
+            value={workMode}
+            onChange={e => setWorkMode(e.target.value)}
+            className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option value="nessuna_preferenza">Nessuna preferenza</option>
+            <option value="remote">Remote</option>
+            <option value="ibrido">Ibrido</option>
+            <option value="presenza">In presenza</option>
+          </select>
         </div>
 
         <div className="space-y-1">
