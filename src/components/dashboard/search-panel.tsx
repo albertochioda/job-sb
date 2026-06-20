@@ -131,9 +131,9 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (res.ok && data.file_url) {
+      if (res.ok) {
         setAdaptedIds(prev => new Set([...prev, offerId]));
-        window.open(data.file_url, "_blank");
+        if (data.file_url) window.open(data.file_url, "_blank");
       } else {
         alert(data.error ?? "Errore generazione CV");
       }
