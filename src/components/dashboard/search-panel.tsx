@@ -219,20 +219,20 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                 <button
                   key={tpl.id || "own"}
                   onClick={() => setSelectedTemplate(tpl.id)}
-                  className={`flex flex-col items-center rounded-lg border-2 p-2 text-center transition-all ${
+                  className={`relative flex flex-col items-center rounded-lg border-2 p-2 text-center transition-all hover:z-10 ${
                     selected
                       ? "border-primary bg-primary/5 shadow-sm"
                       : "border-border hover:border-foreground/40"
                   }`}
                 >
                   {tpl.preview ? (
-                    <div className="w-full aspect-[3/4] overflow-hidden rounded mb-1.5 bg-muted">
+                    <div className="w-full aspect-[3/4] rounded mb-1.5 bg-muted overflow-hidden">
                       <Image
                         src={tpl.preview}
                         alt={tpl.label}
                         width={120}
                         height={160}
-                        className="w-full h-full object-cover object-top transition-transform duration-200 hover:scale-110"
+                        className="w-full h-full object-cover object-top transition-transform duration-200 hover:scale-150"
                       />
                     </div>
                   ) : (
