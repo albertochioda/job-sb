@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
+import { Redis } from "@upstash/redis";
 
 export async function GET() {
-  return NextResponse.json({
-    redis_url_set: !!process.env.UPSTASH_REDIS_URL,
-    redis_token_set: !!process.env.UPSTASH_REDIS_TOKEN,
-    redis_url_prefix: process.env.UPSTASH_REDIS_URL?.slice(0, 40) ?? "MISSING",
-  });
+  try {
+    const redis = new Redis({
+      url: process.env.UPSTASH_REDIS_URL!,
+      token: process.env.UPSTASH_REDIS_TOKEN!,
+    });
+    const queueLen = await redis.llen("job_sb:queue");
+    return NextResponse.json({ ok: true, queue_length: queueLen });
+  } catch (e) {
+    return NextResponse.json({ ok: false, error: String(e) });
+  }
 }
