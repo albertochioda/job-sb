@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
+const geist = { variable: GeistSans.variable };
 
 export const metadata: Metadata = {
   title: "Job SB — Trova lavoro con l'AI",

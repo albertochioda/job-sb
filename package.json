@@ -17,6 +17,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "docx": "^9.7.1",
+    "geist": "^1.7.2",
     "lucide-react": "^1.18.0",
     "mammoth": "^1.12.0",
     "next": "16.2.9",
