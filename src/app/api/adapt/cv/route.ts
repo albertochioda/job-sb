@@ -101,6 +101,33 @@ export async function POST(request: NextRequest) {
   const { offer_id, template_id } = await request.json();
   if (!offer_id) return NextResponse.json({ error: "missing fields" }, { status: 400 });
 
+  // Verifica limiti piano
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("tier, cvs_adapted_used, period_end")
+    .eq("user_id", user.id)
+    .single();
+
+  if (sub) {
+    if (sub.period_end && new Date(sub.period_end) < new Date()) {
+      return NextResponse.json({
+        error: "Il tuo periodo di prova è scaduto. Contatta il supporto per continuare.",
+        code: "trial_expired",
+      }, { status: 403 });
+    }
+    const { data: limits } = await supabase
+      .from("usage_limits")
+      .select("cvs_per_month")
+      .eq("tier", sub.tier)
+      .single();
+    if (limits && sub.cvs_adapted_used >= limits.cvs_per_month) {
+      return NextResponse.json({
+        error: `Hai raggiunto il limite di ${limits.cvs_per_month} CV adattati mensili per il piano ${sub.tier}. Aggiorna il piano per continuare.`,
+        code: "limit_reached",
+      }, { status: 429 });
+    }
+  }
+
   // Verifica offerta green
   const { data: scored } = await supabase
     .from("scored_offers")
@@ -239,6 +266,14 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
+
+  // Incrementa cvs_adapted_used (solo per CV nuovi, non cached)
+  if (sub) {
+    await supabase
+      .from("subscriptions")
+      .update({ cvs_adapted_used: (sub.cvs_adapted_used ?? 0) + 1 })
+      .eq("user_id", user.id);
+  }
 
   // Genera URL firmato valido 1 ora per il download immediato
   const { data: signed } = await adminSupabase.storage.from("cvs").createSignedUrl(fileName, 3600);

@@ -55,6 +55,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [savingAppIds, setSavingAppIds] = useState<Set<string>>(new Set());
   const [selectedTemplate, setSelectedTemplate] = useState<string>("professional");
+  const [userTier, setUserTier] = useState<string>("professional");
   const [hoveredTemplate, setHoveredTemplate] = useState<string | null>(null);
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
 
@@ -93,6 +94,17 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
   useEffect(() => {
     fetchOffers();
   }, [fetchOffers]);
+
+  // Carica tier utente
+  useEffect(() => {
+    fetch("/api/subscription").then(r => r.ok ? r.json() : null).then(data => {
+      if (data?.tier) {
+        setUserTier(data.tier);
+        // individual vede solo minimal_smart
+        if (data.tier === "individual") setSelectedTemplate("minimal_smart");
+      }
+    });
+  }, []);
 
   // Pre-popola adaptedIds e savedIds con dati già presenti in DB
   useEffect(() => {
@@ -269,7 +281,9 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
         <div className="space-y-2">
           <p className="text-sm font-medium">Template CV per &quot;Adatta CV&quot;</p>
           <div className="grid grid-cols-5 gap-2">
-            {CV_TEMPLATES.map((tpl) => {
+            {CV_TEMPLATES.filter(tpl =>
+              userTier !== "individual" || tpl.id === "minimal_smart"
+            ).map((tpl) => {
               const selected = selectedTemplate === tpl.id;
               return (
                 <button
