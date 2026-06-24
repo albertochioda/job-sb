@@ -18,6 +18,7 @@ export default function RegisterForm({ locale, t }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,7 +30,7 @@ export default function RegisterForm({ locale, t }: Props) {
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName, terms_accepted_at: new Date().toISOString(), terms_version: "1.0-beta" },
         emailRedirectTo: `${window.location.origin}/api/auth/callback`,
       },
     });
@@ -84,10 +85,27 @@ export default function RegisterForm({ locale, t }: Props) {
           className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
+      <label className="flex items-start gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={termsAccepted}
+          onChange={e => setTermsAccepted(e.target.checked)}
+          className="mt-0.5 rounded border-border accent-primary shrink-0"
+        />
+        <span className="text-xs text-muted-foreground leading-relaxed">
+          Ho letto e accetto i{" "}
+          <a href="/termini-di-servizio" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:no-underline">Termini di Servizio</a>
+          {", "}la{" "}
+          <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:no-underline">Privacy Policy</a>
+          {" "}e l&apos;
+          <a href="/accordo-riservatezza-beta" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:no-underline">Accordo di Riservatezza Beta</a>
+          {" "}di Job SB.
+        </span>
+      </label>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || !termsAccepted}
         className="w-full bg-primary text-primary-foreground py-2 rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
       >
         {loading ? "..." : t.registerLink}
