@@ -28,7 +28,11 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
   const [geoId, setGeoId] = useState((config as { geo_id?: string }).geo_id ?? "");
   const [radius, setRadius] = useState(config.radius_km ?? 50);
   const [minSalary, setMinSalary] = useState(config.min_salary ?? 0);
-  const [workMode, setWorkMode] = useState(config.work_mode ?? "nessuna_preferenza");
+  const [workModes, setWorkModes] = useState<string[]>(() => {
+    const v = config.work_mode ?? "";
+    if (!v || v === "nessuna_preferenza") return [];
+    return v.split(",").map(s => s.trim()).filter(Boolean);
+  });
   const [rolesText, setRolesText] = useState((config.roles ?? []).join("\n"));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -78,7 +82,7 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
     const res = await fetch("/api/search-config", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ city, country, geo_id: geoId, radius_km: radius, min_salary: minSalary, work_mode: workMode, roles }),
+      body: JSON.stringify({ city, country, geo_id: geoId, radius_km: radius, min_salary: minSalary, work_mode: workModes.length ? workModes.join(",") : "nessuna_preferenza", roles }),
     });
     setSaving(false);
     if (res.ok) {
@@ -159,16 +163,24 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
 
         <div className="space-y-1">
           <label className="text-muted-foreground">Modalità di lavoro</label>
-          <select
-            value={workMode}
-            onChange={e => setWorkMode(e.target.value)}
-            className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-          >
-            <option value="nessuna_preferenza">Nessuna preferenza</option>
-            <option value="remote">Remote</option>
-            <option value="ibrido">Ibrido</option>
-            <option value="presenza">In presenza</option>
-          </select>
+          <div className="flex flex-wrap gap-3 pt-1">
+            {[["remote", "Remote"], ["ibrido", "Ibrido"], ["presenza", "In presenza"]].map(([val, label]) => (
+              <label key={val} className="flex items-center gap-2 cursor-pointer text-sm">
+                <input
+                  type="checkbox"
+                  checked={workModes.includes(val)}
+                  onChange={e => setWorkModes(prev =>
+                    e.target.checked ? [...prev, val] : prev.filter(m => m !== val)
+                  )}
+                  className="rounded border-border accent-primary"
+                />
+                {label}
+              </label>
+            ))}
+            {workModes.length === 0 && (
+              <span className="text-xs text-muted-foreground self-center">Nessuna preferenza (tutte)</span>
+            )}
+          </div>
         </div>
 
         <div className="space-y-1">
