@@ -28,8 +28,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "not cancellable" }, { status: 400 });
   }
 
+  // Aggiorna subito il DB così al refresh non riprende il polling
+  await supabase
+    .from("searches")
+    .update({ status: "cancelled" })
+    .eq("id", search_id);
+
   // Segnala cancellazione al worker via Redis (TTL 1h per sicurezza)
   await redis.set(`job_sb:cancel:${search_id}`, "1", { ex: 3600 });
 
-  return NextResponse.json({ status: "cancelling" });
+  return NextResponse.json({ status: "cancelled" });
 }
