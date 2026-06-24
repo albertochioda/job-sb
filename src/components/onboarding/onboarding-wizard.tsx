@@ -7,7 +7,7 @@ interface Props {
   locale: string;
 }
 
-type Step = 1 | 2 | 3 | 4 | 5;
+type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
 export default function OnboardingWizard({ locale }: Props) {
   const router = useRouter();
@@ -23,7 +23,11 @@ export default function OnboardingWizard({ locale }: Props) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoError, setPhotoError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   // --- Step 2: Upload ---
   async function handleFile(file: File) {
@@ -60,6 +64,23 @@ export default function OnboardingWizard({ locale }: Props) {
     setRoles(roles.filter((x) => x !== r));
   }
 
+  // --- Step 4: Photo upload ---
+  async function handlePhoto(file: File) {
+    setPhotoError("");
+    setPhotoUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/photo/upload", { method: "POST", body: fd });
+    setPhotoUploading(false);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setPhotoError(d.error ?? "Errore caricamento foto");
+      return;
+    }
+    setPhotoPreview(URL.createObjectURL(file));
+    setStep(5);
+  }
+
   // --- Step 5: Save config ---
   async function handleStart() {
     setSaving(true);
@@ -73,7 +94,7 @@ export default function OnboardingWizard({ locale }: Props) {
   }
 
   // --- Stepper UI ---
-  const steps = ["Benvenuto", "Carica CV", "Ruoli", "Parametri", "Pronto"];
+  const steps = ["Benvenuto", "Carica CV", "Ruoli", "Foto", "Parametri", "Pronto"];
 
   return (
     <div className="max-w-lg mx-auto px-4 py-12 space-y-8">
@@ -188,8 +209,54 @@ export default function OnboardingWizard({ locale }: Props) {
         </div>
       )}
 
-      {/* Step 4 — Parametri */}
+      {/* Step 4 — Foto */}
       {step === 4 && (
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold">Foto profilo</h1>
+            <p className="text-muted-foreground mt-1 text-sm">Opzionale — viene inserita nel CV adattato. Puoi aggiungerla anche dopo dal profilo.</p>
+          </div>
+          {photoPreview ? (
+            <div className="flex flex-col items-center gap-4">
+              <img src={photoPreview} alt="Foto profilo" className="w-28 h-28 rounded-full object-cover border" />
+              <p className="text-sm text-green-600 font-medium">Foto caricata ✓</p>
+              <button onClick={() => setStep(5)} className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-medium hover:bg-primary/90">
+                Avanti →
+              </button>
+            </div>
+          ) : (
+            <>
+              <div
+                onClick={() => photoInputRef.current?.click()}
+                className="border-2 border-dashed rounded-lg p-10 text-center cursor-pointer hover:border-primary transition-colors"
+              >
+                {photoUploading ? (
+                  <p className="text-muted-foreground">Caricamento...</p>
+                ) : (
+                  <>
+                    <p className="font-medium">Clicca per caricare una foto</p>
+                    <p className="text-xs text-muted-foreground mt-1">JPG o PNG, max 5MB</p>
+                  </>
+                )}
+              </div>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/jpeg,image/png"
+                className="hidden"
+                onChange={e => e.target.files?.[0] && handlePhoto(e.target.files[0])}
+              />
+              {photoError && <p className="text-sm text-destructive">{photoError}</p>}
+              <button onClick={() => setStep(5)} className="w-full border py-2.5 rounded-md text-sm text-muted-foreground hover:bg-muted">
+                Salta per ora
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Step 5 — Parametri */}
+      {step === 5 && (
         <div className="space-y-6">
           <div>
             <h1 className="text-2xl font-bold">Parametri di ricerca</h1>
@@ -262,14 +329,14 @@ export default function OnboardingWizard({ locale }: Props) {
               />
             </div>
           </div>
-          <button onClick={() => setStep(5)} className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-medium hover:bg-primary/90">
+          <button onClick={() => setStep(6)} className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-medium hover:bg-primary/90">
             Avanti →
           </button>
         </div>
       )}
 
-      {/* Step 5 — Pronto */}
-      {step === 5 && (
+      {/* Step 6 — Pronto */}
+      {step === 6 && (
         <div className="space-y-6">
           <div>
             <h1 className="text-2xl font-bold">Tutto pronto! 🎉</h1>
