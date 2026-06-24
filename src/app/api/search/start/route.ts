@@ -50,7 +50,7 @@ export async function POST() {
       .eq("tier", sub.tier)
       .single();
 
-    if (limits && sub.runs_used >= limits.runs_per_month) {
+    if (limits && (sub.runs_used ?? 0) >= limits.runs_per_month) {
       return NextResponse.json({
         error: `Hai raggiunto il limite di ${limits.runs_per_month} ricerche mensili per il piano ${sub.tier}. Aggiorna il piano per continuare.`,
         code: "limit_reached",

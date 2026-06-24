@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
       .select("cvs_per_month")
       .eq("tier", sub.tier)
       .single();
-    if (limits && sub.cvs_adapted_used >= limits.cvs_per_month) {
+    if (limits && (sub.cvs_adapted_used ?? 0) >= limits.cvs_per_month) {
       return NextResponse.json({
         error: `Hai raggiunto il limite di ${limits.cvs_per_month} CV adattati mensili per il piano ${sub.tier}. Aggiorna il piano per continuare.`,
         code: "limit_reached",
