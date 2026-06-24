@@ -35,7 +35,7 @@ export default async function ProfilePage({
 
   const { data: searchConfig } = await supabase
     .from("search_configs")
-    .select("id, city, radius_km, min_salary, roles")
+    .select("id, city, country, radius_km, min_salary, roles, work_mode")
     .eq("user_id", user.id)
     .eq("is_active", true)
     .single();
