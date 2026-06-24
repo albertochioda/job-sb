@@ -94,11 +94,11 @@ export default function RegisterForm({ locale, t }: Props) {
         />
         <span className="text-xs text-muted-foreground leading-relaxed">
           Ho letto e accetto i{" "}
-          <a href="/termini-di-servizio" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:no-underline">Termini di Servizio</a>
+          <a href={`/${locale}/termini-di-servizio`} target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:no-underline">Termini di Servizio</a>
           {", "}la{" "}
-          <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:no-underline">Privacy Policy</a>
+          <a href={`/${locale}/privacy-policy`} target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:no-underline">Privacy Policy</a>
           {" "}e l&apos;
-          <a href="/accordo-riservatezza-beta" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:no-underline">Accordo di Riservatezza Beta</a>
+          <a href={`/${locale}/accordo-riservatezza-beta`} target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:no-underline">Accordo di Riservatezza Beta</a>
           {" "}di Job SB.
         </span>
       </label>
