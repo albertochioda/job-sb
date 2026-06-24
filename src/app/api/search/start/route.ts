@@ -44,11 +44,13 @@ export async function POST() {
     }
 
     // Controlla limite run
-    const { data: limits } = await supabase
+    const { data: limits, error: limitsErr } = await supabase
       .from("usage_limits")
       .select("runs_per_month")
       .eq("tier", sub.tier)
       .single();
+
+    console.log("[limits-check] tier:", sub.tier, "runs_used:", sub.runs_used, "limits:", limits, "err:", limitsErr?.message);
 
     if (limits && (sub.runs_used ?? 0) >= limits.runs_per_month) {
       return NextResponse.json({
