@@ -19,6 +19,7 @@ export default function OnboardingWizard({ locale }: Props) {
   const [country, setCountry] = useState("Italia");
   const [radiusKm, setRadiusKm] = useState(50);
   const [minSalary, setMinSalary] = useState("");
+  const [workModes, setWorkModes] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -65,7 +66,7 @@ export default function OnboardingWizard({ locale }: Props) {
     const res = await fetch("/api/search-config", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cv_id: cvId, roles, city, country, radius_km: radiusKm, min_salary: minSalary ? parseInt(minSalary) : null }),
+      body: JSON.stringify({ cv_id: cvId, roles, city, country, radius_km: radiusKm, min_salary: minSalary ? parseInt(minSalary) : null, work_mode: workModes.length ? workModes.join(",") : "nessuna_preferenza" }),
     });
     setSaving(false);
     if (res.ok) router.push(`/${locale}/dashboard`);
@@ -229,6 +230,27 @@ export default function OnboardingWizard({ locale }: Props) {
                 {[25, 50, 80, 100, 150].map((v) => <span key={v}>{v}</span>)}
               </div>
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Modalità di lavoro</label>
+              <div className="flex flex-wrap gap-3">
+                {[["remote", "Remote"], ["ibrido", "Ibrido"], ["presenza", "In presenza"]].map(([val, label]) => (
+                  <label key={val} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <input
+                      type="checkbox"
+                      checked={workModes.includes(val)}
+                      onChange={e => setWorkModes(prev =>
+                        e.target.checked ? [...prev, val] : prev.filter(m => m !== val)
+                      )}
+                      className="rounded border-border accent-primary"
+                    />
+                    {label}
+                  </label>
+                ))}
+                {workModes.length === 0 && (
+                  <span className="text-xs text-muted-foreground self-center">Nessuna preferenza (tutte)</span>
+                )}
+              </div>
+            </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">RAL minima (€)</label>
               <input
@@ -257,6 +279,7 @@ export default function OnboardingWizard({ locale }: Props) {
             <p><span className="text-muted-foreground">Ruoli:</span> {roles.join(", ")}</p>
             {city && <p><span className="text-muted-foreground">Città:</span> {city}, {country} (+{radiusKm} km)</p>}
             {minSalary && <p><span className="text-muted-foreground">RAL minima:</span> €{parseInt(minSalary).toLocaleString()}</p>}
+            {workModes.length > 0 && <p><span className="text-muted-foreground">Modalità:</span> {workModes.join(", ")}</p>}
           </div>
           <button
             onClick={handleStart}
