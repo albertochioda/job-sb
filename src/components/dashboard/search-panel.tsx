@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import { useSearchPolling } from "@/contexts/search-polling-context";
 
@@ -412,17 +413,23 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                       </button>
                     )}
                     {offer.flag === "green" && offer.offer_id && (
-                      <button
-                        onClick={() => adaptCv(offer.offer_id!)}
-                        disabled={adaptingIds.has(offer.offer_id)}
-                        className="text-xs text-emerald-600 hover:text-emerald-800 font-medium disabled:opacity-50"
-                      >
-                        {adaptingIds.has(offer.offer_id)
-                          ? "Generazione..."
-                          : adaptedIds.has(offer.offer_id)
-                          ? "✓ CV adattato"
-                          : "Adatta CV"}
-                      </button>
+                      <div className="flex flex-col items-start gap-0.5">
+                        <button
+                          onClick={() => adaptCv(offer.offer_id!)}
+                          disabled={adaptingIds.has(offer.offer_id)}
+                          className="text-xs text-emerald-600 hover:text-emerald-800 font-medium disabled:opacity-50"
+                        >
+                          {adaptingIds.has(offer.offer_id)
+                            ? "Generazione..."
+                            : adaptedIds.has(offer.offer_id)
+                            ? "✓ CV adattato"
+                            : "Adatta CV"}
+                        </button>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
+                          Verifica sempre il CV prima di inviarlo · Always review your CV before sending
+                        </p>
+                      </div>
                     )}
                     {offer.url && (
                       <a
