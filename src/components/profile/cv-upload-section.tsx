@@ -78,6 +78,12 @@ export default function CvUploadSection({ currentCv }: { currentCv: CvInfo | nul
 
       <p className="text-xs text-muted-foreground">Formato supportato: solo Word (.docx). Il supporto PDF arriverà presto.</p>
 
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        💡 Per ottenere i migliori risultati, carica un CV completo con tutte le tue esperienze, competenze e formazione. Più informazioni contiene il tuo CV, più accurato sarà l&apos;adattamento alle offerte di lavoro.
+        <br />
+        💡 For best results, upload a complete CV with all your experiences, skills and education. The more information your CV contains, the more accurate the adaptation to job offers will be.
+      </p>
+
       <input
         ref={inputRef}
         type="file"

@@ -171,6 +171,11 @@ export default function OnboardingWizard({ locale }: Props) {
             onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
           />
           {uploadError && <p className="text-sm text-destructive">{uploadError}</p>}
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            💡 Per ottenere i migliori risultati, carica un CV completo con tutte le tue esperienze, competenze e formazione. Più informazioni contiene il tuo CV, più accurato sarà l&apos;adattamento alle offerte di lavoro.
+            <br />
+            💡 For best results, upload a complete CV with all your experiences, skills and education. The more information your CV contains, the more accurate the adaptation to job offers will be.
+          </p>
         </div>
       )}
 
