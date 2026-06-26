@@ -12,32 +12,39 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 const WORKER_URL = process.env.WORKER_URL!;
 const WORKER_SECRET = process.env.WORKER_SECRET ?? "";
 
-const ADAPT_SYSTEM = `Sei un career coach esperto in ATS. Analizza il CV e la job description e genera contenuti ottimizzati.
+const ADAPT_SYSTEM = `Sei un career coach esperto in ottimizzazione ATS. Il tuo compito è riscrivere i bullet del CV usando il linguaggio esatto della job description, senza inventare nulla.
 Rispondi SOLO con JSON valido, nessun altro testo.`;
 
 function buildPrompt(cvText: string, jdText: string, lang: string): string {
-  return `CV:
+  return `CV DEL CANDIDATO:
 ${cvText.slice(0, 3000)}
 
 JOB DESCRIPTION (${lang}):
 ${jdText.slice(0, 3000)}
 
-Genera SOLO JSON valido. I bullet devono essere divisi per esperienza (5 per ognuna, in ordine cronologico inverso dal CV).
-technical_skills = SOLO tool/software/metodologie, NON lingue parlate.
+ISTRUZIONI PER I BULLET:
+1. Riscrivi ogni bullet usando le keyword e il linguaggio della JD dove applicabile
+2. Enfatizza le competenze più richieste dalla JD (es. se la JD chiede "product management", usa quella terminologia nei bullet dove il CV la supporta)
+3. Mantieni i fatti originali del CV (numeri, aziende, risultati) — NON inventare esperienze, ruoli o risultati non presenti nel CV
+4. Riformula con il vocabolario della JD, non aggiungere competenze che il candidato non ha
+5. Ogni bullet deve essere specifico e misurabile dove possibile
+
+Genera SOLO JSON valido:
 {
-  "titolo": ["<titolo professionale adattato alla JD, max 60 chars>"],
-  "profilo_adattato": "<3 frasi, max 500 chars>",
-  "exp1_bullets": ["<5 bullet esperienza più recente, max 130 chars ciascuno>"],
-  "exp2_bullets": ["<5 bullet seconda esperienza, max 130 chars ciascuno>"],
-  "exp3_bullets": ["<5 bullet terza esperienza, max 130 chars ciascuno>"],
-  "exp4_bullets": ["<5 bullet quarta esperienza se presente, altrimenti lista vuota>"],
-  "exp5_bullets": ["<5 bullet quinta esperienza se presente, altrimenti lista vuota>"],
-  "core_expertise": ["<5 competenze chiave, max 100 chars>"],
-  "technical_skills": ["<3 righe tool/software/metodologie, NO lingue parlate, max 60 chars>"],
-  "keywords_ats": ["<6-10 keyword ATS dalla JD presenti nel CV>"],
-  "note_strategiche": "<max 300 chars>"
+  "titolo": "<titolo professionale che rispecchia il ruolo della JD, max 60 chars>",
+  "profilo_adattato": "<3 frasi che collegano esplicitamente il profilo del candidato alle esigenze della JD, max 500 chars>",
+  "exp1_bullets": ["<5 bullet riformulati con il linguaggio della JD, max 130 chars ciascuno>"],
+  "exp2_bullets": ["<5 bullet, max 130 chars ciascuno>"],
+  "exp3_bullets": ["<5 bullet, max 130 chars ciascuno>"],
+  "exp4_bullets": ["<5 bullet o meno se esperienza breve, max 130 chars ciascuno>"],
+  "exp5_bullets": ["<5 bullet o meno se esperienza breve, max 130 chars ciascuno>"],
+  "core_expertise": ["<5-6 competenze chiave estratte dall'intersezione tra CV e JD>"],
+  "technical_skills": ["<3-5 tool/software/metodologie del CV rilevanti per la JD>"],
+  "keywords_ats": ["<8-12 keyword ATS dalla JD presenti o riformulabili dal CV>"],
+  "note_strategiche": "<osservazioni su fit candidato-JD e gap principali, max 300 chars>"
 }
-Lingua output: ${lang}. Non inventare informazioni non presenti nel CV.`;
+
+Lingua output: ${lang}.`;
 }
 
 async function detectLanguage(text: string): Promise<string> {
