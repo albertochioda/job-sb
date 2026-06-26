@@ -22,12 +22,13 @@ ${cvText.slice(0, 3000)}
 JOB DESCRIPTION (${lang}):
 ${jdText.slice(0, 3000)}
 
-ISTRUZIONI PER I BULLET:
-1. Riscrivi ogni bullet usando le keyword e il linguaggio della JD dove applicabile
-2. Enfatizza le competenze più richieste dalla JD (es. se la JD chiede "product management", usa quella terminologia nei bullet dove il CV la supporta)
-3. Mantieni i fatti originali del CV (numeri, aziende, risultati) — NON inventare esperienze, ruoli o risultati non presenti nel CV
-4. Riformula con il vocabolario della JD, non aggiungere competenze che il candidato non ha
-5. Ogni bullet deve essere specifico e misurabile dove possibile
+ISTRUZIONI BULLET (priorità alta):
+- Usa le keyword esatte della JD nei bullet dove il CV le supporta (es. se la JD dice "ciclo di vita prodotto", scrivi "ciclo di vita prodotto" non "lancio prodotto")
+- Enfatizza nei bullet le competenze più richieste dalla JD, riordinandole per rilevanza
+- Mantieni TUTTI i dati numerici originali (%, €, numeri) — non modificarli mai
+- Se la JD richiede competenze non presenti nel CV, NON aggiungerle — segnalale solo in note_strategiche
+- Il profilo_adattato deve citare esplicitamente il settore/ruolo della JD nel primo periodo
+- Mantieni i fatti originali del CV (aziende, risultati) — NON inventare esperienze o ruoli non presenti nel CV
 
 Genera SOLO JSON valido:
 {
@@ -60,7 +61,7 @@ async function callWorkerAdaptCv(
   offerId: string,
   language: string,
   content: {
-    titolo: string[];
+    titolo: string[] | string;
     profilo_adattato: string;
     exp1_bullets: string[];
     exp2_bullets: string[];
@@ -191,7 +192,7 @@ export async function POST(request: NextRequest) {
 
   const raw = (message.content[0] as { text: string }).text.trim();
   let parsed: {
-    titolo: string[];
+    titolo: string[] | string;
     profilo_adattato: string;
     exp1_bullets: string[];
     exp2_bullets: string[];
@@ -238,7 +239,7 @@ export async function POST(request: NextRequest) {
   let fileName: string;
   try {
     fileName = await callWorkerAdaptCv(user.id, cvFilePath, cvSignedUrl, offer_id, lang, {
-      titolo: parsed.titolo ?? [],
+      titolo: Array.isArray(parsed.titolo) ? parsed.titolo : (parsed.titolo ? [parsed.titolo] : []),
       profilo_adattato: parsed.profilo_adattato,
       exp1_bullets: parsed.exp1_bullets ?? [],
       exp2_bullets: parsed.exp2_bullets ?? [],
