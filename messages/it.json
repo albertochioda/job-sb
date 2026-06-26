@@ -93,7 +93,8 @@
     "filterRed": "Bassa compatibilità",
     "running": "Ricerca in corso...",
     "limitWarning": "Hai usato l'80% dei run mensili disponibili.",
-    "limitReached": "Hai raggiunto il limite mensile. Aggiorna il piano per continuare."
+    "limitReached": "Hai raggiunto il limite mensile. Aggiorna il piano per continuare.",
+    "cv_warning": "Verifica sempre il CV prima di inviarlo"
   },
   "trial": {
     "found": "Abbiamo trovato la tua prima offerta compatibile!",

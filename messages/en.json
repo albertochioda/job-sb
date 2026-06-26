@@ -93,7 +93,8 @@
     "filterRed": "Low match",
     "running": "Search in progress...",
     "limitWarning": "You've used 80% of your monthly runs.",
-    "limitReached": "You've reached your monthly limit. Upgrade your plan to continue."
+    "limitReached": "You've reached your monthly limit. Upgrade your plan to continue.",
+    "cv_warning": "Always review your CV before sending"
   },
   "trial": {
     "found": "We found your first compatible offer!",

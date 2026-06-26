@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { setRequestLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import LogoutButton from "@/components/auth/logout-button";
+import { AlertTriangle } from "lucide-react";
 
 export default async function AdaptedCvsPage({
   params,
@@ -12,6 +13,7 @@ export default async function AdaptedCvsPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
+  const t = await getTranslations({ locale, namespace: "dashboard" });
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect(`/${locale}/login`);
@@ -78,12 +80,18 @@ export default async function AdaptedCvsPage({
                     </p>
                   </div>
                   {acv.file_url && (
-                    <a
-                      href={`/api/adapt/cv/${acv.id}/download`}
-                      className="shrink-0 bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-md hover:bg-primary/90"
-                    >
-                      Scarica .docx
-                    </a>
+                    <div className="shrink-0 flex flex-col items-end gap-1">
+                      <a
+                        href={`/api/adapt/cv/${acv.id}/download`}
+                        className="bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-md hover:bg-primary/90"
+                      >
+                        Scarica .docx
+                      </a>
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
+                        {t("cv_warning")}
+                      </p>
+                    </div>
                   )}
                 </div>
 

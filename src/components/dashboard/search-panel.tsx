@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { AlertTriangle } from "lucide-react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { useSearchPolling } from "@/contexts/search-polling-context";
 
 const CV_TEMPLATES = [
@@ -43,6 +44,7 @@ const FLAG_LABELS = {
 };
 
 export default function SearchPanel({ locale: _locale }: { locale: string }) {
+  const t = useTranslations("dashboard");
   const { initialized, isSearching, progress, completedData, startPolling, cancelSearch } = useSearchPolling();
   const [total, setTotal] = useState(0);
   const [hasError, setHasError] = useState(false);
@@ -425,9 +427,9 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                             ? "✓ CV adattato"
                             : "Adatta CV"}
                         </button>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                           <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
-                          Verifica sempre il CV prima di inviarlo · Always review your CV before sending
+                          {t("cv_warning")}
                         </p>
                       </div>
                     )}
