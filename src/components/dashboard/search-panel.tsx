@@ -427,10 +427,12 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                             ? "✓ CV adattato"
                             : "Adatta CV"}
                         </button>
-                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                          <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
-                          {t("cv_warning")}
-                        </p>
+                        {adaptedIds.has(offer.offer_id) && (
+                          <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
+                            <AlertTriangle className="h-3 w-3 shrink-0" />
+                            {t("cv_warning")}
+                          </p>
+                        )}
                       </div>
                     )}
                     {offer.url && (
