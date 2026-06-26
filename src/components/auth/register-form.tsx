@@ -17,7 +17,6 @@ export default function RegisterForm({ locale, t }: Props) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -39,17 +38,8 @@ export default function RegisterForm({ locale, t }: Props) {
     if (error) {
       setError(error.message && error.message !== "{}" ? error.message : "Registrazione fallita. Riprova.");
     } else {
-      setSent(true);
+      router.push(`/${locale}/onboarding`);
     }
-  }
-
-  if (sent) {
-    return (
-      <div className="text-center space-y-2">
-        <p className="text-green-700 font-medium">{t.emailSent}</p>
-        <p className="text-sm text-muted-foreground">{email}</p>
-      </div>
-    );
   }
 
   return (
