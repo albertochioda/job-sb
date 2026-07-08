@@ -46,7 +46,8 @@
     "alreadyAccount": "Hai già un account?",
     "loginLink": "Accedi",
     "registerLink": "Registrati",
-    "emailSent": "Email inviata. Controlla la tua casella."
+    "emailSent": "Email inviata. Controlla la tua casella.",
+    "invalidCredentials": "Email o password errati. Riprova."
   },
   "onboarding": {
     "step1": "Benvenuto",

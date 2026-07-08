@@ -46,7 +46,8 @@
     "alreadyAccount": "Already have an account?",
     "loginLink": "Log in",
     "registerLink": "Sign up",
-    "emailSent": "Email sent. Check your inbox."
+    "emailSent": "Email sent. Check your inbox.",
+    "invalidCredentials": "Invalid email or password. Please try again."
   },
   "onboarding": {
     "step1": "Welcome",

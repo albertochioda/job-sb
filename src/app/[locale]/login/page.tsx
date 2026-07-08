@@ -16,6 +16,7 @@ export default async function LoginPage({
     loginLink: t("loginLink"),
     forgotPassword: t("forgotPassword"),
     registerLink: t("registerLink"),
+    invalidCredentials: t("invalidCredentials"),
   };
 
   return (
