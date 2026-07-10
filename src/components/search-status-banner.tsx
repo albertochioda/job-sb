@@ -10,13 +10,13 @@ export default function SearchStatusBanner() {
   if (completedData) {
     return (
       <div className="w-full bg-green-600 text-white text-sm px-4 py-2 flex items-center justify-between">
-        <span>Ricerca completata — {completedData.newOffers} offerte analizzate e salvate.</span>
+        <span>Ricerca completata! Trovate {completedData.newOffers} offerte.</span>
         <div className="flex items-center gap-4 shrink-0">
           <button
             onClick={() => { dismissCompleted(); router.push("/it/dashboard"); router.refresh(); }}
             className="underline hover:no-underline"
           >
-            Vedi offerte →
+            Vedi risultati →
           </button>
           <button onClick={dismissCompleted} className="opacity-70 hover:opacity-100 text-lg leading-none">×</button>
         </div>

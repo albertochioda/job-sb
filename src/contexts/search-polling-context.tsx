@@ -37,6 +37,11 @@ export function SearchPollingProvider({ children }: { children: React.ReactNode 
     setCompletedData(null);
     stopPolling();
 
+    // Chiede il permesso per le notifiche browser al primo avvio ricerca
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
     intervalRef.current = setInterval(async () => {
       try {
         const res = await fetch(`/api/search/status?search_id=${searchId}`);
@@ -51,8 +56,15 @@ export function SearchPollingProvider({ children }: { children: React.ReactNode 
           currentSearchIdRef.current = null;
           setIsSearching(false);
           if (data.status === "completed") {
+            const total = data.total ?? 0;
             setProgress(100);
-            setCompletedData({ newOffers: data.total ?? 0 });
+            setCompletedData({ newOffers: total });
+
+            if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+              new Notification("Job SB", {
+                body: `Ricerca completata! Trovate ${total} offerte.`,
+              });
+            }
           }
         }
       } catch {

@@ -244,7 +244,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
 
       {completedData && (
         <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-4 py-2">
-          Ricerca completata — {completedData.newOffers} offerte analizzate e salvate.
+          Ricerca completata! Trovate {completedData.newOffers} offerte.
         </div>
       )}
 
