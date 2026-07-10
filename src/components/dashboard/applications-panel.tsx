@@ -53,6 +53,31 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [adaptingIds, setAdaptingIds] = useState<Set<string>>(new Set());
+
+  const adaptCv = useCallback(async (app: Application) => {
+    if (adaptingIds.has(app.id)) return;
+    setAdaptingIds(prev => new Set([...prev, app.id]));
+    try {
+      const res = await fetch("/api/adapt/cv", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offer_id: app.offer_id, template_id: "professional" }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setApplications(prev => prev.map(a => a.id === app.id
+          ? { ...a, adapted_cvs: { id: data.adapted_cv_id, file_url: data.file_url, language: a.adapted_cvs?.language ?? "it" } }
+          : a
+        ));
+        if (data.file_url) window.open(data.file_url, "_blank");
+      } else {
+        alert(data.error ?? "Errore generazione CV");
+      }
+    } finally {
+      setAdaptingIds(prev => { const s = new Set(prev); s.delete(app.id); return s; });
+    }
+  }, [adaptingIds]);
 
   const filtered = filterStatus === "all"
     ? applications
@@ -237,17 +262,30 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
               />
 
               {/* CV adattato */}
-              {app.adapted_cvs?.file_url && (
-                <div className="flex items-center gap-2 pt-1 border-t">
-                  <span className="text-xs text-muted-foreground">CV adattato:</span>
-                  <a
-                    href={`/api/adapt/cv/${app.adapted_cvs.id}/download`}
-                    className="text-xs text-primary underline hover:no-underline"
-                  >
-                    Scarica .docx {app.adapted_cvs.language === "en" ? "🇬🇧" : "🇮🇹"}
-                  </a>
-                </div>
-              )}
+              <div className="flex items-center gap-3 pt-1 border-t flex-wrap">
+                {app.adapted_cvs?.file_url && (
+                  <>
+                    <span className="text-xs text-muted-foreground">CV adattato:</span>
+                    <a
+                      href={`/api/adapt/cv/${app.adapted_cvs.id}/download`}
+                      className="text-xs text-primary underline hover:no-underline"
+                    >
+                      Scarica .docx {app.adapted_cvs.language === "en" ? "🇬🇧" : "🇮🇹"}
+                    </a>
+                  </>
+                )}
+                <button
+                  onClick={() => adaptCv(app)}
+                  disabled={adaptingIds.has(app.id)}
+                  className="text-xs text-emerald-600 hover:text-emerald-800 font-medium disabled:opacity-50"
+                >
+                  {adaptingIds.has(app.id)
+                    ? "Generazione..."
+                    : app.adapted_cvs?.file_url
+                    ? "Riadatta CV"
+                    : "Adatta CV"}
+                </button>
+              </div>
             </div>
           ))}
         </div>
