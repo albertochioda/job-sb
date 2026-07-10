@@ -405,7 +405,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                     <p className={`text-xs text-muted-foreground leading-relaxed ${expandedCards.has(offer.id) ? "" : "line-clamp-3"}`}>
                       {offer.motivo}
                     </p>
-                    {offer.motivo.length > 120 && (
+                    {offer.motivo.length > 150 && (
                       <button
                         type="button"
                         onClick={() => setExpandedCards(prev => {
@@ -413,7 +413,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                           if (s.has(offer.id)) s.delete(offer.id); else s.add(offer.id);
                           return s;
                         })}
-                        className="text-xs text-primary hover:underline mt-0.5"
+                        className="text-xs font-semibold text-emerald-600 hover:text-emerald-800 hover:underline mt-1"
                       >
                         {expandedCards.has(offer.id) ? "Mostra meno" : "Leggi di più"}
                       </button>
