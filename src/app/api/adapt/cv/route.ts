@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { offer_id, template_id } = await request.json();
+  const { offer_id, template_id, force_regenerate } = await request.json();
   if (!offer_id) return NextResponse.json({ error: "missing fields" }, { status: 400 });
 
   // Verifica limiti piano
@@ -166,18 +166,20 @@ export async function POST(request: NextRequest) {
     if (m) cvFilePath = m[1];
   }
 
-  // Controlla se già adattato (riusa)
-  const { data: existing } = await supabase
-    .from("adapted_cvs")
-    .select("id, file_url, profilo_adattato, bullet_points, core_expertise, technical_skills, keywords_ats, note_strategiche, language")
-    .eq("user_id", user.id)
-    .eq("offer_id", offer_id)
-    .eq("cv_id", cv_id)
-    .single();
+  // Controlla se già adattato (riusa) — bypassato se force_regenerate
+  if (!force_regenerate) {
+    const { data: existing } = await supabase
+      .from("adapted_cvs")
+      .select("id, file_url, profilo_adattato, bullet_points, core_expertise, technical_skills, keywords_ats, note_strategiche, language")
+      .eq("user_id", user.id)
+      .eq("offer_id", offer_id)
+      .eq("cv_id", cv_id)
+      .single();
 
-  if (existing?.file_url) {
-    const { data: signed } = await adminSupabase.storage.from("cvs").createSignedUrl(existing.file_url, 3600);
-    return NextResponse.json({ adapted_cv_id: existing.id, file_url: signed?.signedUrl ?? existing.file_url, cached: true });
+    if (existing?.file_url) {
+      const { data: signed } = await adminSupabase.storage.from("cvs").createSignedUrl(existing.file_url, 3600);
+      return NextResponse.json({ adapted_cv_id: existing.id, file_url: signed?.signedUrl ?? existing.file_url, cached: true });
+    }
   }
 
   const lang = await detectLanguage(offer.description || "");

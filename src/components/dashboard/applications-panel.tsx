@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import TemplateSelector from "@/components/dashboard/template-selector";
 
 const STATUSES = ["saved", "applied", "interview", "offer", "rejected"] as const;
 type Status = typeof STATUSES[number];
@@ -54,15 +55,29 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [adaptingIds, setAdaptingIds] = useState<Set<string>>(new Set());
+  const [userTier, setUserTier] = useState<string>("professional");
+  const [templatePickerAppId, setTemplatePickerAppId] = useState<string | null>(null);
+  const [pickerTemplate, setPickerTemplate] = useState<string>("professional");
 
-  const adaptCv = useCallback(async (app: Application) => {
+  useEffect(() => {
+    fetch("/api/subscription").then(r => r.ok ? r.json() : null).then(data => {
+      if (data?.tier) {
+        setUserTier(data.tier);
+        if (data.tier === "individual") setPickerTemplate("minimal_smart");
+      }
+    });
+  }, []);
+
+  const adaptCv = useCallback(async (app: Application, templateId: string, forceRegenerate: boolean) => {
     if (adaptingIds.has(app.id)) return;
     setAdaptingIds(prev => new Set([...prev, app.id]));
     try {
+      const body: Record<string, string | boolean> = { offer_id: app.offer_id, template_id: templateId };
+      if (forceRegenerate) body.force_regenerate = true;
       const res = await fetch("/api/adapt/cv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ offer_id: app.offer_id, template_id: "professional" }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (res.ok) {
@@ -78,6 +93,17 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
       setAdaptingIds(prev => { const s = new Set(prev); s.delete(app.id); return s; });
     }
   }, [adaptingIds]);
+
+  const openTemplatePicker = (app: Application) => {
+    setPickerTemplate(userTier === "individual" ? "minimal_smart" : "professional");
+    setTemplatePickerAppId(app.id);
+  };
+
+  const confirmAdaptCv = (app: Application) => {
+    const isRegenerate = !!app.adapted_cvs?.file_url;
+    setTemplatePickerAppId(null);
+    adaptCv(app, pickerTemplate, isRegenerate);
+  };
 
   const filtered = filterStatus === "all"
     ? applications
@@ -275,7 +301,7 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
                   </>
                 )}
                 <button
-                  onClick={() => adaptCv(app)}
+                  onClick={() => openTemplatePicker(app)}
                   disabled={adaptingIds.has(app.id)}
                   className="text-xs text-emerald-600 hover:text-emerald-800 font-medium disabled:opacity-50"
                 >
@@ -286,6 +312,35 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
                     : "Adatta CV"}
                 </button>
               </div>
+
+              {/* Mini-modale selettore template */}
+              {templatePickerAppId === app.id && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setTemplatePickerAppId(null)}>
+                  <div className="bg-background rounded-lg border shadow-xl p-4 max-w-md w-full space-y-3" onClick={e => e.stopPropagation()}>
+                    <p className="text-sm font-medium">Scegli template CV</p>
+                    <TemplateSelector
+                      userTier={userTier}
+                      selectedTemplate={pickerTemplate}
+                      onSelect={setPickerTemplate}
+                      compact
+                    />
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        onClick={() => setTemplatePickerAppId(null)}
+                        className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5"
+                      >
+                        Annulla
+                      </button>
+                      <button
+                        onClick={() => confirmAdaptCv(app)}
+                        className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 font-medium"
+                      >
+                        {app.adapted_cvs?.file_url ? "Riadatta CV" : "Genera CV"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
