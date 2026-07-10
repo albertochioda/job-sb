@@ -56,6 +56,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
   const [adaptingIds, setAdaptingIds] = useState<Set<string>>(new Set());
   const [adaptedIds, setAdaptedIds] = useState<Set<string>>(new Set());
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [savingAppIds, setSavingAppIds] = useState<Set<string>>(new Set());
   const [selectedTemplate, setSelectedTemplate] = useState<string>("professional");
   const [userTier, setUserTier] = useState<string>("professional");
@@ -400,7 +401,24 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                   </div>
                 </div>
                 {offer.motivo && (
-                  <p className="text-xs text-muted-foreground leading-relaxed">{offer.motivo}</p>
+                  <div>
+                    <p className={`text-xs text-muted-foreground leading-relaxed ${expandedCards.has(offer.id) ? "" : "line-clamp-3"}`}>
+                      {offer.motivo}
+                    </p>
+                    {offer.motivo.length > 120 && (
+                      <button
+                        type="button"
+                        onClick={() => setExpandedCards(prev => {
+                          const s = new Set(prev);
+                          if (s.has(offer.id)) s.delete(offer.id); else s.add(offer.id);
+                          return s;
+                        })}
+                        className="text-xs text-primary hover:underline mt-0.5"
+                      >
+                        {expandedCards.has(offer.id) ? "Mostra meno" : "Leggi di più"}
+                      </button>
+                    )}
+                  </div>
                 )}
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground/60 uppercase tracking-wide">{offer.source}</p>
