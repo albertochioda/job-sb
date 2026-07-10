@@ -136,18 +136,6 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Verifica offerta green
-  const { data: scored } = await supabase
-    .from("scored_offers")
-    .select("score_final, flag")
-    .eq("offer_id", offer_id)
-    .eq("user_id", user.id)
-    .single();
-
-  if (!scored || scored.flag !== "green") {
-    return NextResponse.json({ error: "Adattamento disponibile solo per offerte con compatibilità Alta (verde)" }, { status: 400 });
-  }
-
   // Carica offerta, CV attivo dell'utente e profilo
   const [{ data: offer }, { data: cv }, { data: profile }] = await Promise.all([
     supabase.from("job_offers").select("title, company, description").eq("id", offer_id).single(),
