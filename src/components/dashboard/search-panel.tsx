@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSearchPolling } from "@/contexts/search-polling-context";
 import TemplateSelector from "@/components/dashboard/template-selector";
@@ -51,6 +51,9 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
   const [savingAppIds, setSavingAppIds] = useState<Set<string>>(new Set());
   const [selectedTemplate, setSelectedTemplate] = useState<string>("professional");
   const [userTier, setUserTier] = useState<string>("professional");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deletingOffers, setDeletingOffers] = useState(false);
 
   const fetchOffers = useCallback(async () => {
     const res = await fetch("/api/offers");
@@ -178,7 +181,74 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
   const isNew = (offer: ScoredOffer) =>
     offer.is_new === true && !readIds.has(offer.id);
 
-  const filteredOffers = filter === "all" ? offers : offers.filter(o => o.flag === filter);
+  const flagFilteredOffers = filter === "all" ? offers : offers.filter(o => o.flag === filter);
+  const q = searchQuery.trim().toLowerCase();
+  const filteredOffers = q
+    ? flagFilteredOffers.filter(o =>
+        o.title?.toLowerCase().includes(q) || o.company?.toLowerCase().includes(q)
+      )
+    : flagFilteredOffers;
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds(prev => {
+      const s = new Set(prev);
+      if (s.has(id)) s.delete(id); else s.add(id);
+      return s;
+    });
+  };
+
+  const selectAllVisible = () => {
+    setSelectedIds(new Set(filteredOffers.map(o => o.id)));
+  };
+
+  const deselectAll = () => setSelectedIds(new Set());
+
+  const deleteOffers = async (offerIds: string[]) => {
+    if (offerIds.length === 0) return;
+    setDeletingOffers(true);
+    try {
+      const res = await fetch("/api/search/offers", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offer_ids: offerIds }),
+      });
+      if (res.ok) {
+        const deletedSet = new Set(offerIds);
+        setOffers(prev => prev.filter(o => !deletedSet.has(o.offer_id ?? "")));
+        setSelectedIds(new Set());
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? "Errore eliminazione offerte");
+      }
+    } finally {
+      setDeletingOffers(false);
+    }
+  };
+
+  const deleteSelected = () => {
+    const offerIds = offers
+      .filter(o => selectedIds.has(o.id) && o.offer_id)
+      .map(o => o.offer_id!);
+    if (!confirm(`Eliminare ${offerIds.length} offerte selezionate?`)) return;
+    deleteOffers(offerIds);
+  };
+
+  const deleteAllOffers = async () => {
+    if (!confirm("Eliminare TUTTE le offerte? Questa azione non è reversibile.")) return;
+    setDeletingOffers(true);
+    try {
+      const res = await fetch("/api/search/offers", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      if (res.ok) {
+        setOffers([]);
+        setSelectedIds(new Set());
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? "Errore eliminazione offerte");
+      }
+    } finally {
+      setDeletingOffers(false);
+    }
+  };
 
   const counts = {
     green: offers.filter(o => o.flag === "green").length,
@@ -198,13 +268,24 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
             </p>
           )}
         </div>
-        <button
-          onClick={startSearch}
-          disabled={!initialized || loading || isSearching}
-          className="bg-primary text-primary-foreground px-5 py-2 rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {!initialized ? "..." : loading ? "Avvio..." : isSearching ? "Ricerca in corso..." : "Avvia ricerca"}
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {offers.length > 0 && (
+            <button
+              onClick={deleteAllOffers}
+              disabled={deletingOffers}
+              className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50 px-3 py-2"
+            >
+              Elimina tutte le offerte
+            </button>
+          )}
+          <button
+            onClick={startSearch}
+            disabled={!initialized || loading || isSearching}
+            className="bg-primary text-primary-foreground px-5 py-2 rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {!initialized ? "..." : loading ? "Avvio..." : isSearching ? "Ricerca in corso..." : "Avvia ricerca"}
+          </button>
+        </div>
       </div>
 
       {/* Banner stima durata */}
@@ -266,6 +347,17 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
         </div>
       )}
 
+      {/* Ricerca testuale */}
+      {offers.length > 0 && (
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Cerca per titolo o azienda..."
+          className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      )}
+
       {/* Filtri */}
       {offers.length > 0 && (
         <div className="flex gap-2">
@@ -285,6 +377,28 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
         </div>
       )}
 
+      {/* Barra azione selezione multipla */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between bg-muted rounded-md px-4 py-2 text-sm">
+          <span className="font-medium">{selectedIds.size} offerte selezionate</span>
+          <div className="flex items-center gap-3">
+            <button onClick={selectAllVisible} className="text-xs text-primary hover:underline">
+              Seleziona tutte
+            </button>
+            <button onClick={deselectAll} className="text-xs text-muted-foreground hover:text-foreground">
+              Deseleziona
+            </button>
+            <button
+              onClick={deleteSelected}
+              disabled={deletingOffers}
+              className="text-xs bg-red-500 text-white px-3 py-1.5 rounded-md hover:bg-red-600 disabled:opacity-50 font-medium"
+            >
+              Elimina selezionate
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Lista offerte */}
       {filteredOffers.length > 0 ? (
         <div className="space-y-3">
@@ -293,24 +407,38 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
             .map((offer) => (
               <div
                 key={offer.id}
-                className="block border rounded-lg p-4 hover:border-foreground/40 transition-colors space-y-2"
+                className="group relative block border rounded-lg p-4 hover:border-foreground/40 transition-colors space-y-2"
               >
+                <button
+                  onClick={() => offer.offer_id && deleteOffers([offer.offer_id])}
+                  disabled={deletingOffers}
+                  title="Elimina offerta"
+                  className="absolute top-2 right-2 text-muted-foreground/0 group-hover:text-muted-foreground/60 hover:text-red-500 transition-colors disabled:opacity-30 z-10"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-0.5 min-w-0 flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(offer.id)}
+                      onChange={() => toggleSelected(offer.id)}
+                      className="shrink-0 mt-1 rounded border-border accent-primary"
+                    />
                     {/* Feature 3: badge NUOVA */}
                     {isNew(offer) && (
                       <span className="shrink-0 mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-500 text-white leading-none">
                         NUOVA
                       </span>
                     )}
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-medium text-sm leading-tight truncate">{offer.title}</p>
                       <p className="text-xs text-muted-foreground">
                         {offer.company} · {offer.location}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 pr-6">
                     <span className="text-sm font-bold tabular-nums">
                       {offer.score_final?.toFixed(1)}
                     </span>
