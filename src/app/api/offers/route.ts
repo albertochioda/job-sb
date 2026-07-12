@@ -31,7 +31,7 @@ export async function GET() {
   const offerIds = scored.map((o: any) => o.offer_id);
   const { data: jobOffers } = await supabase
     .from("job_offers")
-    .select("id, title, company, location, url, source")
+    .select("id, title, company, location, url, source, published_at")
     .in("id", offerIds);
 
   const jobMap = Object.fromEntries((jobOffers ?? []).map((j: any) => [j.id, j]));

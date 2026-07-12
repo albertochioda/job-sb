@@ -19,6 +19,16 @@ interface ScoredOffer {
   is_new?: boolean;
   cv_id?: string;
   offer_id?: string;
+  published_at?: string | null;
+}
+
+function timeAgo(date: string): string {
+  const days = Math.floor((Date.now() - new Date(date).getTime()) / 86400000);
+  if (days <= 0) return "oggi";
+  if (days === 1) return "ieri";
+  if (days < 7) return `${days} giorni fa`;
+  if (days < 30) return `${Math.floor(days / 7)} settimane fa`;
+  return `${Math.floor(days / 30)} mesi fa`;
 }
 
 
@@ -436,6 +446,11 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                       <p className="text-xs text-muted-foreground">
                         {offer.company} · {offer.location}
                       </p>
+                      {offer.published_at && (
+                        <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                          {timeAgo(offer.published_at)}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 pr-6">
