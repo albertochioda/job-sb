@@ -73,9 +73,19 @@ export default function TrialExpiredModal() {
           <div className="space-y-2">
             <h2 className="text-xl font-semibold">Limite raggiunto</h2>
             <p className="text-sm text-muted-foreground">
-              Hai raggiunto il limite di {details?.limit ?? "-"} {details?.resource ?? "azioni"} del tuo piano{" "}
-              {details?.tier ?? ""} questo mese. Aggiorna il piano per continuare, oppure riprova quando il
-              conteggio si azzera.
+              {details?.tier === "professional" ? (
+                <>
+                  Hai raggiunto il limite di {details?.limit ?? "-"} {details?.resource ?? "azioni"} del tuo piano
+                  Professional questo mese. Riprova quando il conteggio si azzera, oppure scrivici se ti serve un
+                  limite più alto per questo mese.
+                </>
+              ) : (
+                <>
+                  Hai raggiunto il limite di {details?.limit ?? "-"} {details?.resource ?? "azioni"} del tuo piano{" "}
+                  {details?.tier ?? ""} questo mese. Aggiorna il piano per continuare, oppure riprova quando il
+                  conteggio si azzera.
+                </>
+              )}
             </p>
           </div>
         )}
