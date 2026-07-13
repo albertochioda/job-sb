@@ -54,6 +54,9 @@ export async function POST() {
       return NextResponse.json({
         error: `Hai raggiunto il limite di ${limits.runs_per_month} ricerche mensili per il piano ${sub.tier}. Aggiorna il piano per continuare.`,
         code: "limit_reached",
+        resource: "ricerche",
+        limit: limits.runs_per_month,
+        tier: sub.tier,
       }, { status: 429 });
     }
   }

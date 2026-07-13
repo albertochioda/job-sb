@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSearchPolling } from "@/contexts/search-polling-context";
+import { useBlockingModal } from "@/contexts/blocking-modal-context";
 import TemplateSelector from "@/components/dashboard/template-selector";
 
 interface ScoredOffer {
@@ -47,6 +48,7 @@ const FLAG_LABELS = {
 export default function SearchPanel({ locale: _locale }: { locale: string }) {
   const t = useTranslations("dashboard");
   const { initialized, isSearching, progress, completedData, startPolling, cancelSearch } = useSearchPolling();
+  const { showBlockingModal } = useBlockingModal();
   const [total, setTotal] = useState(0);
   const [hasError, setHasError] = useState(false);
   const [offers, setOffers] = useState<ScoredOffer[]>([]);
@@ -128,7 +130,13 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
       const res = await fetch("/api/search/start", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error ?? "Errore avvio ricerca");
+        if (data.code === "trial_expired") {
+          showBlockingModal("trial_expired");
+        } else if (data.code === "limit_reached") {
+          showBlockingModal("limit_reached", { resource: data.resource, limit: data.limit, tier: data.tier });
+        } else {
+          alert(data.error ?? "Errore avvio ricerca");
+        }
         return;
       }
       setTotal(0);
@@ -153,6 +161,10 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
       if (res.ok) {
         setAdaptedIds(prev => new Set([...prev, offerId]));
         if (data.file_url) window.open(data.file_url, "_blank");
+      } else if (data.code === "trial_expired") {
+        showBlockingModal("trial_expired");
+      } else if (data.code === "limit_reached") {
+        showBlockingModal("limit_reached", { resource: data.resource, limit: data.limit, tier: data.tier });
       } else {
         alert(data.error ?? "Errore generazione CV");
       }

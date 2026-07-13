@@ -132,6 +132,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         error: `Hai raggiunto il limite di ${limits.cvs_per_month} CV adattati mensili per il piano ${sub.tier}. Aggiorna il piano per continuare.`,
         code: "limit_reached",
+        resource: "CV adattati",
+        limit: limits.cvs_per_month,
+        tier: sub.tier,
       }, { status: 429 });
     }
   }

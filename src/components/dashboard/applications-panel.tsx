@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import TemplateSelector from "@/components/dashboard/template-selector";
+import { useBlockingModal } from "@/contexts/blocking-modal-context";
 
 const STATUSES = ["saved", "applied", "interview", "offer", "rejected"] as const;
 type Status = typeof STATUSES[number];
@@ -58,6 +59,7 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
   const [userTier, setUserTier] = useState<string>("professional");
   const [templatePickerAppId, setTemplatePickerAppId] = useState<string | null>(null);
   const [pickerTemplate, setPickerTemplate] = useState<string>("professional");
+  const { showBlockingModal } = useBlockingModal();
 
   useEffect(() => {
     fetch("/api/subscription").then(r => r.ok ? r.json() : null).then(data => {
@@ -86,13 +88,17 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
           : a
         ));
         if (data.file_url) window.open(data.file_url, "_blank");
+      } else if (data.code === "trial_expired") {
+        showBlockingModal("trial_expired");
+      } else if (data.code === "limit_reached") {
+        showBlockingModal("limit_reached", { resource: data.resource, limit: data.limit, tier: data.tier });
       } else {
         alert(data.error ?? "Errore generazione CV");
       }
     } finally {
       setAdaptingIds(prev => { const s = new Set(prev); s.delete(app.id); return s; });
     }
-  }, [adaptingIds]);
+  }, [adaptingIds, showBlockingModal]);
 
   const openTemplatePicker = (app: Application) => {
     setPickerTemplate(userTier === "individual" ? "minimal_smart" : "professional");
