@@ -26,7 +26,7 @@ export default function TerminiDiServizio() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">4. Periodo di Prova Gratuita (Trial)</h2>
-          <p className="text-sm leading-relaxed">L'accesso nella fase beta è gratuito per un periodo di prova di 30 (trenta) giorni dalla data di registrazione. Durante il periodo di prova, l'utente ha accesso alle funzionalità del piano Professional, inclusi:</p>
+          <p className="text-sm leading-relaxed">L'accesso nella fase beta è gratuito per un periodo di prova di 14 (quattordici) giorni dalla data di registrazione. Durante il periodo di prova, l'utente ha accesso alle funzionalità del piano Professional, inclusi:</p>
           <ul className="text-sm leading-relaxed list-disc pl-5 space-y-1">
             <li>20 ricerche di offerte di lavoro al mese</li>
             <li>30 adattamenti del curriculum vitae al mese</li>

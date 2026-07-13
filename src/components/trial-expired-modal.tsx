@@ -32,7 +32,7 @@ export default function TrialExpiredModal() {
         <div className="space-y-2">
           <h2 className="text-xl font-semibold">Il tuo trial è scaduto</h2>
           <p className="text-sm text-muted-foreground">
-            Hai usato il tuo periodo di prova gratuito di 7 giorni.
+            Hai usato il tuo periodo di prova gratuito di 14 giorni.
           </p>
         </div>
 
