@@ -43,9 +43,17 @@ Regole vincolanti:
 - Non aprire con formule standard come "Vi scrivo per candidarmi" o "Ho letto con interesse l'annuncio"
 - Non ripetere il nome dell'azienda più di 1-2 volte in tutto il testo
 - Non citare direttamente la mission aziendale o frasi prese dal sito dell'azienda
-- Il blocco centrale sul candidato deve ancorarsi ad almeno un dato concreto e misurabile tratto dal CV (numeri, risultati, percentuali) — non aggettivi generici
+- Il blocco centrale sul candidato: scegli UN SOLO risultato misurabile dal CV — il più rilevante per QUESTO annuncio specifico — e usalo come prova a supporto di un'affermazione, non come elenco. Vietato enumerare più di un risultato quantitativo nello stesso paragrafo. Vietato usare più di 2 numeri/percentuali in tutta la lettera.
 - Il blocco finale deve richiamare esplicitamente 1-2 punti dalla motivazione di compatibilità candidato-offerta, se fornita
+- Chiusura: non concludere con aggettivi autodescrittivi generici (es. "sono concreto/motivato/orientato al risultato/determinato"). Chiudi invece con una frase che collega concretamente qualcosa dell'annuncio a un'azione o disponibilità specifica (es. proporre un confronto su un aspetto preciso del ruolo menzionato nell'annuncio), MAI con un'autovalutazione di carattere.
 - Non inventare MAI esperienze, ruoli o risultati non presenti nel CV
+
+ESEMPIO DA NON FARE (riassunto di CV con troppi numeri):
+"Ho ridotto i costi del 17%, il lead time del 30% e gli sprechi del 25%, dimezzato il throughput time..."
+
+ESEMPIO CORRETTO (un risultato, usato come prova):
+"Quando in Gotha Cosmetics ho ereditato uno stabilimento con lead time fuori controllo, non ho aspettato una diagnosi esterna: ho applicato VSM e SMED direttamente sulle linee, portando il lead time giù del 30% in un anno. È lo stesso approccio da campo che il vostro sito, in fase di integrazione con gli standard di Gruppo, richiede."
+
 Rispondi SOLO con il testo continuo della lettera, nessuna formattazione, nessun titolo, nessuna firma finale (la firma viene aggiunta separatamente).`;
 
   if (isAgency) {
