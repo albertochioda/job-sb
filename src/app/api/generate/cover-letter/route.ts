@@ -47,6 +47,7 @@ Regole vincolanti:
 - Il blocco finale deve richiamare esplicitamente 1-2 punti dalla motivazione di compatibilità candidato-offerta, se fornita
 - Chiusura: non concludere con aggettivi autodescrittivi generici (es. "sono concreto/motivato/orientato al risultato/determinato"). Chiudi invece con una frase che collega concretamente qualcosa dell'annuncio a un'azione o disponibilità specifica (es. proporre un confronto su un aspetto preciso del ruolo menzionato nell'annuncio), MAI con un'autovalutazione di carattere.
 - Non inventare MAI esperienze, ruoli o risultati non presenti nel CV
+- Non includere commenti sul tuo processo, meta-riflessioni sulla ricerca svolta, o frasi come "ora scriverò la lettera" — l'output deve contenere ESCLUSIVAMENTE il testo finale della lettera, dalla formula di apertura alla firma
 
 ESEMPIO DA NON FARE (riassunto di CV con troppi numeri):
 "Ho ridotto i costi del 17%, il lead time del 30% e gli sprechi del 25%, dimezzato il throughput time..."
@@ -165,13 +166,15 @@ export async function POST(request: NextRequest) {
     }),
   });
 
-  // Con web search attivo, message.content può contenere blocchi
-  // server_tool_use/web_search_tool_result oltre al testo — estrai solo i blocchi testo
-  const letterText = message.content
-    .filter((block): block is Anthropic.Messages.TextBlock => block.type === "text")
-    .map(block => block.text)
-    .join("\n")
-    .trim();
+  // Con web search attivo, message.content può contenere PIÙ blocchi "text"
+  // (uno con ragionamento pre-ricerca, uno con la lettera finale dopo il tool
+  // use/tool result) oltre a blocchi server_tool_use/web_search_tool_result.
+  // Prendiamo SOLO l'ultimo blocco text — quello successivo a qualsiasi tool
+  // use — scartando ogni commentario intermedio del modello.
+  const textBlocks = message.content.filter(
+    (block): block is Anthropic.Messages.TextBlock => block.type === "text"
+  );
+  const letterText = (textBlocks[textBlocks.length - 1]?.text ?? "").trim();
 
   if (!letterText) {
     return NextResponse.json({ error: "Errore generazione lettera: nessun testo restituito" }, { status: 500 });
