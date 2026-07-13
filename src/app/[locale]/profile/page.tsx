@@ -6,6 +6,7 @@ import LogoutButton from "@/components/auth/logout-button";
 import SearchConfigForm from "@/components/profile/search-config-form";
 import CvUploadSection from "@/components/profile/cv-upload-section";
 import PhotoUploadSection from "@/components/profile/photo-upload-section";
+import CoverLetterSettingsForm from "@/components/profile/cover-letter-settings-form";
 import Link from "next/link";
 
 export default async function ProfilePage({
@@ -23,7 +24,7 @@ export default async function ProfilePage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, email, language, created_at, photo_url")
+    .select("full_name, email, language, created_at, photo_url, cover_letter_tone, cover_letter_bio")
     .eq("id", user.id)
     .single();
 
@@ -108,6 +109,10 @@ export default async function ProfilePage({
       <PhotoUploadSection currentPhotoUrl={photoPreviewUrl} />
       <CvUploadSection currentCv={activeCv ?? null} />
       {searchConfig && <SearchConfigForm config={searchConfig} />}
+      <CoverLetterSettingsForm
+        initialTone={profile?.cover_letter_tone}
+        initialBio={profile?.cover_letter_bio}
+      />
     </main>
   );
 }

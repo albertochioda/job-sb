@@ -1,32 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { buildFileName } from "@/lib/file-naming";
 
 const adminSupabase = createAdminClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
-function sanitizeSegment(value: string, maxLen: number): string {
-  return value
-    .normalize("NFD").replace(/[̀-ͯ]/g, "") // rimuove accenti (diacritici)
-    .replace(/[^\x00-\x7F]/g, "") // rimuove non-ASCII residuo
-    .replace(/[/.,]/g, "") // rimuove slash, punti, virgole
-    .replace(/[^a-zA-Z0-9\s_-]/g, "") // rimuove altri caratteri speciali
-    .trim()
-    .replace(/\s+/g, "_")
-    .slice(0, maxLen)
-    .replace(/^_+|_+$/g, "");
-}
-
-function buildFileName(fullName: string, company: string, title: string): string {
-  const parts = [
-    fullName ? sanitizeSegment(fullName, 40) : "",
-    company ? sanitizeSegment(company, 20) : "",
-    title ? sanitizeSegment(title, 30) : "",
-  ].filter(Boolean);
-  return (parts.length ? parts.join("_") : "CV_Adattato") + ".docx";
-}
 
 export async function GET(
   _request: NextRequest,

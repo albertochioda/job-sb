@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import TemplateSelector from "@/components/dashboard/template-selector";
+import CoverLetterSettingsForm from "@/components/profile/cover-letter-settings-form";
 import { useBlockingModal } from "@/contexts/blocking-modal-context";
 
 const STATUSES = ["saved", "applied", "interview", "offer", "rejected"] as const;
@@ -60,6 +61,11 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
   const [templatePickerAppId, setTemplatePickerAppId] = useState<string | null>(null);
   const [pickerTemplate, setPickerTemplate] = useState<string>("professional");
   const { showBlockingModal } = useBlockingModal();
+  const [generatingLetterIds, setGeneratingLetterIds] = useState<Set<string>>(new Set());
+  const [letterTexts, setLetterTexts] = useState<Record<string, string>>({});
+  const [downloadingLetterIds, setDownloadingLetterIds] = useState<Set<string>>(new Set());
+  const [hasCoverLetterSettings, setHasCoverLetterSettings] = useState<boolean | null>(null);
+  const [calibrationAppId, setCalibrationAppId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/subscription").then(r => r.ok ? r.json() : null).then(data => {
@@ -68,6 +74,13 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
         if (data.tier === "individual") setPickerTemplate("minimal_smart");
       }
     });
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/profile/cover-letter-settings").then(r => r.ok ? r.json() : null).then(data => {
+      const seenLocally = typeof window !== "undefined" && localStorage.getItem("job_sb_cover_letter_calibration_seen") === "1";
+      setHasCoverLetterSettings(!!data?.cover_letter_tone || seenLocally);
+    }).catch(() => setHasCoverLetterSettings(true));
   }, []);
 
   const adaptCv = useCallback(async (app: Application, templateId: string, forceRegenerate: boolean) => {
@@ -99,6 +112,72 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
       setAdaptingIds(prev => { const s = new Set(prev); s.delete(app.id); return s; });
     }
   }, [adaptingIds, showBlockingModal]);
+
+  const runGenerateCoverLetter = useCallback(async (app: Application) => {
+    if (generatingLetterIds.has(app.id)) return;
+    setGeneratingLetterIds(prev => new Set([...prev, app.id]));
+    try {
+      const res = await fetch("/api/generate/cover-letter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offer_id: app.offer_id, template_id: pickerTemplate }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setLetterTexts(prev => ({ ...prev, [app.id]: data.letter_text }));
+      } else if (data.code === "trial_expired") {
+        showBlockingModal("trial_expired");
+      } else if (data.code === "limit_reached") {
+        showBlockingModal("limit_reached", { resource: data.resource, limit: data.limit, tier: data.tier });
+      } else {
+        alert(data.error ?? "Errore generazione lettera");
+      }
+    } finally {
+      setGeneratingLetterIds(prev => { const s = new Set(prev); s.delete(app.id); return s; });
+    }
+  }, [generatingLetterIds, pickerTemplate, showBlockingModal]);
+
+  const generateCoverLetter = (app: Application) => {
+    if (hasCoverLetterSettings === false) {
+      setCalibrationAppId(app.id);
+      return;
+    }
+    runGenerateCoverLetter(app);
+  };
+
+  const handleCalibrationSaved = (app: Application) => {
+    setHasCoverLetterSettings(true);
+    setCalibrationAppId(null);
+    runGenerateCoverLetter(app);
+  };
+
+  const handleCalibrationSkipped = (app: Application) => {
+    if (typeof window !== "undefined") localStorage.setItem("job_sb_cover_letter_calibration_seen", "1");
+    setHasCoverLetterSettings(true);
+    setCalibrationAppId(null);
+    runGenerateCoverLetter(app);
+  };
+
+  const downloadCoverLetter = async (app: Application) => {
+    const text = letterTexts[app.id];
+    if (!text || downloadingLetterIds.has(app.id)) return;
+    setDownloadingLetterIds(prev => new Set([...prev, app.id]));
+    try {
+      const res = await fetch("/api/generate/cover-letter/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offer_id: app.offer_id, template_id: pickerTemplate, letter_text: text }),
+      });
+      const data = await res.json();
+      if (res.ok && data.file_url) {
+        window.open(data.file_url, "_blank");
+      } else {
+        alert(data.error ?? "Errore generazione file lettera");
+      }
+    } finally {
+      setDownloadingLetterIds(prev => { const s = new Set(prev); s.delete(app.id); return s; });
+    }
+  };
 
   const openTemplatePicker = (app: Application) => {
     setPickerTemplate(userTier === "individual" ? "minimal_smart" : "professional");
@@ -317,7 +396,51 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
                     ? "Riadatta CV"
                     : "Adatta CV"}
                 </button>
+                <button
+                  onClick={() => generateCoverLetter(app)}
+                  disabled={generatingLetterIds.has(app.id)}
+                  className="text-xs text-violet-600 hover:text-violet-800 font-medium disabled:opacity-50"
+                >
+                  {generatingLetterIds.has(app.id)
+                    ? "Generazione..."
+                    : letterTexts[app.id] !== undefined
+                    ? "✓ Lettera generata"
+                    : "Genera lettera"}
+                </button>
               </div>
+
+              {letterTexts[app.id] !== undefined && (
+                <div className="border-t pt-3 space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">Lettera di motivazione (modificabile)</p>
+                  <textarea
+                    value={letterTexts[app.id]}
+                    onChange={e => setLetterTexts(prev => ({ ...prev, [app.id]: e.target.value }))}
+                    rows={8}
+                    className="w-full text-sm border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-primary resize-y"
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => downloadCoverLetter(app)}
+                      disabled={downloadingLetterIds.has(app.id)}
+                      className="text-xs bg-violet-600 text-white px-3 py-1.5 rounded-md hover:bg-violet-700 disabled:opacity-50 font-medium"
+                    >
+                      {downloadingLetterIds.has(app.id) ? "Generazione file..." : "Scarica"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {calibrationAppId === app.id && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setCalibrationAppId(null)}>
+                  <div className="bg-background rounded-lg border shadow-xl p-5 max-w-md w-full" onClick={e => e.stopPropagation()}>
+                    <CoverLetterSettingsForm
+                      compact
+                      onSaved={() => handleCalibrationSaved(app)}
+                      onSkip={() => handleCalibrationSkipped(app)}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Mini-modale selettore template */}
               {templatePickerAppId === app.id && (

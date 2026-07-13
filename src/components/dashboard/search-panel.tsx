@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useSearchPolling } from "@/contexts/search-polling-context";
 import { useBlockingModal } from "@/contexts/blocking-modal-context";
 import TemplateSelector from "@/components/dashboard/template-selector";
+import CoverLetterSettingsForm from "@/components/profile/cover-letter-settings-form";
 
 interface ScoredOffer {
   id: string;
@@ -66,6 +67,12 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deletingOffers, setDeletingOffers] = useState(false);
+  const [generatingLetterIds, setGeneratingLetterIds] = useState<Set<string>>(new Set());
+  const [generatedLetterIds, setGeneratedLetterIds] = useState<Set<string>>(new Set());
+  const [letterTexts, setLetterTexts] = useState<Record<string, string>>({});
+  const [downloadingLetterIds, setDownloadingLetterIds] = useState<Set<string>>(new Set());
+  const [hasCoverLetterSettings, setHasCoverLetterSettings] = useState<boolean | null>(null);
+  const [calibrationOfferId, setCalibrationOfferId] = useState<string | null>(null);
 
   const fetchOffers = useCallback(async () => {
     const res = await fetch("/api/offers");
@@ -113,6 +120,14 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
         setSavedIds(ids);
       }
     });
+  }, []);
+
+  // Verifica se l'utente ha già calibrato tono/bio per la lettera di motivazione
+  useEffect(() => {
+    fetch("/api/profile/cover-letter-settings").then(r => r.ok ? r.json() : null).then(data => {
+      const seenLocally = typeof window !== "undefined" && localStorage.getItem("job_sb_cover_letter_calibration_seen") === "1";
+      setHasCoverLetterSettings(!!data?.cover_letter_tone || seenLocally);
+    }).catch(() => setHasCoverLetterSettings(true));
   }, []);
 
   const startSearch = async () => {
@@ -170,6 +185,75 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
       }
     } finally {
       setAdaptingIds(prev => { const s = new Set(prev); s.delete(offerId); return s; });
+    }
+  };
+
+  const runGenerateCoverLetter = async (offerId: string) => {
+    if (generatingLetterIds.has(offerId)) return;
+    setGeneratingLetterIds(prev => new Set([...prev, offerId]));
+    try {
+      const body: Record<string, string> = { offer_id: offerId };
+      if (selectedTemplate) body.template_id = selectedTemplate;
+      const res = await fetch("/api/generate/cover-letter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setLetterTexts(prev => ({ ...prev, [offerId]: data.letter_text }));
+        setGeneratedLetterIds(prev => new Set([...prev, offerId]));
+      } else if (data.code === "trial_expired") {
+        showBlockingModal("trial_expired");
+      } else if (data.code === "limit_reached") {
+        showBlockingModal("limit_reached", { resource: data.resource, limit: data.limit, tier: data.tier });
+      } else {
+        alert(data.error ?? "Errore generazione lettera");
+      }
+    } finally {
+      setGeneratingLetterIds(prev => { const s = new Set(prev); s.delete(offerId); return s; });
+    }
+  };
+
+  const generateCoverLetter = (offerId: string) => {
+    if (hasCoverLetterSettings === false) {
+      setCalibrationOfferId(offerId);
+      return;
+    }
+    runGenerateCoverLetter(offerId);
+  };
+
+  const handleCalibrationSaved = (offerId: string) => {
+    setHasCoverLetterSettings(true);
+    setCalibrationOfferId(null);
+    runGenerateCoverLetter(offerId);
+  };
+
+  const handleCalibrationSkipped = (offerId: string) => {
+    if (typeof window !== "undefined") localStorage.setItem("job_sb_cover_letter_calibration_seen", "1");
+    setHasCoverLetterSettings(true);
+    setCalibrationOfferId(null);
+    runGenerateCoverLetter(offerId);
+  };
+
+  const downloadCoverLetter = async (offerId: string) => {
+    const text = letterTexts[offerId];
+    if (!text || downloadingLetterIds.has(offerId)) return;
+    setDownloadingLetterIds(prev => new Set([...prev, offerId]));
+    try {
+      const res = await fetch("/api/generate/cover-letter/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offer_id: offerId, template_id: selectedTemplate, letter_text: text }),
+      });
+      const data = await res.json();
+      if (res.ok && data.file_url) {
+        window.open(data.file_url, "_blank");
+      } else {
+        alert(data.error ?? "Errore generazione file lettera");
+      }
+    } finally {
+      setDownloadingLetterIds(prev => { const s = new Set(prev); s.delete(offerId); return s; });
     }
   };
 
@@ -527,6 +611,19 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                         )}
                       </div>
                     )}
+                    {offer.flag === "green" && offer.offer_id && (
+                      <button
+                        onClick={() => generateCoverLetter(offer.offer_id!)}
+                        disabled={generatingLetterIds.has(offer.offer_id)}
+                        className="text-xs text-violet-600 hover:text-violet-800 font-medium disabled:opacity-50"
+                      >
+                        {generatingLetterIds.has(offer.offer_id)
+                          ? "Generazione..."
+                          : generatedLetterIds.has(offer.offer_id)
+                          ? "✓ Lettera generata"
+                          : "Genera lettera"}
+                      </button>
+                    )}
                     {offer.url && (
                       <a
                         href={offer.url}
@@ -540,6 +637,37 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                     )}
                   </div>
                 </div>
+                {offer.offer_id && letterTexts[offer.offer_id] !== undefined && (
+                  <div className="border-t pt-3 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Lettera di motivazione (modificabile)</p>
+                    <textarea
+                      value={letterTexts[offer.offer_id]}
+                      onChange={e => setLetterTexts(prev => ({ ...prev, [offer.offer_id!]: e.target.value }))}
+                      rows={8}
+                      className="w-full text-sm border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-primary resize-y"
+                    />
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => downloadCoverLetter(offer.offer_id!)}
+                        disabled={downloadingLetterIds.has(offer.offer_id)}
+                        className="text-xs bg-violet-600 text-white px-3 py-1.5 rounded-md hover:bg-violet-700 disabled:opacity-50 font-medium"
+                      >
+                        {downloadingLetterIds.has(offer.offer_id) ? "Generazione file..." : "Scarica"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {calibrationOfferId === offer.offer_id && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setCalibrationOfferId(null)}>
+                    <div className="bg-background rounded-lg border shadow-xl p-5 max-w-md w-full" onClick={e => e.stopPropagation()}>
+                      <CoverLetterSettingsForm
+                        compact
+                        onSaved={() => handleCalibrationSaved(offer.offer_id!)}
+                        onSkip={() => handleCalibrationSkipped(offer.offer_id!)}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
         </div>
