@@ -35,6 +35,31 @@ const TONE_INSTRUCTIONS: Record<string, string> = {
   misurato: "Tono misurato e istituzionale: registro formale, misurato, senza freddezza eccessiva.",
 };
 
+async function researchCompanyFacts(company: string, role: string): Promise<string | null> {
+  if (!company) return null;
+  const system = `Cerca informazioni verificabili e rilevanti sull'azienda "${company}" per contestualizzare una candidatura al ruolo "${role}". Rispondi SOLO con un elenco puntato di massimo 3 fatti concreti e verificati (o "nessun fatto rilevante trovato" se la ricerca non produce nulla di utile) — non scrivere nessuna lettera in questa fase.`;
+
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 300,
+      system,
+      messages: [{ role: "user", content: `Azienda: ${company}\nRuolo: ${role}` }],
+      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 1 } as unknown as Anthropic.Messages.Tool],
+    });
+    const textBlocks = message.content.filter(
+      (block): block is Anthropic.Messages.TextBlock => block.type === "text"
+    );
+    const result = (textBlocks[textBlocks.length - 1]?.text ?? "").trim();
+    if (!result || /nessun fatto rilevante/i.test(result)) return null;
+    return result;
+  } catch {
+    // Se la ricerca fallisce, procediamo senza fatti aggiuntivi — non deve
+    // bloccare la generazione della lettera
+    return null;
+  }
+}
+
 function buildCoverLetterSystem(isAgency: boolean): string {
   const base = `Sei un career coach esperto nella scrittura di lettere di motivazione efficaci e autentiche.
 Scrivi una lettera di motivazione di 250-300 parole totali, organizzata in tre blocchi impliciti (perché l'azienda/il ruolo, perché il candidato, cosa il candidato porta), SENZA etichette o titoli visibili nel testo finale.
@@ -64,7 +89,7 @@ ATTENZIONE: questo annuncio è pubblicato da un'agenzia di ricerca e selezione, 
   }
   return `${base}
 
-Se hai effettuato una ricerca web sull'azienda, USALA SOLO se i risultati riguardano con certezza l'azienda in questione (stesso settore/località/contesto dell'annuncio). Se i risultati sono ambigui, generici o riguardano un'azienda omonima diversa, IGNORALI COMPLETAMENTE e scrivi basandoti solo sul testo dell'annuncio, senza inventare fatti esterni.`;
+Ti vengono forniti alcuni fatti verificati sull'azienda, raccolti in una fase di ricerca separata precedente a questa. Usali SOLO se aggiungono valore concreto e pertinente alla lettera; se sono vaghi, irrilevanti o assenti, ignorali completamente e scrivi basandoti solo sul testo dell'annuncio, senza inventare fatti esterni.`;
 }
 
 function buildCoverLetterPrompt(
@@ -74,6 +99,7 @@ function buildCoverLetterPrompt(
   tone: string | null,
   bio: string | null,
   motivo: string | null,
+  companyFacts: string | null,
   lang: string,
 ): string {
   const toneInstruction = TONE_INSTRUCTIONS[tone ?? ""] ?? "Tono professionale bilanciato.";
@@ -88,6 +114,7 @@ AZIENDA: ${company || "non specificata"}
 CALIBRAZIONE STILE: ${toneInstruction}
 ${bio ? `NOTA PERSONALE DEL CANDIDATO (usala se pertinente): "${bio}"` : ""}
 ${motivo ? `MOTIVAZIONE DI COMPATIBILITÀ CANDIDATO-OFFERTA (richiama 1-2 punti nel blocco finale): ${motivo}` : ""}
+${companyFacts ? `FATTI VERIFICATI SULL'AZIENDA (usali solo se pertinenti, non forzarli):\n${companyFacts}` : ""}
 
 Lingua output: ${lang}.`;
 }
@@ -143,6 +170,15 @@ export async function POST(request: NextRequest) {
   const lang = await detectLanguage(offer.description || "");
   const isAgency = isAgencyPosting(offer.company || "", offer.description || "");
 
+  // Chiamata 1 (solo annunci diretti): ricerca web isolata in una chiamata
+  // separata SENZA scrittura della lettera — evita che il ragionamento sulla
+  // ricerca finisca mescolato al testo finale nello stesso flusso di output.
+  // Per gli annunci di agenzia si salta: il committente non è identificabile.
+  const companyFacts = isAgency ? null : await researchCompanyFacts(offer.company || "", offer.title || "");
+
+  // Chiamata 2: scrittura della lettera, MAI con tool — qui il modello sta
+  // solo scrivendo, non ragionando su una ricerca, quindi l'output è
+  // garantito privo di commentario di processo.
   const system = buildCoverLetterSystem(isAgency);
   const prompt = buildCoverLetterPrompt(
     cv.extracted_text || "",
@@ -151,6 +187,7 @@ export async function POST(request: NextRequest) {
     profile?.cover_letter_tone ?? null,
     profile?.cover_letter_bio ?? null,
     scored?.motivo ?? null,
+    companyFacts,
     lang,
   );
 
@@ -159,18 +196,8 @@ export async function POST(request: NextRequest) {
     max_tokens: 1024,
     system,
     messages: [{ role: "user", content: prompt }],
-    // Web search attivo solo per annunci diretti — per gli annunci di
-    // agenzia il committente non è identificabile, la ricerca sarebbe inutile/rischiosa
-    ...(isAgency ? {} : {
-      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 1 } as unknown as Anthropic.Messages.Tool],
-    }),
   });
 
-  // Con web search attivo, message.content può contenere PIÙ blocchi "text"
-  // (uno con ragionamento pre-ricerca, uno con la lettera finale dopo il tool
-  // use/tool result) oltre a blocchi server_tool_use/web_search_tool_result.
-  // Prendiamo SOLO l'ultimo blocco text — quello successivo a qualsiasi tool
-  // use — scartando ogni commentario intermedio del modello.
   const textBlocks = message.content.filter(
     (block): block is Anthropic.Messages.TextBlock => block.type === "text"
   );
