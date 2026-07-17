@@ -23,6 +23,7 @@ export async function GET() {
     .select("id, score_final, flag, motivo, offer_id, is_new, cv_id")
     .eq("user_id", user.id)
     .neq("flag", "geo_skip")
+    .neq("flag", "scoring_failed")
     .order("score_final", { ascending: false })
     .limit(200);
 

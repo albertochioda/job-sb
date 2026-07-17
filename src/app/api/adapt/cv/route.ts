@@ -15,6 +15,25 @@ const WORKER_SECRET = process.env.WORKER_SECRET ?? "";
 const ADAPT_SYSTEM = `Sei un career coach esperto in ottimizzazione ATS. Il tuo compito è riscrivere i bullet del CV usando il linguaggio esatto della job description, senza inventare nulla.
 Rispondi SOLO con JSON valido, nessun altro testo.`;
 
+/**
+ * Trova il primo oggetto JSON completo a parentesi bilanciate, ignorando
+ * qualsiasi testo prima o dopo — a differenza di un regex greedy (/\{[\s\S]*\}/),
+ * non si estende oltre la graffa di chiusura corrispondente a quella di apertura.
+ */
+function extractJsonObject(text: string): string {
+  const start = text.indexOf("{");
+  if (start === -1) throw new Error("Nessuna graffa di apertura trovata");
+  let depth = 0;
+  for (let i = start; i < text.length; i++) {
+    if (text[i] === "{") depth++;
+    else if (text[i] === "}") {
+      depth--;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+  throw new Error("Nessuna graffa di chiusura bilanciata trovata");
+}
+
 function buildPrompt(cvText: string, jdText: string, lang: string): string {
   return `CV DEL CANDIDATO:
 ${cvText.slice(0, 3000)}
@@ -198,8 +217,7 @@ export async function POST(request: NextRequest) {
     note_strategiche: string;
   };
   try {
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+    parsed = JSON.parse(extractJsonObject(raw));
   } catch {
     return NextResponse.json({ error: "Errore parsing risposta Claude" }, { status: 500 });
   }
