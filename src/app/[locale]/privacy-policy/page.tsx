@@ -21,7 +21,6 @@ export default function PrivacyPolicy() {
             <li>Dati del profilo professionale: curriculum vitae, esperienze lavorative, competenze, formazione</li>
             <li>Dati di configurazione: ruoli cercati, città di preferenza, RAL minima desiderata, modalità di lavoro preferita</li>
             <li>Foto profilo (opzionale)</li>
-            <li>Dati di pagamento: per gli abbonamenti a pagamento, i dati della carta e delle transazioni sono raccolti ed elaborati direttamente da Stripe Inc., nostro fornitore di servizi di pagamento — Job SB non memorizza né ha accesso ai dati completi della carta</li>
           </ul>
           <p className="text-sm font-medium">2.2 Dati raccolti automaticamente</p>
           <ul className="text-sm leading-relaxed list-disc pl-5 space-y-1">
@@ -37,7 +36,6 @@ export default function PrivacyPolicy() {
             <li>Erogazione del Servizio (base giuridica: esecuzione del contratto — art. 6.1.b GDPR)</li>
             <li>Ricerca e presentazione di offerte di lavoro compatibili con il profilo (base giuridica: esecuzione del contratto)</li>
             <li>Adattamento del curriculum vitae tramite intelligenza artificiale (base giuridica: esecuzione del contratto)</li>
-            <li>Gestione dei pagamenti e fatturazione degli abbonamenti (base giuridica: esecuzione del contratto)</li>
             <li>Miglioramento del Servizio e analisi statistica in forma aggregata e anonima (base giuridica: legittimo interesse — art. 6.1.f GDPR)</li>
             <li>Adempimento di obblighi legali (base giuridica: obbligo legale — art. 6.1.c GDPR)</li>
           </ul>
@@ -50,7 +48,7 @@ export default function PrivacyPolicy() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">5. Trasferimento dei Dati</h2>
-          <p className="text-sm leading-relaxed">I dati sono conservati su server Supabase (UE) e Vercel. L'utilizzo delle API Anthropic e dei servizi di pagamento Stripe comporta il trasferimento di dati verso gli USA, garantito da adeguate garanzie contrattuali (Standard Contractual Clauses).</p>
+          <p className="text-sm leading-relaxed">I dati sono conservati su server Supabase (UE) e Vercel. L'utilizzo delle API Anthropic comporta il trasferimento di dati verso gli USA, garantito da adeguate garanzie contrattuali (Standard Contractual Clauses).</p>
         </section>
 
         <section className="space-y-3">
