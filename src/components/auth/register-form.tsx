@@ -18,6 +18,7 @@ export default function RegisterForm({ locale, t }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,6 +39,22 @@ export default function RegisterForm({ locale, t }: Props) {
     if (error) {
       setError(error.message && error.message !== "{}" ? error.message : "Registrazione fallita. Riprova.");
     } else {
+      // Il consenso marketing di default è già false lato DB — scriviamo
+      // esplicitamente solo se l'utente lo ha attivato. Nessuna sincronizzazione
+      // da metadata auth a profiles è confermata esistere nel codice, quindi
+      // scriviamo direttamente qui (stesso pattern fail-safe già usato per
+      // terms_version). Un fallimento non deve bloccare la registrazione.
+      if (marketingConsent) {
+        try {
+          await fetch("/api/profile/marketing-consent", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ marketing_consent: true }),
+          });
+        } catch (err) {
+          console.error("Marketing consent save failed:", err);
+        }
+      }
       router.push(`/${locale}/onboarding`);
     }
   }
@@ -90,6 +107,17 @@ export default function RegisterForm({ locale, t }: Props) {
           {" "}e l&apos;
           <a href={`/${locale}/accordo-riservatezza-beta`} target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:no-underline">Accordo di Riservatezza Beta</a>
           {" "}di Job SB.
+        </span>
+      </label>
+      <label className="flex items-start gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={marketingConsent}
+          onChange={e => setMarketingConsent(e.target.checked)}
+          className="mt-0.5 rounded border-border accent-primary shrink-0"
+        />
+        <span className="text-xs text-muted-foreground leading-relaxed">
+          Acconsento a ricevere comunicazioni promozionali via email (facoltativo)
         </span>
       </label>
       {error && <p className="text-sm text-destructive">{error}</p>}

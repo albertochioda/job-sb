@@ -7,6 +7,7 @@ import SearchConfigForm from "@/components/profile/search-config-form";
 import CvUploadSection from "@/components/profile/cv-upload-section";
 import PhotoUploadSection from "@/components/profile/photo-upload-section";
 import CoverLetterSettingsForm from "@/components/profile/cover-letter-settings-form";
+import MarketingConsentToggle from "@/components/profile/marketing-consent-toggle";
 import Link from "next/link";
 
 export default async function ProfilePage({
@@ -24,7 +25,7 @@ export default async function ProfilePage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, email, language, created_at, photo_url, cover_letter_tone, cover_letter_bio")
+    .select("full_name, email, language, created_at, photo_url, cover_letter_tone, cover_letter_bio, marketing_consent")
     .eq("id", user.id)
     .single();
 
@@ -113,6 +114,7 @@ export default async function ProfilePage({
         initialTone={profile?.cover_letter_tone}
         initialBio={profile?.cover_letter_bio}
       />
+      <MarketingConsentToggle initialConsent={profile?.marketing_consent ?? false} />
     </main>
   );
 }
