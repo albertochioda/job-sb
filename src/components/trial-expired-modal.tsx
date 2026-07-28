@@ -54,6 +54,18 @@ export default function TrialExpiredModal() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [reason, dismissBlockingModal]);
 
+  // Reset dello state locale del flow trial ogni volta che `reason` cambia
+  // (chiusura → null, o riapertura → nuovo valore): il componente non si
+  // smonta mai (resta montato in dashboard/layout.tsx), quindi senza questo
+  // reset trialStep restava bloccato su "thanks" da una sessione precedente
+  // e riappariva su quello schermo per qualsiasi altra azione bloccata.
+  useEffect(() => {
+    setTrialStep("info");
+    setSelectedReason("");
+    setFreeText("");
+    setSubmitting(false);
+  }, [reason]);
+
   if (!reason) return null;
 
   const isTrialExpired = reason === "trial_expired";
@@ -62,7 +74,7 @@ export default function TrialExpiredModal() {
     if (!selectedReason || submitting) return;
     setSubmitting(true);
     try {
-      await fetch("/api/feedback/cancellation", {
+      const res = await fetch("/api/feedback/cancellation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -71,8 +83,15 @@ export default function TrialExpiredModal() {
           free_text: selectedReason === "Altro" ? (freeText || null) : null,
         }),
       });
-    } catch {
-      // Il feedback è opzionale — un fallimento di rete non deve impedire la chiusura
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        console.error("Feedback submission failed:", data.error);
+        // Mostra comunque "thanks" ma logga l'errore — il feedback è
+        // opzionale, non blocchiamo l'utente con un errore visibile, ma
+        // l'insert fallito va tracciato per non nasconderlo di nuovo.
+      }
+    } catch (err) {
+      console.error("Feedback submission network error:", err);
     } finally {
       setSubmitting(false);
       setTrialStep("thanks");
