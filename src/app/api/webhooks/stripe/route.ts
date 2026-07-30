@@ -196,7 +196,15 @@ export async function POST(request: NextRequest) {
     // per diagnosticare il 500 senza accesso ai log Vercel. Da rimuovere
     // dopo la diagnosi (non è prassi esporre dettagli interni in produzione).
     const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: "processing failed", debug: message }, { status: 500 });
+    const anyErr = err as { type?: string; code?: string; detail?: unknown; raw?: unknown; cause?: unknown };
+    return NextResponse.json({
+      error: "processing failed",
+      debug: message,
+      debugType: anyErr?.type,
+      debugCode: anyErr?.code,
+      debugDetail: anyErr?.detail ? String(anyErr.detail) : undefined,
+      debugCause: anyErr?.cause ? String(anyErr.cause) : undefined,
+    }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });
