@@ -9,7 +9,7 @@ export async function GET() {
   const [{ data: sub }, { data: limits }] = await Promise.all([
     supabase
       .from("subscriptions")
-      .select("tier, status, runs_used, cvs_adapted_used, period_start, period_end, stripe_customer_id, stripe_subscription_id, cancel_at_period_end")
+      .select("tier, status, runs_used, cvs_adapted_used, period_start, period_end, stripe_customer_id, stripe_subscription_id, cancel_at_period_end, first_payment_at")
       .eq("user_id", user.id)
       .single(),
     supabase.from("usage_limits").select("*"),
@@ -26,6 +26,7 @@ export async function GET() {
     stripe_customer_id: sub?.stripe_customer_id ?? null,
     stripe_subscription_id: sub?.stripe_subscription_id ?? null,
     cancel_at_period_end: sub?.cancel_at_period_end ?? false,
+    first_payment_at: sub?.first_payment_at ?? null,
     limits: tierLimits,
   });
 }

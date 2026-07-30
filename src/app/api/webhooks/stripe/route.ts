@@ -79,6 +79,13 @@ export async function POST(request: NextRequest) {
             stripe_customer_id: customerId ?? null,
             stripe_subscription_id: subscriptionId ?? null,
             status: "active",
+            // Sempre sovrascritto, senza check "solo se null": se l'utente
+            // cancella e si riabbona in futuro, è un nuovo contratto a
+            // tutti gli effetti — merita una nuova finestra di rimborso di
+            // 14 giorni (Art. 7.2 ToS). checkout.session.completed si attiva
+            // solo alla creazione di un nuovo abbonamento, mai ai rinnovi
+            // (quelli passano da invoice.paid, che non tocca questo campo).
+            first_payment_at: new Date().toISOString(),
           })
           .eq("user_id", userId)
           .select("user_id");
