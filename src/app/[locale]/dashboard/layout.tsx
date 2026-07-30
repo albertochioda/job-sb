@@ -14,7 +14,7 @@ export default async function DashboardLayout({
   return (
     <BlockingModalProvider>
       <TermsReacceptanceModal locale={locale} />
-      <TrialExpiredModal />
+      <TrialExpiredModal locale={locale} />
       {children}
     </BlockingModalProvider>
   );

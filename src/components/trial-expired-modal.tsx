@@ -16,13 +16,34 @@ const CANCELLATION_REASONS = [
 ];
 
 type TrialStep = "info" | "feedback" | "thanks";
+type Tier = "individual" | "professional";
+type Cadence = "monthly" | "quarterly" | "annual";
 
-export default function TrialExpiredModal() {
+const PLAN_PRICES: Record<Tier, Record<Cadence, number>> = {
+  individual: { monthly: 19, quarterly: 47, annual: 159 },
+  professional: { monthly: 29, quarterly: 75, annual: 249 },
+};
+
+const CADENCE_LABELS: Record<Cadence, string> = {
+  monthly: "Mensile",
+  quarterly: "Trimestrale",
+  annual: "Annuale",
+};
+
+export default function TrialExpiredModal({ locale }: { locale: string }) {
   const { reason, details, showBlockingModal, dismissBlockingModal } = useBlockingModal();
   const [trialStep, setTrialStep] = useState<TrialStep>("info");
   const [selectedReason, setSelectedReason] = useState("");
   const [freeText, setFreeText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [cadenceByTier, setCadenceByTier] = useState<Record<Tier, Cadence>>({
+    individual: "monthly",
+    professional: "monthly",
+  });
+  const [checkoutTier, setCheckoutTier] = useState<Tier | null>(null);
+  const [checkoutConsent, setCheckoutConsent] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
 
   // Check iniziale al mount per trial_expired — stesso comportamento di prima,
   // ma ora passa lo stato attraverso il context invece che come stato locale
@@ -64,6 +85,10 @@ export default function TrialExpiredModal() {
     setSelectedReason("");
     setFreeText("");
     setSubmitting(false);
+    setCheckoutTier(null);
+    setCheckoutConsent(false);
+    setCheckoutLoading(false);
+    setCheckoutError("");
   }, [reason]);
 
   if (!reason) return null;
@@ -100,6 +125,33 @@ export default function TrialExpiredModal() {
 
   const isFoundJob = selectedReason === "🎉 Ho trovato lavoro";
 
+  const startCheckout = async () => {
+    if (!checkoutTier || !checkoutConsent || checkoutLoading) return;
+    setCheckoutLoading(true);
+    setCheckoutError("");
+    try {
+      const res = await fetch("/api/checkout/create-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tier: checkoutTier,
+          cadence: cadenceByTier[checkoutTier],
+          locale,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setCheckoutError(data.error ?? "Errore nella creazione della sessione di pagamento");
+        setCheckoutLoading(false);
+      }
+    } catch {
+      setCheckoutError("Errore di rete, riprova");
+      setCheckoutLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       {/* Backdrop */}
@@ -129,43 +181,92 @@ export default function TrialExpiredModal() {
                   </p>
                 </div>
 
-                <div className="space-y-2 text-left">
-                  <div className="border rounded-lg p-3 flex items-center justify-between">
-                    <span className="text-sm font-medium">Individual</span>
-                    <span className="text-sm text-muted-foreground">€19/mese</span>
+                {!checkoutTier ? (
+                  <div className="space-y-3 text-left">
+                    {(["individual", "professional"] as const).map((tier) => (
+                      <div key={tier} className="border rounded-lg p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium capitalize">{tier}</span>
+                          <span className="text-sm text-muted-foreground">
+                            €{PLAN_PRICES[tier][cadenceByTier[tier]]}
+                          </span>
+                        </div>
+                        <div className="flex gap-1.5">
+                          {(["monthly", "quarterly", "annual"] as const).map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => setCadenceByTier((prev) => ({ ...prev, [tier]: c }))}
+                              className={`flex-1 text-xs px-2 py-1.5 rounded-md border transition-colors ${
+                                cadenceByTier[tier] === c
+                                  ? "border-primary bg-primary/5 font-medium"
+                                  : "border-border text-muted-foreground hover:border-foreground/40"
+                              }`}
+                            >
+                              {CADENCE_LABELS[c]}
+                            </button>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setCheckoutTier(tier)}
+                          className="w-full bg-foreground text-background text-sm py-2 rounded-md font-medium hover:opacity-90 transition-opacity"
+                        >
+                          Sottoscrivi
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                  <div className="border rounded-lg p-3 flex items-center justify-between">
-                    <span className="text-sm font-medium">Professional</span>
-                    <span className="text-sm text-muted-foreground">€29/mese</span>
+                ) : (
+                  <div className="space-y-3 text-left">
+                    <p className="text-sm">
+                      <span className="font-medium capitalize">{checkoutTier}</span>
+                      {" — "}
+                      {CADENCE_LABELS[cadenceByTier[checkoutTier]]}, €{PLAN_PRICES[checkoutTier][cadenceByTier[checkoutTier]]}
+                    </p>
+                    <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={checkoutConsent}
+                        onChange={(e) => setCheckoutConsent(e.target.checked)}
+                        className="mt-0.5 accent-primary shrink-0"
+                      />
+                      <span>
+                        Richiedo che l&apos;esecuzione del Servizio abbia inizio immediatamente, anche prima della
+                        scadenza del termine di 14 giorni per l&apos;esercizio del diritto di recesso, e sono
+                        consapevole che, qualora inizi a utilizzare il Servizio durante tale periodo, perderò il
+                        diritto di recesso e al connesso rimborso.
+                      </span>
+                    </label>
+                    {checkoutError && <p className="text-xs text-destructive">{checkoutError}</p>}
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setCheckoutTier(null)}
+                        className="text-sm text-muted-foreground hover:text-foreground px-2"
+                      >
+                        Annulla
+                      </button>
+                      <button
+                        type="button"
+                        onClick={startCheckout}
+                        disabled={!checkoutConsent || checkoutLoading}
+                        className="flex-1 bg-foreground text-background text-sm py-2.5 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+                      >
+                        {checkoutLoading ? "Attendere..." : "Procedi al pagamento"}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div className="flex flex-col gap-3 pt-2">
-                  {/* TODO(Track B2): sostituire questi 2 link con il vero checkout
-                      Stripe per il piano selezionato, non appena disponibile.
-                      Nel frattempo restano le CTA email/WhatsApp esistenti. */}
-                  <a
-                    href="mailto:albertochioda@gmail.com?subject=Upgrade Job SSB"
-                    className="inline-flex items-center justify-center rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
+                {!checkoutTier && (
+                  <button
+                    onClick={() => setTrialStep("feedback")}
+                    className="text-xs text-muted-foreground hover:text-foreground underline"
                   >
-                    Contatta Alberto
-                  </a>
-                  <a
-                    href="https://wa.me/393332854256"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center rounded-lg border px-5 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
-                  >
-                    Scrivi su WhatsApp
-                  </a>
-                </div>
-
-                <button
-                  onClick={() => setTrialStep("feedback")}
-                  className="text-xs text-muted-foreground hover:text-foreground underline"
-                >
-                  Non intendo proseguire
-                </button>
+                    Non intendo proseguire
+                  </button>
+                )}
               </>
             )}
 
