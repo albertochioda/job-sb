@@ -192,7 +192,11 @@ export async function POST(request: NextRequest) {
     // Errore genuinamente riprovabile (DB temporaneamente giù, chiamata
     // Stripe fallita, ecc.) — 500 fa sì che Stripe ritenti automaticamente.
     console.error(`[stripe-webhook] errore processing ${event.type}:`, err);
-    return NextResponse.json({ error: "processing failed" }, { status: 500 });
+    // DEBUG TEMPORANEO: espone il messaggio di errore reale nella risposta
+    // per diagnosticare il 500 senza accesso ai log Vercel. Da rimuovere
+    // dopo la diagnosi (non è prassi esporre dettagli interni in produzione).
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: "processing failed", debug: message }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });
