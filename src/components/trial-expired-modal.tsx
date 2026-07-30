@@ -34,12 +34,16 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
   const [checkoutConsent, setCheckoutConsent] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState("");
 
-  // Check iniziale al mount per trial_expired — stesso comportamento di prima,
+  // Check iniziale al mount — stesso comportamento di prima per trial_expired,
   // ma ora passa lo stato attraverso il context invece che come stato locale
   // isolato. NON TOCCARE: data?.tier === "trial" è l'unica condizione che
-  // decide se mostrare il modale — i beta tester hanno tier='professional'
+  // decide se mostrare quel modale — i beta tester hanno tier='professional'
   // assegnato manualmente via SQL, quindi non intercettano mai questo check.
+  // payment_failed ha priorità inferiore (else if): uno stato past_due
+  // riguarda solo utenti con abbonamento Stripe reale, mai in trial.
   useEffect(() => {
     fetch("/api/subscription")
       .then(r => r.ok ? r.json() : null)
@@ -50,6 +54,8 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
           new Date(data.period_end) < new Date()
         ) {
           showBlockingModal("trial_expired");
+        } else if (data?.status === "past_due") {
+          showBlockingModal("payment_failed");
         }
       })
       .catch(() => {});
@@ -79,11 +85,37 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
     setCheckoutConsent(false);
     setCheckoutLoading(false);
     setCheckoutError("");
+    setPortalLoading(false);
+    setPortalError("");
   }, [reason]);
 
   if (!reason) return null;
 
   const isTrialExpired = reason === "trial_expired";
+  const isPaymentFailed = reason === "payment_failed";
+
+  const openBillingPortal = async () => {
+    if (portalLoading) return;
+    setPortalLoading(true);
+    setPortalError("");
+    try {
+      const res = await fetch("/api/billing/portal-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale }),
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setPortalError(data.error ?? "Errore nell'apertura del portale di fatturazione");
+        setPortalLoading(false);
+      }
+    } catch {
+      setPortalError("Errore di rete, riprova");
+      setPortalLoading(false);
+    }
+  };
 
   const submitCancellationFeedback = async () => {
     if (!selectedReason || submitting) return;
@@ -324,6 +356,45 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
                 </p>
               </div>
             )}
+          </>
+        ) : isPaymentFailed ? (
+          <>
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold">Pagamento non riuscito</h2>
+              <p className="text-sm text-muted-foreground">
+                L&apos;ultimo addebito del tuo abbonamento non è andato a buon fine. Stripe ritenterà
+                automaticamente il pagamento nei prossimi giorni: nel frattempo il tuo accesso resta attivo,
+                nessuna azione è strettamente necessaria. Per evitare interruzioni, ti consigliamo comunque di
+                aggiornare il metodo di pagamento il prima possibile.
+              </p>
+            </div>
+
+            {portalError && <p className="text-xs text-destructive">{portalError}</p>}
+
+            <div className="flex flex-col gap-3 pt-2">
+              <button
+                type="button"
+                onClick={openBillingPortal}
+                disabled={portalLoading}
+                className="inline-flex items-center justify-center rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                {portalLoading ? "Attendere..." : "Aggiorna metodo di pagamento"}
+              </button>
+              <a
+                href="mailto:albertochioda@gmail.com?subject=Problema pagamento Job SB"
+                className="inline-flex items-center justify-center rounded-lg border px-5 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+              >
+                Contatta Alberto
+              </a>
+              <a
+                href="https://wa.me/393332854256"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center rounded-lg border px-5 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+              >
+                Scrivi su WhatsApp
+              </a>
+            </div>
           </>
         ) : (
           <>

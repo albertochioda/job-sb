@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
-export type BlockingReason = "trial_expired" | "limit_reached";
+export type BlockingReason = "trial_expired" | "limit_reached" | "payment_failed";
 
 export interface BlockingModalDetails {
   resource?: string;
