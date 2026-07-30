@@ -3,17 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { useBlockingModal } from "@/contexts/blocking-modal-context";
-
-const CANCELLATION_REASONS = [
-  "🎉 Ho trovato lavoro",
-  "Non riesco a ottenere colloqui nonostante le candidature",
-  "Non trovo abbastanza offerte rilevanti per il mio profilo",
-  "Il prezzo non è adatto a me al momento",
-  "Non ho più tempo per la ricerca attiva ora",
-  "Preferisco proseguire senza uno strumento come questo",
-  "Ho avuto problemi tecnici con la piattaforma",
-  "Altro",
-];
+import { CANCELLATION_REASONS } from "@/lib/cancellation-reasons";
 
 type TrialStep = "info" | "feedback" | "thanks";
 type Tier = "individual" | "professional";

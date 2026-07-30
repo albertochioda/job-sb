@@ -8,6 +8,7 @@ import CvUploadSection from "@/components/profile/cv-upload-section";
 import PhotoUploadSection from "@/components/profile/photo-upload-section";
 import CoverLetterSettingsForm from "@/components/profile/cover-letter-settings-form";
 import MarketingConsentToggle from "@/components/profile/marketing-consent-toggle";
+import SubscriptionBillingSection from "@/components/profile/subscription-billing-section";
 import Link from "next/link";
 
 export default async function ProfilePage({
@@ -31,7 +32,7 @@ export default async function ProfilePage({
 
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("tier, runs_used, cvs_adapted_used")
+    .select("tier, runs_used, cvs_adapted_used, stripe_customer_id, stripe_subscription_id, cancel_at_period_end, period_end")
     .eq("user_id", user.id)
     .single();
 
@@ -107,6 +108,13 @@ export default async function ProfilePage({
           </div>
         </div>
       </div>
+      <SubscriptionBillingSection
+        locale={locale}
+        stripeCustomerId={subscription?.stripe_customer_id ?? null}
+        stripeSubscriptionId={subscription?.stripe_subscription_id ?? null}
+        initialCancelAtPeriodEnd={subscription?.cancel_at_period_end ?? false}
+        periodEnd={subscription?.period_end ?? null}
+      />
       <PhotoUploadSection currentPhotoUrl={photoPreviewUrl} />
       <CvUploadSection currentCv={activeCv ?? null} />
       {searchConfig && <SearchConfigForm config={searchConfig} />}

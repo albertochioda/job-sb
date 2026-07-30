@@ -153,7 +153,10 @@ export async function POST(request: NextRequest) {
         const stripeSub = await stripe.subscriptions.retrieve(subEvent.id);
         const tier = stripeSub.items.data[0]?.price?.metadata?.job_sb_tier;
 
-        const updatePayload: Record<string, unknown> = { status: stripeSub.status };
+        const updatePayload: Record<string, unknown> = {
+          status: stripeSub.status,
+          cancel_at_period_end: stripeSub.cancel_at_period_end,
+        };
         if (tier) updatePayload.tier = tier;
 
         const { error } = await supabase
@@ -174,6 +177,7 @@ export async function POST(request: NextRequest) {
             tier: "trial",
             status: "canceled",
             stripe_subscription_id: null,
+            cancel_at_period_end: false,
             // stripe_customer_id NON viene azzerato: il Customer Stripe
             // resta valido e riutilizzabile se l'utente si riabbona.
           })
