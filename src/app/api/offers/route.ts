@@ -35,11 +35,21 @@ export async function GET() {
 
   if (!scored || scored.length === 0) return NextResponse.json({ offers: [] });
 
+  // Ordinamento a due livelli: prima la fascia di merito (Alta/Media/Bassa,
+  // stessa mappatura flag→label di search-panel.tsx), poi il composite_score
+  // dentro ciascuna fascia — così un'offerta nuova emerge rispetto alle altre
+  // della sua fascia, ma non scavalca mai una fascia superiore.
+  const FLAG_RANK: Record<string, number> = { green: 0, yellow: 1, red: 2 };
+
   const withComposite = scored.map((o: any) => ({
     ...o,
     composite_score: (o.score_final ?? 0) + (o.is_new ? 1.0 : 0),
   }));
-  withComposite.sort((a, b) => b.composite_score - a.composite_score);
+  withComposite.sort((a, b) => {
+    const rankDiff = (FLAG_RANK[a.flag] ?? 99) - (FLAG_RANK[b.flag] ?? 99);
+    if (rankDiff !== 0) return rankDiff;
+    return b.composite_score - a.composite_score;
+  });
   const top = withComposite.slice(0, 200);
 
   const offerIds = top.map((o: any) => o.offer_id);
