@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const showHidden = new URL(request.url).searchParams.get("hidden") === "true";
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,16 +25,34 @@ export async function GET() {
   // applicazione. Scelto invece di una colonna GENERATED su Supabase per non
   // aggiungere un'altra migrazione manuale da eseguire fuori da git — questo
   // fix è autosufficiente e deployabile subito.
+  // hidden_by_user: le offerte nascoste dall'utente restano in DB (mai
+  // eliminate) ma escluse dalla vista principale, salvo richiesta esplicita
+  // della vista "nascoste" (?hidden=true).
   const { data: scored } = await supabase
     .from("scored_offers")
-    .select("id, score_final, flag, motivo, offer_id, is_new, cv_id")
+    .select("id, score_final, flag, motivo, offer_id, is_new, cv_id, hidden_by_user")
     .eq("user_id", user.id)
+    .eq("hidden_by_user", showHidden)
     .neq("flag", "geo_skip")
     .neq("flag", "scoring_failed")
     .order("score_final", { ascending: false })
     .limit(500);
 
-  if (!scored || scored.length === 0) return NextResponse.json({ offers: [] });
+  // Conteggio nascoste, solo nella vista principale — usato per il badge
+  // "Mostra nascoste (N)" senza dover richiedere l'intera lista.
+  let hiddenCount = 0;
+  if (!showHidden) {
+    const { count } = await supabase
+      .from("scored_offers")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("hidden_by_user", true)
+      .neq("flag", "geo_skip")
+      .neq("flag", "scoring_failed");
+    hiddenCount = count ?? 0;
+  }
+
+  if (!scored || scored.length === 0) return NextResponse.json({ offers: [], hidden_count: hiddenCount });
 
   // Ordinamento a due livelli: prima la fascia di merito (Alta/Media/Bassa,
   // stessa mappatura flag→label di search-panel.tsx), poi il composite_score
@@ -68,8 +87,9 @@ export async function GET() {
     flag: o.flag,
     motivo: o.motivo,
     is_new: o.is_new,
+    hidden_by_user: o.hidden_by_user,
     ...jobMap[o.offer_id],
   }));
 
-  return NextResponse.json({ offers: flat });
+  return NextResponse.json({ offers: flat, hidden_count: hiddenCount });
 }

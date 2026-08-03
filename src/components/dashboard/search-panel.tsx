@@ -22,6 +22,7 @@ interface ScoredOffer {
   cv_id?: string;
   offer_id?: string;
   published_at?: string | null;
+  hidden_by_user?: boolean;
 }
 
 function timeAgo(date: string): string {
@@ -64,6 +65,10 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
   const [savingAppIds, setSavingAppIds] = useState<Set<string>>(new Set());
   const [selectedTemplate, setSelectedTemplate] = useState<string>("professional");
   const [userTier, setUserTier] = useState<string>("professional");
+  const [usage, setUsage] = useState<{
+    runs_used: number; cvs_adapted_used: number;
+    limits: { runs_per_month: number; cvs_per_month: number } | null;
+  } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deletingOffers, setDeletingOffers] = useState(false);
@@ -73,14 +78,48 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
   const [downloadingLetterIds, setDownloadingLetterIds] = useState<Set<string>>(new Set());
   const [hasCoverLetterSettings, setHasCoverLetterSettings] = useState<boolean | null>(null);
   const [calibrationOfferId, setCalibrationOfferId] = useState<string | null>(null);
+  const [viewingHidden, setViewingHidden] = useState(false);
+  const [hiddenCount, setHiddenCount] = useState(0);
+  const [hidingIds, setHidingIds] = useState<Set<string>>(new Set());
 
-  const fetchOffers = useCallback(async () => {
-    const res = await fetch("/api/offers");
+  const fetchOffers = useCallback(async (hidden = false) => {
+    const res = await fetch(`/api/offers${hidden ? "?hidden=true" : ""}`);
     if (res.ok) {
       const data = await res.json();
       setOffers(data.offers ?? []);
+      if (typeof data.hidden_count === "number") setHiddenCount(data.hidden_count);
     }
   }, []);
+
+  const setOfferHidden = async (offerId: string, hidden: boolean) => {
+    if (hidingIds.has(offerId)) return;
+    setHidingIds(prev => new Set([...prev, offerId]));
+    try {
+      const res = await fetch(`/api/offers/${offerId}/hide`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hidden }),
+      });
+      if (res.ok) {
+        // L'offerta esce dalla vista corrente (nascosta dalla vista principale,
+        // o ripristinata dalla vista "nascoste") — la rimuoviamo localmente
+        // invece di ricaricare tutto.
+        setOffers(prev => prev.filter(o => o.offer_id !== offerId));
+        setHiddenCount(prev => Math.max(0, hidden ? prev + 1 : prev - 1));
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? "Errore aggiornamento offerta");
+      }
+    } finally {
+      setHidingIds(prev => { const s = new Set(prev); s.delete(offerId); return s; });
+    }
+  };
+
+  const toggleHiddenView = () => {
+    const next = !viewingHidden;
+    setViewingHidden(next);
+    fetchOffers(next);
+  };
 
   // Ricarica offerte quando il context segnala completamento
   const prevIsSearching = useRef(false);
@@ -95,13 +134,20 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
     fetchOffers();
   }, [fetchOffers]);
 
-  // Carica tier utente
+  // Carica tier utente + contatori di utilizzo
   useEffect(() => {
     fetch("/api/subscription").then(r => r.ok ? r.json() : null).then(data => {
       if (data?.tier) {
         setUserTier(data.tier);
         // individual vede solo minimal_smart
         if (data.tier === "individual") setSelectedTemplate("minimal_smart");
+      }
+      if (data) {
+        setUsage({
+          runs_used: data.runs_used ?? 0,
+          cvs_adapted_used: data.cvs_adapted_used ?? 0,
+          limits: data.limits ?? null,
+        });
       }
     });
   }, []);
@@ -375,7 +421,20 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {offers.length > 0 && (
+          {usage?.limits && (
+            <span className="text-xs text-muted-foreground tabular-nums hidden sm:inline">
+              {usage.runs_used}/{usage.limits.runs_per_month} ricerche · {usage.cvs_adapted_used}/{usage.limits.cvs_per_month} CV
+            </span>
+          )}
+          {(hiddenCount > 0 || viewingHidden) && (
+            <button
+              onClick={toggleHiddenView}
+              className="text-xs text-muted-foreground hover:text-foreground px-3 py-2"
+            >
+              {viewingHidden ? "← Torna alle offerte" : `Mostra nascoste (${hiddenCount})`}
+            </button>
+          )}
+          {!viewingHidden && offers.length > 0 && (
             <button
               onClick={deleteAllOffers}
               disabled={deletingOffers}
@@ -591,6 +650,15 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                       </button>
                     )}
                     {offer.offer_id && (
+                      <button
+                        onClick={() => setOfferHidden(offer.offer_id!, !viewingHidden)}
+                        disabled={hidingIds.has(offer.offer_id)}
+                        className="text-xs text-muted-foreground hover:text-foreground font-medium disabled:opacity-50"
+                      >
+                        {hidingIds.has(offer.offer_id) ? "..." : viewingHidden ? "Ripristina" : "Nascondi"}
+                      </button>
+                    )}
+                    {offer.offer_id && (
                       <div className="flex flex-col items-start gap-0.5">
                         <button
                           onClick={() => adaptCv(offer.offer_id!)}
@@ -670,6 +738,10 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                 )}
               </div>
             ))}
+        </div>
+      ) : offers.length === 0 && viewingHidden ? (
+        <div className="text-center py-16 text-muted-foreground">
+          <p className="text-lg">Nessuna offerta nascosta.</p>
         </div>
       ) : offers.length === 0 && !isSearching && !completedData ? (
         <div className="text-center py-16 text-muted-foreground">

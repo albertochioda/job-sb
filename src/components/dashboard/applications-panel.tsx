@@ -66,6 +66,28 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
   const [downloadingLetterIds, setDownloadingLetterIds] = useState<Set<string>>(new Set());
   const [hasCoverLetterSettings, setHasCoverLetterSettings] = useState<boolean | null>(null);
   const [calibrationAppId, setCalibrationAppId] = useState<string | null>(null);
+  const [hidingIds, setHidingIds] = useState<Set<string>>(new Set());
+  const [hiddenOfferIds, setHiddenOfferIds] = useState<Set<string>>(new Set());
+
+  const hideOffer = async (app: Application) => {
+    if (hidingIds.has(app.id) || hiddenOfferIds.has(app.offer_id)) return;
+    setHidingIds(prev => new Set([...prev, app.id]));
+    try {
+      const res = await fetch(`/api/offers/${app.offer_id}/hide`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hidden: true }),
+      });
+      if (res.ok) {
+        setHiddenOfferIds(prev => new Set([...prev, app.offer_id]));
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? "Errore nell'aggiornamento dell'offerta");
+      }
+    } finally {
+      setHidingIds(prev => { const s = new Set(prev); s.delete(app.id); return s; });
+    }
+  };
 
   useEffect(() => {
     fetch("/api/subscription").then(r => r.ok ? r.json() : null).then(data => {
@@ -302,6 +324,13 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
                       Apri →
                     </a>
                   )}
+                  <button
+                    onClick={() => hideOffer(app)}
+                    disabled={hidingIds.has(app.id) || hiddenOfferIds.has(app.offer_id)}
+                    className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
+                  >
+                    {hiddenOfferIds.has(app.offer_id) ? "✓ Nascosta" : hidingIds.has(app.id) ? "..." : "Nascondi"}
+                  </button>
                   <button
                     onClick={() => deleteApplication(app.id)}
                     disabled={deletingId === app.id}

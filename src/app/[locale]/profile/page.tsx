@@ -9,6 +9,7 @@ import PhotoUploadSection from "@/components/profile/photo-upload-section";
 import CoverLetterSettingsForm from "@/components/profile/cover-letter-settings-form";
 import MarketingConsentToggle from "@/components/profile/marketing-consent-toggle";
 import SubscriptionBillingSection from "@/components/profile/subscription-billing-section";
+import { getTierLimits } from "@/lib/usage-limits";
 import Link from "next/link";
 
 export default async function ProfilePage({
@@ -32,9 +33,11 @@ export default async function ProfilePage({
 
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("tier, runs_used, cvs_adapted_used, stripe_customer_id, stripe_subscription_id, cancel_at_period_end, period_end")
+    .select("tier, runs_used, cvs_adapted_used, cover_letters_used, stripe_customer_id, stripe_subscription_id, cancel_at_period_end, period_end")
     .eq("user_id", user.id)
     .single();
+
+  const tierLimits = await getTierLimits(supabase, subscription?.tier);
 
   const { data: searchConfig } = await supabase
     .from("search_configs")
@@ -100,11 +103,24 @@ export default async function ProfilePage({
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Run usati</span>
-            <span>{subscription?.runs_used ?? 0}</span>
+            <span>
+              {subscription?.runs_used ?? 0}
+              {tierLimits && ` / ${tierLimits.runs_per_month}`}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">CV adattati</span>
-            <span>{subscription?.cvs_adapted_used ?? 0}</span>
+            <span>
+              {subscription?.cvs_adapted_used ?? 0}
+              {tierLimits && ` / ${tierLimits.cvs_per_month}`}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Lettere generate</span>
+            <span>
+              {subscription?.cover_letters_used ?? 0}
+              {tierLimits && ` / ${tierLimits.cover_letters_per_month}`}
+            </span>
           </div>
         </div>
       </div>
