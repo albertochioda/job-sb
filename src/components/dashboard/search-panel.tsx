@@ -590,7 +590,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                         {savedIds.has(offer.offer_id) ? "✓ Salvata" : savingAppIds.has(offer.offer_id) ? "..." : "Salva"}
                       </button>
                     )}
-                    {offer.flag === "green" && offer.offer_id && (
+                    {offer.offer_id && (
                       <div className="flex flex-col items-start gap-0.5">
                         <button
                           onClick={() => adaptCv(offer.offer_id!)}
@@ -611,7 +611,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
                         )}
                       </div>
                     )}
-                    {offer.flag === "green" && offer.offer_id && (
+                    {offer.offer_id && (
                       <button
                         onClick={() => generateCoverLetter(offer.offer_id!)}
                         disabled={generatingLetterIds.has(offer.offer_id)}
