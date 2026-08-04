@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   // della vista "nascoste" (?hidden=true).
   const { data: scored } = await supabase
     .from("scored_offers")
-    .select("id, score_final, flag, motivo, offer_id, is_new, cv_id, hidden_by_user")
+    .select("id, score_a, score_b, score_final, flag, motivo, offer_id, is_new, cv_id, hidden_by_user")
     .eq("user_id", user.id)
     .eq("hidden_by_user", showHidden)
     .neq("flag", "geo_skip")
@@ -83,6 +83,8 @@ export async function GET(request: NextRequest) {
     id: o.id,
     offer_id: o.offer_id,
     cv_id: o.cv_id,
+    score_a: o.score_a,
+    score_b: o.score_b,
     score_final: o.score_final,
     flag: o.flag,
     motivo: o.motivo,
