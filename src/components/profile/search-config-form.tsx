@@ -14,6 +14,8 @@ interface SearchConfig {
   radius_km: number;
   min_salary: number;
   work_mode?: string;
+  work_schedule?: string;
+  contract_types?: string[] | null;
   roles: string[];
 }
 
@@ -33,6 +35,8 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
     if (!v || v === "nessuna_preferenza") return [];
     return v.split(",").map(s => s.trim()).filter(Boolean);
   });
+  const [workSchedule, setWorkSchedule] = useState(config.work_schedule ?? "nessuna_preferenza");
+  const [contractTypes, setContractTypes] = useState<string[]>(config.contract_types ?? []);
   const [rolesText, setRolesText] = useState((config.roles ?? []).join("\n"));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -82,7 +86,13 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
     const res = await fetch("/api/search-config", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ city, country, geo_id: geoId, radius_km: radius, min_salary: minSalary, work_mode: workModes.length ? workModes.join(",") : "nessuna_preferenza", roles }),
+      body: JSON.stringify({
+        city, country, geo_id: geoId, radius_km: radius, min_salary: minSalary,
+        work_mode: workModes.length ? workModes.join(",") : "nessuna_preferenza",
+        work_schedule: workSchedule,
+        contract_types: contractTypes.length ? contractTypes : null,
+        roles,
+      }),
     });
     setSaving(false);
     if (res.ok) {
@@ -179,6 +189,46 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
             ))}
             {workModes.length === 0 && (
               <span className="text-xs text-muted-foreground self-center">Nessuna preferenza (tutte)</span>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-muted-foreground">Regime orario</label>
+          <div className="flex flex-wrap gap-3 pt-1">
+            {[["nessuna_preferenza", "Nessuna preferenza"], ["tempo_pieno", "Tempo pieno"], ["part_time", "Part-time"]].map(([val, label]) => (
+              <label key={val} className="flex items-center gap-2 cursor-pointer text-sm">
+                <input
+                  type="radio"
+                  name="work_schedule_settings"
+                  checked={workSchedule === val}
+                  onChange={() => setWorkSchedule(val)}
+                  className="accent-primary"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-muted-foreground">Tipologia contrattuale</label>
+          <div className="flex flex-wrap gap-3 pt-1">
+            {[["indeterminato", "Indeterminato"], ["determinato", "Determinato"], ["apprendistato", "Apprendistato"], ["somministrazione", "Somministrazione"], ["altro", "Altro"]].map(([val, label]) => (
+              <label key={val} className="flex items-center gap-2 cursor-pointer text-sm">
+                <input
+                  type="checkbox"
+                  checked={contractTypes.includes(val)}
+                  onChange={e => setContractTypes(prev =>
+                    e.target.checked ? [...prev, val] : prev.filter(c => c !== val)
+                  )}
+                  className="rounded border-border accent-primary"
+                />
+                {label}
+              </label>
+            ))}
+            {contractTypes.length === 0 && (
+              <span className="text-xs text-muted-foreground self-center">Nessuna preferenza (tutti)</span>
             )}
           </div>
         </div>

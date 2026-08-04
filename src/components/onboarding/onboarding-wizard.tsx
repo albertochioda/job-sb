@@ -20,6 +20,8 @@ export default function OnboardingWizard({ locale }: Props) {
   const [radiusKm, setRadiusKm] = useState(50);
   const [minSalary, setMinSalary] = useState("");
   const [workModes, setWorkModes] = useState<string[]>([]);
+  const [workSchedule, setWorkSchedule] = useState<string>("nessuna_preferenza");
+  const [contractTypes, setContractTypes] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -87,7 +89,13 @@ export default function OnboardingWizard({ locale }: Props) {
     const res = await fetch("/api/search-config", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cv_id: cvId, roles, city, country, radius_km: radiusKm, min_salary: minSalary ? parseInt(minSalary) : null, work_mode: workModes.length ? workModes.join(",") : "nessuna_preferenza" }),
+      body: JSON.stringify({
+        cv_id: cvId, roles, city, country, radius_km: radiusKm,
+        min_salary: minSalary ? parseInt(minSalary) : null,
+        work_mode: workModes.length ? workModes.join(",") : "nessuna_preferenza",
+        work_schedule: workSchedule,
+        contract_types: contractTypes.length ? contractTypes : null,
+      }),
     });
     setSaving(false);
     if (res.ok) router.push(`/${locale}/dashboard`);
@@ -320,6 +328,44 @@ export default function OnboardingWizard({ locale }: Props) {
                 ))}
                 {workModes.length === 0 && (
                   <span className="text-xs text-muted-foreground self-center">Nessuna preferenza (tutte)</span>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Regime orario</label>
+              <div className="flex flex-wrap gap-3">
+                {[["nessuna_preferenza", "Nessuna preferenza"], ["tempo_pieno", "Tempo pieno"], ["part_time", "Part-time"]].map(([val, label]) => (
+                  <label key={val} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <input
+                      type="radio"
+                      name="work_schedule"
+                      checked={workSchedule === val}
+                      onChange={() => setWorkSchedule(val)}
+                      className="accent-primary"
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tipologia contrattuale</label>
+              <div className="flex flex-wrap gap-3">
+                {[["indeterminato", "Indeterminato"], ["determinato", "Determinato"], ["apprendistato", "Apprendistato"], ["somministrazione", "Somministrazione"], ["altro", "Altro"]].map(([val, label]) => (
+                  <label key={val} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <input
+                      type="checkbox"
+                      checked={contractTypes.includes(val)}
+                      onChange={e => setContractTypes(prev =>
+                        e.target.checked ? [...prev, val] : prev.filter(c => c !== val)
+                      )}
+                      className="rounded border-border accent-primary"
+                    />
+                    {label}
+                  </label>
+                ))}
+                {contractTypes.length === 0 && (
+                  <span className="text-xs text-muted-foreground self-center">Nessuna preferenza (tutti)</span>
                 )}
               </div>
             </div>

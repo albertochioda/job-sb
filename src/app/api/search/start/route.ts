@@ -88,6 +88,8 @@ export async function POST() {
       radius_km: config.radius_km ?? 50,
       min_salary: config.min_salary ?? 0,
       work_mode: (config as { work_mode?: string }).work_mode ?? "nessuna_preferenza",
+      work_schedule: (config as { work_schedule?: string }).work_schedule ?? "nessuna_preferenza",
+      contract_types: (config as { contract_types?: string[] }).contract_types ?? [],
       languages: config.languages ?? ["it"],
     },
     cv_text: cv.extracted_text ?? "",
