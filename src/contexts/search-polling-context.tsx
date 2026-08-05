@@ -6,7 +6,7 @@ interface SearchPollingContextType {
   initialized: boolean;
   isSearching: boolean;
   progress: number;
-  completedData: { newOffers: number } | null;
+  completedData: { newOffers: number; matchedOffers: number } | null;
   dismissCompleted: () => void;
   startPolling: (searchId: string, rolesCount: number) => void;
   cancelSearch: () => Promise<void>;
@@ -18,7 +18,7 @@ export function SearchPollingProvider({ children }: { children: React.ReactNode 
   const [initialized, setInitialized] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [completedData, setCompletedData] = useState<{ newOffers: number } | null>(null);
+  const [completedData, setCompletedData] = useState<{ newOffers: number; matchedOffers: number } | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentSearchIdRef = useRef<string | null>(null);
 
@@ -58,11 +58,28 @@ export function SearchPollingProvider({ children }: { children: React.ReactNode 
           if (data.status === "completed") {
             const total = data.total ?? 0;
             setProgress(100);
-            setCompletedData({ newOffers: total });
+
+            // Il conteggio del pool rilevante (esclude geo_skip/scoring_failed)
+            // non è nello status Redis/searches — stesso filtro esatto usato da
+            // /api/offers per "N offerte" nel pannello, recuperato qui una sola
+            // volta così sia il banner globale sia il pannello leggono lo stesso
+            // numero dal context invece di duplicare la fetch.
+            let matchedOffers = 0;
+            try {
+              const offersRes = await fetch("/api/offers");
+              if (offersRes.ok) {
+                const offersData = await offersRes.json();
+                matchedOffers = offersData.total_count ?? 0;
+              }
+            } catch {
+              // ignora — il banner mostrerà comunque il totale grezzo
+            }
+
+            setCompletedData({ newOffers: total, matchedOffers });
 
             if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
               new Notification("Job SB", {
-                body: `Ricerca completata! Trovate ${total} offerte.`,
+                body: `${total} offerte analizzate, ${matchedOffers} in linea con la tua esperienza e i tuoi criteri di ricerca.`,
               });
             }
           }

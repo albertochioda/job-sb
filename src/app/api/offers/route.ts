@@ -52,7 +52,18 @@ export async function GET(request: NextRequest) {
     hiddenCount = count ?? 0;
   }
 
-  if (!scored || scored.length === 0) return NextResponse.json({ offers: [], hidden_count: hiddenCount });
+  // Conteggio esatto del pool rilevante (stesso filtro della select sopra,
+  // ma senza il cap a 200 righe) — usato per il messaggio "N in linea con
+  // il tuo profilo" a fine ricerca, dove serve il totale reale non troncato.
+  const { count: totalCount } = await supabase
+    .from("scored_offers")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("hidden_by_user", showHidden)
+    .neq("flag", "geo_skip")
+    .neq("flag", "scoring_failed");
+
+  if (!scored || scored.length === 0) return NextResponse.json({ offers: [], hidden_count: hiddenCount, total_count: totalCount ?? 0 });
 
   // Ordinamento a due livelli: prima la fascia di merito (Alta/Media/Bassa,
   // stessa mappatura flag→label di search-panel.tsx), poi il composite_score
@@ -93,5 +104,5 @@ export async function GET(request: NextRequest) {
     ...jobMap[o.offer_id],
   }));
 
-  return NextResponse.json({ offers: flat, hidden_count: hiddenCount });
+  return NextResponse.json({ offers: flat, hidden_count: hiddenCount, total_count: totalCount ?? 0 });
 }

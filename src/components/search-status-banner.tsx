@@ -10,7 +10,7 @@ export default function SearchStatusBanner() {
   if (completedData) {
     return (
       <div className="w-full bg-green-600 text-white text-sm px-4 py-2 flex items-center justify-between">
-        <span>Ricerca completata! Trovate {completedData.newOffers} offerte.</span>
+        <span>{completedData.newOffers} offerte analizzate, {completedData.matchedOffers} in linea con la tua esperienza e i tuoi criteri di ricerca.</span>
         <div className="flex items-center gap-4 shrink-0">
           <button
             onClick={() => { dismissCompleted(); router.push("/it/dashboard"); router.refresh(); }}

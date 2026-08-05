@@ -413,7 +413,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
   return (
     <div className="space-y-6">
       {/* Header + avvia */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold">Offerte trovate</h2>
           {offers.length > 0 && (
@@ -422,7 +422,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
             </p>
           )}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2">
           {usage?.limits && (
             <span className="text-xs text-muted-foreground tabular-nums hidden sm:inline">
               {usage.runs_used}/{usage.limits.runs_per_month} ricerche · {usage.cvs_adapted_used}/{usage.limits.cvs_per_month} CV
@@ -492,7 +492,7 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
 
       {completedData && (
         <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-4 py-2">
-          Ricerca completata! Trovate {completedData.newOffers} offerte.
+          {completedData.newOffers} offerte analizzate, {completedData.matchedOffers} in linea con la tua esperienza e i tuoi criteri di ricerca.
         </div>
       )}
 
