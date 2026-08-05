@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSearchPolling } from "@/contexts/search-polling-context";
@@ -49,7 +50,7 @@ const FLAG_LABELS = {
   red: "Bassa",
 };
 
-export default function SearchPanel({ locale: _locale }: { locale: string }) {
+export default function SearchPanel({ locale }: { locale: string }) {
   const t = useTranslations("dashboard");
   const { initialized, isSearching, progress, completedData, startPolling, cancelSearch } = useSearchPolling();
   const { showBlockingModal } = useBlockingModal();
@@ -412,6 +413,22 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
 
   return (
     <div className="space-y-6">
+      {/* Contatori di utilizzo — subito sotto il saluto/sottotitolo della dashboard */}
+      {usage?.limits && (
+        <div>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {usage.runs_used}/{usage.limits.runs_per_month} ricerche · {usage.cvs_adapted_used}/{usage.limits.cvs_per_month} CV
+          </span>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            I totali completi sono visibili anche nella sezione{" "}
+            <Link href={`/${locale}/profile`} className="underline hover:text-foreground">
+              Profilo
+            </Link>
+            .
+          </p>
+        </div>
+      )}
+
       {/* Header + avvia */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -423,11 +440,6 @@ export default function SearchPanel({ locale: _locale }: { locale: string }) {
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {usage?.limits && (
-            <span className="text-xs text-muted-foreground tabular-nums hidden sm:inline">
-              {usage.runs_used}/{usage.limits.runs_per_month} ricerche · {usage.cvs_adapted_used}/{usage.limits.cvs_per_month} CV
-            </span>
-          )}
           {(hiddenCount > 0 || viewingHidden) && (
             <button
               onClick={toggleHiddenView}
