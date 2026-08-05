@@ -34,12 +34,7 @@ export default function TerminiDiServizio() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">4. Periodo di Prova Gratuita (Trial)</h2>
-          <p className="text-sm leading-relaxed">L'accesso nella fase beta è gratuito per un periodo di prova di 14 (quattordici) giorni dalla data di registrazione. Durante il periodo di prova, l'utente ha accesso alle funzionalità del piano Professional, inclusi:</p>
-          <ul className="text-sm leading-relaxed list-disc pl-5 space-y-1">
-            <li>20 ricerche di offerte di lavoro al mese</li>
-            <li>30 adattamenti del curriculum vitae al mese</li>
-            <li>Accesso a tutti i template CV disponibili</li>
-          </ul>
+          <p className="text-sm leading-relaxed">L'accesso nella fase beta è gratuito per un periodo di prova di 14 (quattordici) giorni dalla data di registrazione. Durante il periodo di prova, l'utente ha accesso a: 3 ricerche di offerte di lavoro, 5 adattamenti del curriculum vitae, 5 lettere di motivazione generate dall'intelligenza artificiale, e a tutti i template CV disponibili.</p>
           <p className="text-sm leading-relaxed">Al termine del periodo di prova, l'Utente può sottoscrivere uno dei piani di abbonamento a pagamento disponibili per continuare ad accedere al Servizio, secondo le modalità descritte all'Art. 5 e seguenti. In assenza di sottoscrizione, l'accesso alle funzionalità a pagamento viene sospeso alla scadenza del periodo di prova. Il Titolare si riserva il diritto di modificare i limiti del piano trial in qualsiasi momento durante la fase beta.</p>
         </section>
 
@@ -73,10 +68,15 @@ export default function TerminiDiServizio() {
           <h3 className="text-base font-semibold">7.2 Politica di rimborso di Job SB (fase attuale)</h3>
           <p className="text-sm leading-relaxed">Indipendentemente da quanto previsto per legge all'Art. 7.1, Job SB si impegna volontariamente a:</p>
           <ul className="text-sm leading-relaxed list-disc pl-5 space-y-1">
-            <li>Primo pagamento: rimborso integrale su richiesta, entro 14 giorni dalla data del primo addebito, qualunque sia il motivo, anche in caso di utilizzo del Servizio.</li>
-            <li>Rinnovi successivi: nessun rimborso automatico per periodi parziali o non utilizzati. La cancellazione evita futuri addebiti ma non dà diritto al rimborso del periodo già in corso.</li>
-            <li>Addebiti errati o non autorizzati: rimborso integrale, verificato caso per caso, contattando <a href="mailto:albertochioda@gmail.com" className="underline">albertochioda@gmail.com</a>.</li>
+            <li>La finestra di rimborso volontario di 14 (quattordici) giorni decorre dalla data di registrazione dell'account (inizio del periodo di prova), non dalla data del primo pagamento — e comprende quindi il periodo di prova già utilizzato dall'Utente prima di sottoscrivere un piano a pagamento.</li>
+            <li>Se l'Utente sottoscrive un piano a pagamento prima della scadenza del periodo di prova, la finestra di 14 giorni non riparte da zero al momento del pagamento: resta calcolata sui 14 giorni totali dalla registrazione.</li>
+            <li>Se il periodo di prova scade completamente prima che l'Utente sottoscriva un piano a pagamento (conversione tardiva, ad esempio settimane dopo la fine del trial), la finestra di 14 giorni dalla registrazione risulta già trascorsa al momento del pagamento: in questo caso non si applica alcun rimborso volontario per "cambio idea" ai sensi del presente articolo.</li>
+            <li>Rinnovi successivi al primo pagamento: nessun rimborso automatico per periodi parziali o non utilizzati. La cancellazione evita futuri addebiti ma non dà diritto al rimborso del periodo già in corso.</li>
+            <li>Addebiti errati o doppi addebiti: rimborso integrale sempre garantito, indipendentemente dalla finestra di 14 giorni sopra descritta, verificato caso per caso contattando <a href="mailto:albertochioda@gmail.com" className="underline">albertochioda@gmail.com</a>.</li>
           </ul>
+          <p className="text-sm leading-relaxed bg-yellow-50 border border-yellow-300 rounded px-3 py-2">
+            ⚠️ DA VERIFICARE CON LEGALE — Nello scenario di conversione tardiva (Utente che sottoscrive un piano a pagamento molte settimane dopo la fine del periodo di prova), questa politica commerciale volontaria lascerebbe l'Utente senza alcuna finestra di recesso sul pagamento realmente effettuato, dato che i 14 giorni dalla registrazione sono già trascorsi. Va verificato se questo è comunque compatibile con il diritto di recesso minimo previsto dalla normativa UE a tutela dei consumatori, che potrebbe applicarsi comunque a partire dal momento del pagamento (Art. 7.1) indipendentemente da questa policy commerciale interna — in tal caso l'Art. 7.1 (diritto di recesso di legge) prevarrebbe comunque su quanto sopra.
+          </p>
           <p className="text-sm leading-relaxed">Questa politica potrà essere rivista in futuro; eventuali modifiche verranno comunicate con adeguato preavviso e non si applicheranno retroattivamente ad abbonamenti già in corso al momento della modifica.</p>
         </section>
 
