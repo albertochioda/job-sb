@@ -166,6 +166,25 @@ export async function POST(request: NextRequest) {
         };
         if (tier) updatePayload.tier = tier;
 
+        // pending_tier_change (api/billing/change-plan) va ripulito solo
+        // quando il tier confermato da Stripe coincide con quello
+        // pianificato — cioè quando il cambio si è davvero concretizzato
+        // al rinnovo. Non lo svuotiamo incondizionatamente perché questo
+        // evento arriva anche per motivi non legati al cambio piano (es.
+        // toggle di cancel_at_period_end), e cancellerebbe un cambio
+        // ancora in sospeso.
+        if (tier) {
+          const { data: existing } = await supabase
+            .from("subscriptions")
+            .select("pending_tier_change")
+            .eq("stripe_subscription_id", stripeSub.id)
+            .single();
+          const pending = existing?.pending_tier_change as { tier?: string } | null;
+          if (pending?.tier === tier) {
+            updatePayload.pending_tier_change = null;
+          }
+        }
+
         const { error } = await supabase
           .from("subscriptions")
           .update(updatePayload)
@@ -185,6 +204,7 @@ export async function POST(request: NextRequest) {
             status: "canceled",
             stripe_subscription_id: null,
             cancel_at_period_end: false,
+            pending_tier_change: null,
             // stripe_customer_id NON viene azzerato: il Customer Stripe
             // resta valido e riutilizzabile se l'utente si riabbona.
           })

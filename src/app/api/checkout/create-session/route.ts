@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
+import { VALID_TIERS, VALID_CADENCES, lookupKeyFor, type Tier, type Cadence } from "@/lib/billing/plans";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-const VALID_TIERS = ["individual", "professional"] as const;
-const VALID_CADENCES = ["monthly", "quarterly", "annual"] as const;
-
-type Tier = (typeof VALID_TIERS)[number];
-type Cadence = (typeof VALID_CADENCES)[number];
 
 function randomSuffix(length = 8): string {
   const chars = "abcdefghijklmnopqrstuvwxyz";
@@ -26,7 +21,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "tier o cadence non valido" }, { status: 400 });
   }
 
-  const lookupKey = `${tier as Tier}_${cadence as Cadence}`;
+  const lookupKey = lookupKeyFor(tier as Tier, cadence as Cadence);
 
   // Recupera il Price ID via lookup_key — mai hardcoded, così il catalogo
   // (script scripts/stripe-setup-products.mjs) resta l'unica fonte di verità

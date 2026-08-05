@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import SubscriptionCancelModal from "./subscription-cancel-modal";
+import SubscriptionChangePlanModal from "./subscription-change-plan-modal";
+import { CADENCE_LABELS, type Tier, type Cadence } from "@/lib/billing/plans";
+
+type PendingTierChange = { tier: Tier; cadence: Cadence; effective_at: string } | null;
 
 export default function SubscriptionBillingSection({
   locale,
@@ -9,16 +13,22 @@ export default function SubscriptionBillingSection({
   stripeSubscriptionId,
   initialCancelAtPeriodEnd,
   periodEnd,
+  currentTier,
+  initialPendingTierChange,
 }: {
   locale: string;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   initialCancelAtPeriodEnd: boolean;
   periodEnd: string | null;
+  currentTier: Tier | "trial";
+  initialPendingTierChange: PendingTierChange;
 }) {
   const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(initialCancelAtPeriodEnd);
   const [effectivePeriodEnd, setEffectivePeriodEnd] = useState(periodEnd);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showChangePlanModal, setShowChangePlanModal] = useState(false);
+  const [pendingTierChange, setPendingTierChange] = useState<PendingTierChange>(initialPendingTierChange);
   const [showNoSubscriptionNotice, setShowNoSubscriptionNotice] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState("");
@@ -75,9 +85,25 @@ export default function SubscriptionBillingSection({
     setShowCancelModal(true);
   };
 
+  const onChangePlanClick = () => {
+    if (!stripeSubscriptionId) {
+      setShowNoSubscriptionNotice(true);
+      return;
+    }
+    setShowChangePlanModal(true);
+  };
+
   return (
     <div className="border rounded-lg p-6 space-y-4">
       <h2 className="font-semibold text-lg">Fatturazione e abbonamento</h2>
+
+      {pendingTierChange && (
+        <p className="text-sm bg-blue-50 border border-blue-200 text-blue-800 rounded-md px-4 py-3">
+          Il tuo piano cambierà a <strong className="capitalize">{pendingTierChange.tier}</strong> (
+          {CADENCE_LABELS[pendingTierChange.cadence]}) dal{" "}
+          {new Date(pendingTierChange.effective_at).toLocaleDateString("it-IT")}.
+        </p>
+      )}
 
       {stripeCustomerId && (
         <div className="flex items-center justify-between gap-4">
@@ -117,13 +143,22 @@ export default function SubscriptionBillingSection({
           </>
         ) : (
           <>
-            <button
-              type="button"
-              onClick={onCancelClick}
-              className="text-sm text-muted-foreground hover:text-destructive underline"
-            >
-              Cancella abbonamento
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={onChangePlanClick}
+                className="text-sm border rounded-md px-4 py-2 font-medium hover:bg-muted transition-colors"
+              >
+                Cambia piano
+              </button>
+              <button
+                type="button"
+                onClick={onCancelClick}
+                className="text-sm text-muted-foreground hover:text-destructive underline"
+              >
+                Cancella abbonamento
+              </button>
+            </div>
             {showNoSubscriptionNotice && (
               <p className="text-sm text-muted-foreground">
                 Per gestire il tuo abbonamento contattaci a{" "}
@@ -143,6 +178,17 @@ export default function SubscriptionBillingSection({
           onCancelled={(newPeriodEnd) => {
             setCancelAtPeriodEnd(true);
             if (newPeriodEnd) setEffectivePeriodEnd(newPeriodEnd);
+          }}
+        />
+      )}
+
+      {showChangePlanModal && (
+        <SubscriptionChangePlanModal
+          currentTier={currentTier}
+          onClose={() => setShowChangePlanModal(false)}
+          onChanged={(result) => {
+            setPendingTierChange(result);
+            setShowChangePlanModal(false);
           }}
         />
       )}

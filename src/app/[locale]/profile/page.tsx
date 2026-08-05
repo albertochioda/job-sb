@@ -33,7 +33,7 @@ export default async function ProfilePage({
 
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("tier, runs_used, cvs_adapted_used, cover_letters_used, stripe_customer_id, stripe_subscription_id, cancel_at_period_end, period_end")
+    .select("tier, runs_used, cvs_adapted_used, cover_letters_used, stripe_customer_id, stripe_subscription_id, cancel_at_period_end, period_end, pending_tier_change")
     .eq("user_id", user.id)
     .single();
 
@@ -130,6 +130,8 @@ export default async function ProfilePage({
         stripeSubscriptionId={subscription?.stripe_subscription_id ?? null}
         initialCancelAtPeriodEnd={subscription?.cancel_at_period_end ?? false}
         periodEnd={subscription?.period_end ?? null}
+        currentTier={subscription?.tier ?? "trial"}
+        initialPendingTierChange={subscription?.pending_tier_change ?? null}
       />
       <PhotoUploadSection currentPhotoUrl={photoPreviewUrl} />
       <CvUploadSection currentCv={activeCv ?? null} />

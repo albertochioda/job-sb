@@ -4,21 +4,9 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { useBlockingModal } from "@/contexts/blocking-modal-context";
 import { CANCELLATION_REASONS } from "@/lib/cancellation-reasons";
+import { PLAN_PRICES, CADENCE_LABELS, type Tier, type Cadence } from "@/lib/billing/plans";
 
 type TrialStep = "info" | "feedback" | "thanks";
-type Tier = "individual" | "professional";
-type Cadence = "monthly" | "quarterly" | "annual";
-
-const PLAN_PRICES: Record<Tier, Record<Cadence, number>> = {
-  individual: { monthly: 19, quarterly: 47, annual: 159 },
-  professional: { monthly: 29, quarterly: 75, annual: 249 },
-};
-
-const CADENCE_LABELS: Record<Cadence, string> = {
-  monthly: "Mensile",
-  quarterly: "Trimestrale",
-  annual: "Annuale",
-};
 
 export default function TrialExpiredModal({ locale }: { locale: string }) {
   const { reason, details, showBlockingModal, dismissBlockingModal } = useBlockingModal();
