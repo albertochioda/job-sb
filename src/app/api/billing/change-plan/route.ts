@@ -1,27 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
-import { VALID_TIERS, VALID_CADENCES, lookupKeyFor, type Tier, type Cadence } from "@/lib/billing/plans";
+import { VALID_TIERS, VALID_CADENCES, lookupKeyFor, isUpgrade as computeIsUpgrade, type Tier, type Cadence } from "@/lib/billing/plans";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 /**
- * Cambio piano (Individual↔Professional, o solo cadenza) per un abbonamento
- * già attivo — effetto A FINE PERIODO, non immediato, stessa logica già
- * usata per cancel_at_period_end (Art. 6 ToS): l'utente resta sul piano
- * attuale fino al rinnovo già pagato, poi il nuovo piano/prezzo parte dal
- * rinnovo successivo.
+ * Cambio piano (Individual↔Professional) per un abbonamento già attivo —
+ * asimmetrico, standard SaaS:
+ * - UPGRADE (a un tier superiore): immediato, con proration_behavior:
+ *   'create_prorations' — Stripe calcola e addebita subito la differenza
+ *   proporzionata ai giorni rimanenti del periodo corrente. Nessun
+ *   pending_tier_change: il tier in subscriptions si aggiorna súbito
+ *   tramite il webhook customer.subscription.updated (già esistente).
+ * - DOWNGRADE (a un tier inferiore): invariato rispetto al giro precedente
+ *   — effetto A FINE PERIODO via Subscription Schedule a due fasi, stessa
+ *   logica già usata per cancel_at_period_end (Art. 6 ToS). pending_tier_change
+ *   riflette il cambio programmato finché il webhook non lo conferma.
  *
- * IMPORTANTE — verificato prima di scrivere questo endpoint:
- * stripe.subscriptions.update() con un nuovo price cambia il piano SUBITO,
- * anche con proration_behavior:'none' (quel parametro evita solo l'addebito/
- * credito prorata, non rimanda il cambio nel tempo). Per un cambio che
- * decorre a fine periodo serve un Subscription Schedule con due fasi: la
- * fase corrente (prezzo attuale, fino alla fine del periodo già pagato) e
- * una seconda fase che parte esattamente lì con il nuovo prezzo — con
- * end_behavior:'release' la subscription torna a rinnovarsi autonomamente
- * col nuovo prezzo una volta completata la fase 2, senza bisogno di fasi
- * infinite.
+ * IMPORTANTE — verificato empiricamente (non solo dalla documentazione)
+ * prima di scrivere questo endpoint:
+ * - stripe.subscriptions.update() con un nuovo price e
+ *   proration_behavior:'none' cambia il piano SUBITO (quel parametro evita
+ *   solo l'addebito/credito prorata, non rimanda il cambio nel tempo) — per
+ *   questo il downgrade usa invece un Subscription Schedule.
+ * - stripe.subscriptions.update() con proration_behavior:'create_prorations'
+ *   sull'item esistente cambia il price SUBITO e genera automaticamente un
+ *   invoice item di proration, fatturato all'invoice successiva (o subito
+ *   se la subscription usa charge_automatically con fatturazione immediata
+ *   sulle modifiche) — comportamento confermato su un abbonamento reale
+ *   prima di considerarlo definitivo, vedi riepilogo del test.
  */
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -63,10 +71,59 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Il piano selezionato è già quello attivo" }, { status: 400 });
   }
 
-  let schedule: Stripe.SubscriptionSchedule;
+  const currentTier = currentItem.price.metadata?.job_sb_tier as Tier | undefined;
+  if (!currentTier || !VALID_TIERS.includes(currentTier)) {
+    return NextResponse.json({ error: "Impossibile determinare il tier attuale dal price Stripe" }, { status: 500 });
+  }
+
+  if (currentTier === newTier) {
+    // Stesso tier, cadenza diversa — esplicitamente non gestito da questa
+    // logica upgrade/downgrade: va deciso a parte se debba essere immediato
+    // con proration o pianificato a fine periodo, non va indovinato qui.
+    return NextResponse.json(
+      { error: "Cambio di sola cadenza a parità di piano non ancora supportato — contatta Alberto per questo caso." },
+      { status: 400 }
+    );
+  }
+
+  const upgrade = computeIsUpgrade(currentTier, newTier as Tier);
+
   try {
+    if (upgrade) {
+      // Se esiste uno schedule attivo (es. un downgrade pianificato in
+      // precedenza), va rilasciato prima: un upgrade immediato sovrascrive
+      // qualunque cambio programmato, e Stripe non permette di aggiornare
+      // direttamente il price di una subscription controllata da uno
+      // schedule attivo.
+      const existingScheduleId = typeof stripeSub.schedule === "string" ? stripeSub.schedule : stripeSub.schedule?.id;
+      if (existingScheduleId) {
+        await stripe.subscriptionSchedules.release(existingScheduleId);
+      }
+
+      await stripe.subscriptions.update(stripeSub.id, {
+        items: [{ id: currentItem.id, price: newPrice.id, quantity: 1 }],
+        proration_behavior: "create_prorations",
+      });
+
+      // Aggiornamento diretto oltre al webhook (stesso pattern già usato in
+      // cancel-subscription): evita che l'UI mostri uno stato stantio nella
+      // finestra prima che customer.subscription.updated arrivi. Nessun
+      // pending_tier_change per l'upgrade: è già effettivo ora.
+      const { error: updateError } = await supabase
+        .from("subscriptions")
+        .update({ tier: newTier, pending_tier_change: null })
+        .eq("user_id", user.id);
+
+      if (updateError) {
+        console.error("[change-plan] errore aggiornamento tier locale (upgrade):", updateError.message);
+      }
+
+      return NextResponse.json({ success: true, immediate: true, tier: newTier, cadence: newCadence });
+    }
+
+    // --- Downgrade: invariato, a fine periodo via Subscription Schedule ---
     const existingScheduleId = typeof stripeSub.schedule === "string" ? stripeSub.schedule : stripeSub.schedule?.id;
-    schedule = existingScheduleId
+    const schedule = existingScheduleId
       ? await stripe.subscriptionSchedules.retrieve(existingScheduleId)
       : await stripe.subscriptionSchedules.create({ from_subscription: stripeSub.id });
 
@@ -119,10 +176,10 @@ export async function POST(request: NextRequest) {
       // non blocchiamo la risposta per un errore di sola cache locale.
     }
 
-    return NextResponse.json({ success: true, tier: newTier, cadence: newCadence, effective_at: effectiveAt });
+    return NextResponse.json({ success: true, immediate: false, tier: newTier, cadence: newCadence, effective_at: effectiveAt });
   } catch (err) {
-    console.error("[change-plan] errore pianificazione cambio piano:", err);
-    const message = err instanceof Error ? err.message : "Errore nella pianificazione del cambio piano";
+    console.error("[change-plan] errore cambio piano:", err);
+    const message = err instanceof Error ? err.message : "Errore nel cambio piano";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -29,6 +29,8 @@ export default function SubscriptionBillingSection({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showChangePlanModal, setShowChangePlanModal] = useState(false);
   const [pendingTierChange, setPendingTierChange] = useState<PendingTierChange>(initialPendingTierChange);
+  const [displayedTier, setDisplayedTier] = useState<Tier | "trial">(currentTier);
+  const [immediateChangeNotice, setImmediateChangeNotice] = useState<string | null>(null);
   const [showNoSubscriptionNotice, setShowNoSubscriptionNotice] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState("");
@@ -96,6 +98,12 @@ export default function SubscriptionBillingSection({
   return (
     <div className="border rounded-lg p-6 space-y-4">
       <h2 className="font-semibold text-lg">Fatturazione e abbonamento</h2>
+
+      {immediateChangeNotice && (
+        <p className="text-sm bg-green-50 border border-green-200 text-green-800 rounded-md px-4 py-3">
+          {immediateChangeNotice}
+        </p>
+      )}
 
       {pendingTierChange && (
         <p className="text-sm bg-blue-50 border border-blue-200 text-blue-800 rounded-md px-4 py-3">
@@ -184,10 +192,18 @@ export default function SubscriptionBillingSection({
 
       {showChangePlanModal && (
         <SubscriptionChangePlanModal
-          currentTier={currentTier}
+          currentTier={displayedTier}
           onClose={() => setShowChangePlanModal(false)}
           onChanged={(result) => {
-            setPendingTierChange(result);
+            if (result.immediate) {
+              setDisplayedTier(result.tier);
+              setPendingTierChange(null);
+              setImmediateChangeNotice(
+                `Piano aggiornato a ${result.tier} (${CADENCE_LABELS[result.cadence]}) — addebito della differenza in corso.`
+              );
+            } else if (result.effective_at) {
+              setPendingTierChange({ tier: result.tier, cadence: result.cadence, effective_at: result.effective_at });
+            }
             setShowChangePlanModal(false);
           }}
         />

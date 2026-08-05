@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
-import { VALID_TIERS, VALID_CADENCES, PLAN_PRICES, CADENCE_LABELS, type Tier, type Cadence } from "@/lib/billing/plans";
+import { VALID_TIERS, VALID_CADENCES, PLAN_PRICES, CADENCE_LABELS, isUpgrade, type Tier, type Cadence } from "@/lib/billing/plans";
 
 export default function SubscriptionChangePlanModal({
   currentTier,
@@ -11,7 +11,7 @@ export default function SubscriptionChangePlanModal({
 }: {
   currentTier: Tier | "trial";
   onClose: () => void;
-  onChanged: (result: { tier: Tier; cadence: Cadence; effective_at: string }) => void;
+  onChanged: (result: { tier: Tier; cadence: Cadence; effective_at: string | null; immediate: boolean }) => void;
 }) {
   const [tier, setTier] = useState<Tier>(currentTier === "professional" ? "individual" : "professional");
   const [cadence, setCadence] = useState<Cadence>("monthly");
@@ -19,6 +19,9 @@ export default function SubscriptionChangePlanModal({
   const [error, setError] = useState("");
 
   const isSameAsCurrent = tier === currentTier; // la cadenza attuale non è nota lato client, il backend verifica comunque il price esatto
+  // currentTier può essere "trial" (mai in questo flusso, il pulsante è
+  // nascosto senza subscription reale) — il cast è sicuro qui.
+  const willBeImmediate = currentTier !== "trial" && !isSameAsCurrent && isUpgrade(currentTier, tier);
 
   const submit = async () => {
     if (submitting) return;
@@ -32,9 +35,9 @@ export default function SubscriptionChangePlanModal({
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        onChanged({ tier: data.tier, cadence: data.cadence, effective_at: data.effective_at });
+        onChanged({ tier: data.tier, cadence: data.cadence, effective_at: data.effective_at ?? null, immediate: !!data.immediate });
       } else {
-        setError(data.error ?? "Errore nella pianificazione del cambio piano");
+        setError(data.error ?? "Errore nel cambio piano");
       }
     } catch {
       setError("Errore di rete, riprova");
@@ -59,7 +62,11 @@ export default function SubscriptionChangePlanModal({
         <div className="space-y-2 text-center">
           <h2 className="text-xl font-semibold">Cambia piano</h2>
           <p className="text-sm text-muted-foreground">
-            Il nuovo piano parte dal prossimo rinnovo — resti sul piano attuale fino alla fine del periodo già pagato, nessun addebito ora.
+            {willBeImmediate ? (
+              <>Il passaggio a un piano superiore è <strong>immediato</strong>: verrà addebitata subito la differenza proporzionata ai giorni rimanenti del periodo in corso.</>
+            ) : (
+              <>Il nuovo piano parte dal prossimo rinnovo — resti sul piano attuale fino alla fine del periodo già pagato, nessun addebito ora.</>
+            )}
           </p>
         </div>
 
@@ -118,7 +125,7 @@ export default function SubscriptionChangePlanModal({
             disabled={submitting}
             className="flex-1 bg-foreground text-background text-sm py-2.5 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
-            {submitting ? "Attendere..." : "Conferma cambio piano"}
+            {submitting ? "Attendere..." : willBeImmediate ? "Aggiorna subito e addebita la differenza" : "Conferma cambio piano"}
           </button>
         </div>
       </div>

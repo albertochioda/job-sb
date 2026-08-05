@@ -25,3 +25,13 @@ export const CADENCE_LABELS: Record<Cadence, string> = {
 export function lookupKeyFor(tier: Tier, cadence: Cadence): string {
   return `${tier}_${cadence}`;
 }
+
+// Ordine di merito dei tier — usato per decidere se un cambio piano è un
+// upgrade (immediato, con proration) o un downgrade (a fine periodo).
+// Copre solo il cambio di tier, non la cadenza (vedi commento in
+// api/billing/change-plan/route.ts).
+export const TIER_RANK: Record<Tier, number> = { individual: 0, professional: 1 };
+
+export function isUpgrade(currentTier: Tier, newTier: Tier): boolean {
+  return TIER_RANK[newTier] > TIER_RANK[currentTier];
+}
