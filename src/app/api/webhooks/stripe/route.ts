@@ -118,11 +118,20 @@ export async function POST(request: NextRequest) {
         }
 
         const updatePayload: Record<string, unknown> = {
-          runs_used: 0,
-          cvs_adapted_used: 0,
-          cover_letters_used: 0,
           status: "active",
         };
+        // I contatori di utilizzo vanno azzerati SOLO su un vero rinnovo
+        // ciclico (billing_reason 'subscription_cycle') — altrimenti
+        // qualunque fattura pagata (es. la fattura ad-hoc di proration di
+        // un upgrade, billing_reason 'subscription_update') darebbe
+        // all'utente un reset gratuito dei contatori del mese in corso,
+        // non solo il vantaggio legittimo del piano superiore (scoperto
+        // testando la fatturazione immediata degli upgrade).
+        if (invoice.billing_reason === "subscription_cycle") {
+          updatePayload.runs_used = 0;
+          updatePayload.cvs_adapted_used = 0;
+          updatePayload.cover_letters_used = 0;
+        }
         if (item) {
           updatePayload.period_start = toIso(item.current_period_start);
           updatePayload.period_end = toIso(item.current_period_end);
