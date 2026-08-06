@@ -86,6 +86,14 @@ export async function POST(request: NextRequest) {
             // solo alla creazione di un nuovo abbonamento, mai ai rinnovi
             // (quelli passano da invoice.paid, che non tocca questo campo).
             first_payment_at: new Date().toISOString(),
+            // Il passaggio da trial a piano a pagamento azzera qualunque
+            // consumo del trial — resta un blocco a sé, indipendente dal
+            // nuovo abbonamento appena iniziato (non va confuso col reset
+            // condizionato a billing_reason='subscription_cycle' di
+            // invoice.paid, che riguarda solo i rinnovi successivi).
+            runs_used: 0,
+            cvs_adapted_used: 0,
+            cover_letters_used: 0,
           })
           .eq("user_id", userId)
           .select("user_id");
