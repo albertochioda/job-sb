@@ -31,6 +31,7 @@ export default function SubscriptionBillingSection({
   const [pendingTierChange, setPendingTierChange] = useState<PendingTierChange>(initialPendingTierChange);
   const [displayedTier, setDisplayedTier] = useState<Tier | "trial">(currentTier);
   const [immediateChangeNotice, setImmediateChangeNotice] = useState<string | null>(null);
+  const [immediateChangeIsWarning, setImmediateChangeIsWarning] = useState(false);
   const [showNoSubscriptionNotice, setShowNoSubscriptionNotice] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState("");
@@ -100,7 +101,13 @@ export default function SubscriptionBillingSection({
       <h2 className="font-semibold text-lg">Fatturazione e abbonamento</h2>
 
       {immediateChangeNotice && (
-        <p className="text-sm bg-green-50 border border-green-200 text-green-800 rounded-md px-4 py-3">
+        <p
+          className={`text-sm rounded-md px-4 py-3 border ${
+            immediateChangeIsWarning
+              ? "bg-amber-50 border-amber-200 text-amber-800"
+              : "bg-green-50 border-green-200 text-green-800"
+          }`}
+        >
           {immediateChangeNotice}
         </p>
       )}
@@ -198,8 +205,11 @@ export default function SubscriptionBillingSection({
             if (result.immediate) {
               setDisplayedTier(result.tier);
               setPendingTierChange(null);
+              setImmediateChangeIsWarning(!!result.invoiceWarning);
               setImmediateChangeNotice(
-                `Piano aggiornato a ${result.tier} (${CADENCE_LABELS[result.cadence]}) — addebito della differenza in corso.`
+                result.invoiceWarning
+                  ? `Piano aggiornato a ${result.tier} (${CADENCE_LABELS[result.cadence]}). ${result.invoiceWarning}`
+                  : `Piano aggiornato a ${result.tier} (${CADENCE_LABELS[result.cadence]}) — differenza addebitata.`
               );
             } else if (result.effective_at) {
               setPendingTierChange({ tier: result.tier, cadence: result.cadence, effective_at: result.effective_at });

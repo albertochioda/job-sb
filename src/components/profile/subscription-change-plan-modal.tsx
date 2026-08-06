@@ -11,7 +11,7 @@ export default function SubscriptionChangePlanModal({
 }: {
   currentTier: Tier | "trial";
   onClose: () => void;
-  onChanged: (result: { tier: Tier; cadence: Cadence; effective_at: string | null; immediate: boolean }) => void;
+  onChanged: (result: { tier: Tier; cadence: Cadence; effective_at: string | null; immediate: boolean; invoiceWarning: string | null }) => void;
 }) {
   const [tier, setTier] = useState<Tier>(currentTier === "professional" ? "individual" : "professional");
   const [cadence, setCadence] = useState<Cadence>("monthly");
@@ -35,7 +35,13 @@ export default function SubscriptionChangePlanModal({
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        onChanged({ tier: data.tier, cadence: data.cadence, effective_at: data.effective_at ?? null, immediate: !!data.immediate });
+        onChanged({
+          tier: data.tier,
+          cadence: data.cadence,
+          effective_at: data.effective_at ?? null,
+          immediate: !!data.immediate,
+          invoiceWarning: data.invoice_warning ?? null,
+        });
       } else {
         setError(data.error ?? "Errore nel cambio piano");
       }

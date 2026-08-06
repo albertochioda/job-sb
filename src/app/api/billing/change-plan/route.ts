@@ -105,6 +105,55 @@ export async function POST(request: NextRequest) {
         proration_behavior: "create_prorations",
       });
 
+      // Fattura SUBITO la differenza invece di lasciarla in coda fino al
+      // prossimo rinnovo — altrimenti un utente potrebbe fare upgrade,
+      // usare Professional, e cancellare prima del rinnovo senza mai
+      // pagare la differenza.
+      //
+      // Opzione (a) valutata e scartata — "fatturare PRIMA di cambiare il
+      // piano" non è realizzabile in modo pulito con l'API Stripe: gli
+      // invoice item di proration sono generati come effetto collaterale
+      // della STESSA chiamata subscriptions.update() che cambia il price
+      // (verificato empiricamente nel giro precedente) — non esiste un
+      // modo nativo per calcolarli e addebitarli prima di applicare il
+      // cambio, se non ricalcolando a mano la proration di Stripe
+      // (duplica logica delicata — arrotondamenti, tasse, timing — con
+      // rischio concreto di derive rispetto al calcolo reale di Stripe).
+      // Procediamo quindi con (b): il piano cambia subito, la fattura di
+      // proration viene creata/finalizzata/pagata subito dopo. Se il
+      // pagamento fallisce, il piano RESTA cambiato — il webhook
+      // invoice.payment_failed già esistente marca la subscription
+      // past_due, stesso stato/UI (modale di avviso, link al portale) già
+      // gestiti per i rinnovi falliti: nessuna gestione nuova da costruire
+      // per lo stato "piano cambiato ma non pagato".
+      let invoicePaid = true;
+      let invoicePaymentError: string | null = null;
+      try {
+        const invoice = await stripe.invoices.create({
+          customer: stripeSub.customer as string,
+          subscription: stripeSub.id,
+          auto_advance: false, // finalizziamo e paghiamo esplicitamente sotto, niente race con l'auto-finalizzazione asincrona di Stripe
+          description: `Differenza upgrade a ${newTier} (${newCadence})`,
+        });
+        const finalized = await stripe.invoices.finalizeInvoice(invoice.id);
+        // Una fattura di proration a saldo zero (credito e addebito si
+        // annullano esattamente) viene marcata 'paid' già da
+        // finalizeInvoice, senza bisogno di un pagamento reale — chiamare
+        // .pay() in quel caso fallirebbe con "Invoice is already paid"
+        // anche se non c'è nessun problema di pagamento (verificato
+        // empiricamente).
+        if (finalized.status !== "paid") {
+          await stripe.invoices.pay(invoice.id);
+        }
+      } catch (err) {
+        invoicePaid = false;
+        invoicePaymentError = err instanceof Error ? err.message : "Pagamento della differenza non riuscito";
+        console.error(
+          "[change-plan] pagamento immediato della proration fallito (piano già cambiato, stato past_due gestito dal webhook invoice.payment_failed esistente):",
+          invoicePaymentError
+        );
+      }
+
       // Aggiornamento diretto oltre al webhook (stesso pattern già usato in
       // cancel-subscription): evita che l'UI mostri uno stato stantio nella
       // finestra prima che customer.subscription.updated arrivi. Nessun
@@ -118,7 +167,16 @@ export async function POST(request: NextRequest) {
         console.error("[change-plan] errore aggiornamento tier locale (upgrade):", updateError.message);
       }
 
-      return NextResponse.json({ success: true, immediate: true, tier: newTier, cadence: newCadence });
+      return NextResponse.json({
+        success: true,
+        immediate: true,
+        tier: newTier,
+        cadence: newCadence,
+        invoice_paid: invoicePaid,
+        invoice_warning: invoicePaid
+          ? null
+          : "Il piano è stato aggiornato, ma il pagamento della differenza non è riuscito — controlla il metodo di pagamento nella sezione fatturazione.",
+      });
     }
 
     // --- Downgrade: invariato, a fine periodo via Subscription Schedule ---
