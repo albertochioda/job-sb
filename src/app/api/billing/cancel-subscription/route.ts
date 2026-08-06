@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
+import { releaseScheduleIfPresent } from "@/lib/billing/stripe-schedule";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
 
   const { data: sub } = await supabase
     .from("subscriptions")
-    .select("stripe_subscription_id, period_end")
+    .select("stripe_subscription_id, period_end, pending_tier_change")
     .eq("user_id", user.id)
     .single();
 
@@ -36,6 +37,21 @@ export async function POST(request: NextRequest) {
   if (feedbackError) {
     console.error("[cancel-subscription] errore salvataggio feedback:", feedbackError.message);
     // Non blocchiamo la cancellazione per un feedback non salvato.
+  }
+
+  // Se esiste un downgrade pianificato (Subscription Schedule attivo), va
+  // rilasciato PRIMA di cancellare — altrimenti resterebbe orfano e
+  // continuerebbe a eseguire un cambio piano su un abbonamento che nel
+  // frattempo è stato cancellato (gap trovato nell'audit del ciclo di vita
+  // abbonamento). stripeSub va ri-recuperato qui perché la select sopra
+  // legge solo la cache Supabase, non lo stato Stripe autoritativo.
+  const stripeSubForSchedule = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
+  const scheduleReleased = await releaseScheduleIfPresent(stripe, stripeSubForSchedule);
+  if (scheduleReleased || sub.pending_tier_change) {
+    await supabase
+      .from("subscriptions")
+      .update({ pending_tier_change: null })
+      .eq("user_id", user.id);
   }
 
   // cancel_at_period_end: l'accesso resta attivo fino a fine periodo,

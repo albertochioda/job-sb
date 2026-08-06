@@ -37,6 +37,8 @@ export default function SubscriptionBillingSection({
   const [portalError, setPortalError] = useState("");
   const [reactivating, setReactivating] = useState(false);
   const [reactivateError, setReactivateError] = useState("");
+  const [cancellingPendingChange, setCancellingPendingChange] = useState(false);
+  const [cancelPendingChangeError, setCancelPendingChangeError] = useState("");
 
   const openPortal = async () => {
     if (portalLoading) return;
@@ -80,6 +82,25 @@ export default function SubscriptionBillingSection({
     }
   };
 
+  const cancelPendingChange = async () => {
+    if (cancellingPendingChange) return;
+    setCancellingPendingChange(true);
+    setCancelPendingChangeError("");
+    try {
+      const res = await fetch("/api/billing/cancel-pending-change", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setPendingTierChange(null);
+      } else {
+        setCancelPendingChangeError(data.error ?? "Errore nell'annullamento del cambio pianificato");
+      }
+    } catch {
+      setCancelPendingChangeError("Errore di rete, riprova");
+    } finally {
+      setCancellingPendingChange(false);
+    }
+  };
+
   const onCancelClick = () => {
     if (!stripeSubscriptionId) {
       setShowNoSubscriptionNotice(true);
@@ -113,11 +134,22 @@ export default function SubscriptionBillingSection({
       )}
 
       {pendingTierChange && (
-        <p className="text-sm bg-blue-50 border border-blue-200 text-blue-800 rounded-md px-4 py-3">
-          Il tuo piano cambierà a <strong className="capitalize">{pendingTierChange.tier}</strong> (
-          {CADENCE_LABELS[pendingTierChange.cadence]}) dal{" "}
-          {new Date(pendingTierChange.effective_at).toLocaleDateString("it-IT")}.
-        </p>
+        <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-md px-4 py-3 space-y-2">
+          <p className="text-sm">
+            Il tuo piano cambierà a <strong className="capitalize">{pendingTierChange.tier}</strong> (
+            {CADENCE_LABELS[pendingTierChange.cadence]}) dal{" "}
+            {new Date(pendingTierChange.effective_at).toLocaleDateString("it-IT")}.
+          </p>
+          <button
+            type="button"
+            onClick={cancelPendingChange}
+            disabled={cancellingPendingChange}
+            className="text-xs font-medium underline hover:no-underline disabled:opacity-50"
+          >
+            {cancellingPendingChange ? "Attendere..." : "Annulla cambio pianificato"}
+          </button>
+          {cancelPendingChangeError && <p className="text-xs text-destructive">{cancelPendingChangeError}</p>}
+        </div>
       )}
 
       {stripeCustomerId && (

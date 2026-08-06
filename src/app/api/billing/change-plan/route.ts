@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { VALID_TIERS, VALID_CADENCES, lookupKeyFor, isUpgrade as computeIsUpgrade, type Tier, type Cadence } from "@/lib/billing/plans";
+import { releaseScheduleIfPresent } from "@/lib/billing/stripe-schedule";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -95,10 +96,7 @@ export async function POST(request: NextRequest) {
       // qualunque cambio programmato, e Stripe non permette di aggiornare
       // direttamente il price di una subscription controllata da uno
       // schedule attivo.
-      const existingScheduleId = typeof stripeSub.schedule === "string" ? stripeSub.schedule : stripeSub.schedule?.id;
-      if (existingScheduleId) {
-        await stripe.subscriptionSchedules.release(existingScheduleId);
-      }
+      await releaseScheduleIfPresent(stripe, stripeSub);
 
       await stripe.subscriptions.update(stripeSub.id, {
         items: [{ id: currentItem.id, price: newPrice.id, quantity: 1 }],
