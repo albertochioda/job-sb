@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
 import TemplateSelector from "@/components/dashboard/template-selector";
 import CoverLetterSettingsForm from "@/components/profile/cover-letter-settings-form";
 import { useBlockingModal } from "@/contexts/blocking-modal-context";
@@ -51,6 +53,7 @@ interface Application {
 }
 
 export default function ApplicationsPanel({ initial }: { initial: Application[] }) {
+  const { locale } = useParams<{ locale: string }>();
   const [applications, setApplications] = useState<Application[]>(initial);
   const [filterStatus, setFilterStatus] = useState<Status | "all">("all");
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
@@ -447,7 +450,13 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
                     rows={8}
                     className="w-full text-sm border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-primary resize-y"
                   />
-                  <div className="flex justify-end">
+                  <div className="flex items-center justify-end gap-3">
+                    <Link
+                      href={`/${locale}/dashboard/generated-letters`}
+                      className="text-xs text-muted-foreground hover:text-foreground underline"
+                    >
+                      Vedi nelle lettere generate
+                    </Link>
                     <button
                       onClick={() => downloadCoverLetter(app)}
                       disabled={downloadingLetterIds.has(app.id)}

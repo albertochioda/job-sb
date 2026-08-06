@@ -735,7 +735,13 @@ export default function SearchPanel({ locale }: { locale: string }) {
                       rows={8}
                       className="w-full text-sm border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-primary resize-y"
                     />
-                    <div className="flex justify-end">
+                    <div className="flex items-center justify-end gap-3">
+                      <Link
+                        href={`/${locale}/dashboard/generated-letters`}
+                        className="text-xs text-muted-foreground hover:text-foreground underline"
+                      >
+                        Vedi nelle lettere generate
+                      </Link>
                       <button
                         onClick={() => downloadCoverLetter(offer.offer_id!)}
                         disabled={downloadingLetterIds.has(offer.offer_id)}

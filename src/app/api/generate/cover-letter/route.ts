@@ -207,7 +207,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Errore generazione lettera: nessun testo restituito" }, { status: 500 });
   }
 
-  // Incrementa cover_letters_used solo su generazione riuscita
+  // Incrementa cover_letters_used solo su generazione riuscita — invariato,
+  // la persistenza sotto non cambia questa logica dei limiti.
   if (sub) {
     await supabase
       .from("subscriptions")
@@ -215,8 +216,36 @@ export async function POST(request: NextRequest) {
       .eq("user_id", user.id);
   }
 
+  // Persiste subito il testo generato — prima viveva solo nello stato React
+  // del frontend e spariva al reload. Upsert su (user_id, offer_id): una
+  // rigenerazione per la stessa offerta sovrascrive la lettera precedente,
+  // stesso comportamento già in uso per adapted_cvs. file_url resta NULL
+  // finché l'utente non scarica il .docx (vedi /download, che lo popola).
+  const { data: savedLetter, error: letterDbError } = await supabase
+    .from("generated_letters")
+    .upsert(
+      {
+        user_id: user.id,
+        offer_id,
+        letter_text: letterText,
+        tone: profile?.cover_letter_tone ?? null,
+        language: lang,
+        template_id: template_id ?? "professional",
+      },
+      { onConflict: "user_id,offer_id" }
+    )
+    .select("id")
+    .single();
+
+  if (letterDbError) {
+    // Non blocchiamo la risposta per un errore di sola persistenza — la
+    // lettera è comunque stata generata e restituita al frontend.
+    console.error("[generate-cover-letter] errore salvataggio generated_letters:", letterDbError.message);
+  }
+
   return NextResponse.json({
     letter_text: letterText,
+    letter_id: savedLetter?.id ?? null,
     offer_id,
     template_id: template_id ?? "professional",
     language: lang,

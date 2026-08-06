@@ -73,5 +73,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error?.message ?? "Impossibile generare link download" }, { status: 500 });
   }
 
+  // Persiste il path del .docx appena generato (e il testo, che l'utente può
+  // aver modificato nella textarea prima di scaricare) sulla riga già creata
+  // al momento della generazione — così un ri-download successivo (dalla
+  // sezione "Lettere Generate") riusa questo file invece di rigenerarlo.
+  const { error: updateError } = await supabase
+    .from("generated_letters")
+    .update({ file_url: filePath, letter_text })
+    .eq("user_id", user.id)
+    .eq("offer_id", offer_id);
+
+  if (updateError) {
+    console.error("[cover-letter-download] errore aggiornamento file_url:", updateError.message);
+  }
+
   return NextResponse.json({ file_url: signed.signedUrl });
 }
