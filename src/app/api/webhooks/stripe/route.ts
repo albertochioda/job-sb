@@ -123,10 +123,15 @@ export async function POST(request: NextRequest) {
         // I contatori di utilizzo vanno azzerati SOLO su un vero rinnovo
         // ciclico (billing_reason 'subscription_cycle') — altrimenti
         // qualunque fattura pagata (es. la fattura ad-hoc di proration di
-        // un upgrade, billing_reason 'subscription_update') darebbe
-        // all'utente un reset gratuito dei contatori del mese in corso,
-        // non solo il vantaggio legittimo del piano superiore (scoperto
-        // testando la fatturazione immediata degli upgrade).
+        // un upgrade, creata via stripe.invoices.create() in change-plan/
+        // route.ts, che risulta billing_reason 'manual' — verificato
+        // empiricamente, non 'subscription_update' come si potrebbe
+        // supporre) darebbe all'utente un reset gratuito dei contatori del
+        // mese in corso, non solo il vantaggio legittimo del piano
+        // superiore (scoperto testando la fatturazione immediata degli
+        // upgrade). 'subscription_cycle' confermato empiricamente come il
+        // valore reale di un rinnovo naturale, tramite un Test Clock
+        // Stripe dedicato (non sull'account di produzione).
         if (invoice.billing_reason === "subscription_cycle") {
           updatePayload.runs_used = 0;
           updatePayload.cvs_adapted_used = 0;
