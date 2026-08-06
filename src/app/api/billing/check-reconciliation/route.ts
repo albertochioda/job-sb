@@ -137,11 +137,20 @@ export async function POST(request: NextRequest) {
       <p>Nessuna correzione automatica è stata applicata — solo segnalazione, verifica caso per caso.</p>
     `;
 
-    await sendEmail({
+    const emailResult = await sendEmail({
       to: ALERT_EMAIL_TO,
       subject: `⚠️ Job SB — ${discrepancies.length} discrepanze Stripe↔Supabase rilevate`,
       html,
     });
+    // sendEmail() fallisce "silenziosamente" per design (mai un throw, per
+    // non bloccare il chiamante) — va quindi controllato esplicitamente qui,
+    // altrimenti un fallimento reale (es. dominio Resend non verificato)
+    // sparisce senza lasciare traccia nei log Vercel, come già capitato.
+    if (!emailResult.success) {
+      console.error("[reconciliation] invio email di riepilogo fallito:", emailResult.error);
+    } else {
+      console.log("[reconciliation] email di riepilogo inviata:", emailResult.id);
+    }
   }
 
   return NextResponse.json({
