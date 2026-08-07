@@ -8,6 +8,7 @@ import { useSearchPolling } from "@/contexts/search-polling-context";
 import { useBlockingModal } from "@/contexts/blocking-modal-context";
 import TemplateSelector from "@/components/dashboard/template-selector";
 import CoverLetterSettingsForm from "@/components/profile/cover-letter-settings-form";
+import SupportChatIcon from "@/components/support-chat-icon";
 
 interface ScoredOffer {
   id: string;
@@ -432,7 +433,10 @@ export default function SearchPanel({ locale }: { locale: string }) {
       {/* Header + avvia */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Offerte trovate</h2>
+          <h2 className="text-xl font-semibold inline-flex items-center gap-1.5">
+            Offerte trovate
+            <SupportChatIcon message="Come funziona il punteggio di compatibilità?" label="Come funziona il punteggio?" />
+          </h2>
           {offers.length > 0 && (
             <p className="text-sm text-muted-foreground mt-1">
               {offers.length} offerte · {counts.green} alta · {counts.yellow} media · {counts.red} bassa compatibilità
@@ -525,7 +529,10 @@ export default function SearchPanel({ locale }: { locale: string }) {
       {/* Selettore template CV a card */}
       {offers.some(o => o.flag === "green") && (
         <div className="space-y-2">
-          <p className="text-sm font-medium">Template CV per &quot;Adatta CV&quot;</p>
+          <p className="text-sm font-medium inline-flex items-center gap-1.5">
+            Template CV per &quot;Adatta CV&quot;
+            <SupportChatIcon message="Quali template sono inclusi nel mio piano?" label="Quali template sono inclusi?" />
+          </p>
           <TemplateSelector
             userTier={userTier}
             selectedTemplate={selectedTemplate}

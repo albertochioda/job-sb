@@ -11,6 +11,7 @@ import MarketingConsentToggle from "@/components/profile/marketing-consent-toggl
 import SubscriptionBillingSection from "@/components/profile/subscription-billing-section";
 import { getTierLimits } from "@/lib/usage-limits";
 import Link from "next/link";
+import SupportChatIcon from "@/components/support-chat-icon";
 
 export default async function ProfilePage({
   params,
@@ -95,7 +96,10 @@ export default async function ProfilePage({
       </div>
 
       <div className="border rounded-lg p-6 space-y-4">
-        <h2 className="font-semibold text-lg">Piano attivo</h2>
+        <h2 className="font-semibold text-lg inline-flex items-center gap-1.5">
+          Piano attivo
+          <SupportChatIcon message="Come funziona il periodo di prova?" label="Come funziona il periodo di prova?" />
+        </h2>
         <div className="grid gap-3 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Tier</span>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import TemplateSelector from "@/components/dashboard/template-selector";
 import CoverLetterSettingsForm from "@/components/profile/cover-letter-settings-form";
 import { useBlockingModal } from "@/contexts/blocking-modal-context";
+import SupportChatIcon from "@/components/support-chat-icon";
 
 const STATUSES = ["saved", "applied", "interview", "offer", "rejected"] as const;
 type Status = typeof STATUSES[number];
@@ -484,7 +485,10 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
               {templatePickerAppId === app.id && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setTemplatePickerAppId(null)}>
                   <div className="bg-background rounded-lg border shadow-xl p-4 max-w-md w-full space-y-3" onClick={e => e.stopPropagation()}>
-                    <p className="text-sm font-medium">Scegli template CV</p>
+                    <p className="text-sm font-medium inline-flex items-center gap-1.5">
+                      Scegli template CV
+                      <SupportChatIcon message="Quali template sono inclusi nel mio piano?" label="Quali template sono inclusi?" />
+                    </p>
                     <TemplateSelector
                       userTier={userTier}
                       selectedTemplate={pickerTemplate}
