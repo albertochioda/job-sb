@@ -16,11 +16,18 @@ const SUPPORT_WHATSAPP = "https://wa.me/393332854256";
 // anti-abuso, non pensata per limitare l'uso normale.
 const DAILY_MESSAGE_LIMIT = 30;
 
-// Marcatore che Haiku antepone quando reindirizza invece di rispondere nel
-// merito — usato per popolare was_redirected senza dover indovinare dal
-// testo della risposta (fragile su parafrasi). Rimosso prima di restituire
-// la risposta all'utente.
+// Marcatori che Haiku antepone invece di rispondere nel merito — usati per
+// popolare was_redirected senza dover indovinare dal testo della risposta
+// (fragile su parafrasi). Rimossi prima di restituire la risposta
+// all'utente. Due categorie distinte:
+// - REDIRECT: serve Alberto (azioni sull'account, problemi tecnici,
+//   richieste commerciali) → email/WhatsApp.
+// - CAREER_ADVICE: consigli di carriera → nessun contatto personale
+//   esposto, il servizio dichiara semplicemente di non fornirli.
 const REDIRECT_MARKER = "[REDIRECT]";
+const CAREER_ADVICE_MARKER = "[CAREER_ADVICE]";
+const CAREER_ADVICE_MESSAGE =
+  "Al momento non forniamo consigli di carriera all'interno del servizio — Job SB ti aiuta a trovare e candidarti alle offerte, ma la scelta del percorso professionale resta tua.";
 
 function loadKnowledgeBase(): string {
   const filePath = path.join(process.cwd(), "docs", "support-knowledge.md");
@@ -39,10 +46,12 @@ ${knowledgeBase}
 Regole:
 - Rispondi SOLO usando le informazioni contenute nel documento sopra. Non inventare funzionalità, prezzi o comportamenti non descritti.
 - Tono semplice, frasi brevi, zero gergo tecnico o da SaaS — l'utente non è necessariamente esperto di app.
-- Se la domanda riguarda consigli di carriera, revisione del CV nel merito (es. "è un buon CV?", "dovrei accettare questa offerta?"), oppure richiede un'azione sull'account che tu non puoi eseguire (es. "cambiami il piano", "cancella il mio abbonamento"): NON rispondere nel merito. Rispondi ESATTAMENTE con questo formato, sostituendo solo il messaggio:
+- Se la domanda è un consiglio di carriera nel merito (es. "dovrei cambiare lavoro?", "quale ruolo dovrei cercare?", "ho sempre fatto X, potrei fare anche Y?", revisione del CV nel merito come "è un buon CV?", "dovrei accettare questa offerta?"): NON rispondere nel merito e NON menzionare email o WhatsApp. Rispondi ESATTAMENTE con questo formato:
+  ${CAREER_ADVICE_MARKER}${CAREER_ADVICE_MESSAGE}
+- Se la domanda richiede l'intervento di Alberto — un'azione sull'account che tu non puoi eseguire (es. "cambiami il piano", "cancella il mio abbonamento"), un problema tecnico specifico, o una richiesta commerciale: NON rispondere nel merito. Rispondi ESATTAMENTE con questo formato, sostituendo solo il messaggio:
   ${REDIRECT_MARKER}Per questo ti conviene scrivere direttamente ad Alberto via email (${SUPPORT_EMAIL}) o WhatsApp (${SUPPORT_WHATSAPP}).
-- Se la domanda è chiaramente fuori scope rispetto al documento (nulla a che vedere con Job SB): stesso reindirizzamento con lo stesso formato, non improvvisare una risposta.
-- Se invece la domanda è coperta dal documento, rispondi normalmente e in modo utile, senza il marcatore ${REDIRECT_MARKER}.`;
+- Se la domanda è chiaramente fuori scope rispetto al documento (nulla a che vedere con Job SB): stesso reindirizzamento ad Alberto con lo stesso formato di REDIRECT, non improvvisare una risposta.
+- Se invece la domanda è coperta dal documento, rispondi normalmente e in modo utile, senza alcun marcatore.`;
 }
 
 export async function POST(request: NextRequest) {
@@ -85,8 +94,17 @@ export async function POST(request: NextRequest) {
     .join("")
     .trim();
 
-  const wasRedirected = rawText.startsWith(REDIRECT_MARKER);
-  const answer = wasRedirected ? rawText.slice(REDIRECT_MARKER.length).trim() : rawText;
+  const isRedirect = rawText.startsWith(REDIRECT_MARKER);
+  const isCareerAdvice = rawText.startsWith(CAREER_ADVICE_MARKER);
+  // was_redirected resta true per entrambe le categorie fuori-scope — utile
+  // sapere quante domande in totale non hanno avuto risposta nel merito,
+  // anche se il motivo (serve Alberto vs. consiglio di carriera) differisce.
+  const wasRedirected = isRedirect || isCareerAdvice;
+  const answer = isRedirect
+    ? rawText.slice(REDIRECT_MARKER.length).trim()
+    : isCareerAdvice
+    ? rawText.slice(CAREER_ADVICE_MARKER.length).trim()
+    : rawText;
 
   await supabase.from("support_chat_log").insert({
     user_id: user.id,
