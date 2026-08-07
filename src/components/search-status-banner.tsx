@@ -13,7 +13,11 @@ export default function SearchStatusBanner() {
         <span>{completedData.newOffers} offerte analizzate, {completedData.matchedOffers} in linea con la tua esperienza e i tuoi criteri di ricerca.</span>
         <div className="flex items-center gap-4 shrink-0">
           <button
-            onClick={() => { dismissCompleted(); router.push("/it/dashboard"); router.refresh(); }}
+            onClick={() => {
+              const searchId = completedData.searchId;
+              dismissCompleted();
+              router.push(`/it/dashboard/search-results/${searchId}`);
+            }}
             className="underline hover:no-underline"
           >
             Vedi risultati →

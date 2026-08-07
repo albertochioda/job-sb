@@ -503,8 +503,16 @@ export default function SearchPanel({ locale }: { locale: string }) {
       )}
 
       {completedData && (
-        <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-4 py-2">
-          {completedData.newOffers} offerte analizzate, {completedData.matchedOffers} in linea con la tua esperienza e i tuoi criteri di ricerca.
+        <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-4 py-2 flex items-center justify-between gap-3">
+          <span>
+            {completedData.newOffers} offerte analizzate, {completedData.matchedOffers} in linea con la tua esperienza e i tuoi criteri di ricerca.
+          </span>
+          <Link
+            href={`/${locale}/dashboard/search-results/${completedData.searchId}`}
+            className="shrink-0 underline hover:no-underline font-medium"
+          >
+            Vedi solo questi risultati →
+          </Link>
         </div>
       )}
 

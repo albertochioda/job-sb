@@ -3,7 +3,14 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 export async function GET(request: NextRequest) {
-  const showHidden = new URL(request.url).searchParams.get("hidden") === "true";
+  const params = new URL(request.url).searchParams;
+  const showHidden = params.get("hidden") === "true";
+  // Quando presente, filtra per i risultati di UNA ricerca specifica
+  // (scored_offers.last_matched_search_id) invece della vista aggregata su
+  // tutto lo storico dell'utente — usato dalla pagina "Risultati di questa
+  // ricerca", distinta dalla dashboard principale "Tutte le offerte".
+  const searchId = params.get("search_id");
+
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,7 +35,7 @@ export async function GET(request: NextRequest) {
   // hidden_by_user: le offerte nascoste dall'utente restano in DB (mai
   // eliminate) ma escluse dalla vista principale, salvo richiesta esplicita
   // della vista "nascoste" (?hidden=true).
-  const { data: scored } = await supabase
+  let scoredQuery = supabase
     .from("scored_offers")
     .select("id, score_a, score_b, score_final, flag, motivo, offer_id, is_new, cv_id, hidden_by_user")
     .eq("user_id", user.id)
@@ -37,38 +44,48 @@ export async function GET(request: NextRequest) {
     .neq("flag", "scoring_failed")
     .order("score_final", { ascending: false })
     .limit(500);
+  if (searchId) scoredQuery = scoredQuery.eq("last_matched_search_id", searchId);
+
+  const { data: scored } = await scoredQuery;
 
   // Conteggio nascoste, solo nella vista principale — usato per il badge
-  // "Mostra nascoste (N)" senza dover richiedere l'intera lista.
+  // "Mostra nascoste (N)" senza dover richiedere l'intera lista. Scoperto
+  // anch'esso per search_id quando presente, stessa coerenza della select sopra.
   let hiddenCount = 0;
   if (!showHidden) {
-    const { count } = await supabase
+    let hiddenQuery = supabase
       .from("scored_offers")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .eq("hidden_by_user", true)
       .neq("flag", "geo_skip")
       .neq("flag", "scoring_failed");
+    if (searchId) hiddenQuery = hiddenQuery.eq("last_matched_search_id", searchId);
+    const { count } = await hiddenQuery;
     hiddenCount = count ?? 0;
   }
 
   // Conteggio esatto del pool rilevante (stesso filtro della select sopra,
   // ma senza il cap a 200 righe) — usato per il messaggio "N in linea con
-  // il tuo profilo" a fine ricerca, dove serve il totale reale non troncato.
-  const { count: totalCount } = await supabase
+  // il tuo profilo" a fine ricerca (vista aggregata) o per il totale della
+  // singola ricerca (vista filtrata per search_id).
+  let totalCountQuery = supabase
     .from("scored_offers")
     .select("id", { count: "exact", head: true })
     .eq("user_id", user.id)
     .eq("hidden_by_user", showHidden)
     .neq("flag", "geo_skip")
     .neq("flag", "scoring_failed");
+  if (searchId) totalCountQuery = totalCountQuery.eq("last_matched_search_id", searchId);
+  const { count: totalCount } = await totalCountQuery;
 
   if (!scored || scored.length === 0) return NextResponse.json({ offers: [], hidden_count: hiddenCount, total_count: totalCount ?? 0 });
 
   // Ordinamento a due livelli: prima la fascia di merito (Alta/Media/Bassa,
   // stessa mappatura flag→label di search-panel.tsx), poi il composite_score
   // dentro ciascuna fascia — così un'offerta nuova emerge rispetto alle altre
-  // della sua fascia, ma non scavalca mai una fascia superiore.
+  // della sua fascia, ma non scavalca mai una fascia superiore. Stessa logica
+  // applicata identica sia alla vista aggregata sia a quella per search_id.
   const FLAG_RANK: Record<string, number> = { green: 0, yellow: 1, red: 2 };
 
   const withComposite = scored.map((o: any) => ({

@@ -6,7 +6,7 @@ interface SearchPollingContextType {
   initialized: boolean;
   isSearching: boolean;
   progress: number;
-  completedData: { newOffers: number; matchedOffers: number } | null;
+  completedData: { newOffers: number; matchedOffers: number; searchId: string } | null;
   dismissCompleted: () => void;
   startPolling: (searchId: string, rolesCount: number) => void;
   cancelSearch: () => Promise<void>;
@@ -18,7 +18,7 @@ export function SearchPollingProvider({ children }: { children: React.ReactNode 
   const [initialized, setInitialized] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [completedData, setCompletedData] = useState<{ newOffers: number; matchedOffers: number } | null>(null);
+  const [completedData, setCompletedData] = useState<{ newOffers: number; matchedOffers: number; searchId: string } | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentSearchIdRef = useRef<string | null>(null);
 
@@ -75,7 +75,12 @@ export function SearchPollingProvider({ children }: { children: React.ReactNode 
               // ignora — il banner mostrerà comunque il totale grezzo
             }
 
-            setCompletedData({ newOffers: total, matchedOffers });
+            // searchId qui è il parametro di startPolling (chiusura), ancora
+            // valido anche se currentSearchIdRef.current è già stato azzerato
+            // sopra — completedData deve sapere a quale ricerca si riferisce,
+            // per linkare "Vedi risultati" alla vista filtrata
+            // (search-results/[searchId]) invece che all'aggregato.
+            setCompletedData({ newOffers: total, matchedOffers, searchId });
 
             if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
               new Notification("Job SB", {
