@@ -45,6 +45,9 @@ export default async function GeneratedLettersPage({
           <Link href={`/${locale}/dashboard/adapted-cvs`} className="text-sm text-muted-foreground hover:text-foreground">
             CV Adattati
           </Link>
+          <Link href={`/${locale}/dashboard/search-history`} className="text-sm text-muted-foreground hover:text-foreground">
+            Storico ricerche
+          </Link>
           <Link href={`/${locale}/profile`} className="text-sm text-muted-foreground hover:text-foreground">
             Profilo
           </Link>

@@ -39,6 +39,7 @@ const FLAG_LABELS = {
  */
 export default function SearchResultsList({ searchId, locale }: { searchId: string; locale: string }) {
   const [offers, setOffers] = useState<ScoredOffer[]>([]);
+  const [reconfirmedCount, setReconfirmedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
@@ -46,7 +47,10 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
   useEffect(() => {
     fetch(`/api/offers?search_id=${searchId}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setOffers(data?.offers ?? []))
+      .then((data) => {
+        setOffers(data?.offers ?? []);
+        setReconfirmedCount(data?.reconfirmed_count ?? 0);
+      })
       .finally(() => setLoading(false));
   }, [searchId]);
 
@@ -75,16 +79,30 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
 
   if (offers.length === 0) {
     return (
-      <div className="text-center py-16 text-muted-foreground">
-        <p className="text-lg">Nessuna offerta rilevante da questa ricerca.</p>
-        <p className="text-sm mt-1">Le offerte fuori raggio o non valutabili non compaiono qui.</p>
+      <div className="text-center py-16 text-muted-foreground space-y-2">
+        {reconfirmedCount > 0 ? (
+          <>
+            <p className="text-lg">Nessuna nuova offerta trovata in questa ricerca.</p>
+            <p className="text-sm">
+              {reconfirmedCount} offerte già note continuano a corrispondere ai tuoi criteri —{" "}
+              <a href={`/${locale}/dashboard`} className="underline hover:text-foreground">
+                vedi tutte le tue offerte →
+              </a>
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-lg">Nessuna offerta rilevante da questa ricerca.</p>
+            <p className="text-sm mt-1">Le offerte fuori raggio o non valutabili non compaiono qui.</p>
+          </>
+        )}
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">{offers.length} offerte in linea con il tuo profilo da questa ricerca.</p>
+      <p className="text-sm text-muted-foreground">{offers.length} nuove offerte trovate da questa ricerca, in linea con il tuo profilo.</p>
       {offers.map((offer) => {
         const offerId = offer.offer_id ?? offer.id;
         return (

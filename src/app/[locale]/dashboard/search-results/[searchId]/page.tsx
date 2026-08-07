@@ -48,6 +48,9 @@ export default async function SearchResultsPage({
           <Link href={`/${locale}/dashboard/applications`} className="text-sm text-muted-foreground hover:text-foreground">
             Candidature
           </Link>
+          <Link href={`/${locale}/dashboard/search-history`} className="text-sm text-muted-foreground hover:text-foreground">
+            Storico ricerche
+          </Link>
           <Link href={`/${locale}/profile`} className="text-sm text-muted-foreground hover:text-foreground">
             Profilo
           </Link>
@@ -60,7 +63,7 @@ export default async function SearchResultsPage({
           <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Risultati di una ricerca specifica</p>
           <h1 className="text-2xl font-bold mt-1">Risultati della ricerca del {dateLabel}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Solo le offerte trovate o riconfermate da questa ricerca — per la vista completa su tutto lo storico vai su{" "}
+            Solo le offerte genuinamente nuove trovate da questa ricerca — per la vista completa su tutto lo storico vai su{" "}
             <Link href={`/${locale}/dashboard`} className="underline hover:text-foreground">Tutte le tue offerte</Link>.
           </p>
         </div>

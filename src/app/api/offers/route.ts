@@ -44,7 +44,11 @@ export async function GET(request: NextRequest) {
     .neq("flag", "scoring_failed")
     .order("score_final", { ascending: false })
     .limit(500);
-  if (searchId) scoredQuery = scoredQuery.eq("last_matched_search_id", searchId);
+  // Vista "Risultati di questa ricerca": solo scoperte genuinamente nuove
+  // (is_new=true) — le cache-hit riconfermate restano collegate a
+  // last_matched_search_id nel DB (storico/conteggio) ma non compaiono qui,
+  // che deve mostrare solo ciò che questa run ha trovato di nuovo.
+  if (searchId) scoredQuery = scoredQuery.eq("last_matched_search_id", searchId).eq("is_new", true);
 
   const { data: scored } = await scoredQuery;
 
@@ -60,7 +64,7 @@ export async function GET(request: NextRequest) {
       .eq("hidden_by_user", true)
       .neq("flag", "geo_skip")
       .neq("flag", "scoring_failed");
-    if (searchId) hiddenQuery = hiddenQuery.eq("last_matched_search_id", searchId);
+    if (searchId) hiddenQuery = hiddenQuery.eq("last_matched_search_id", searchId).eq("is_new", true);
     const { count } = await hiddenQuery;
     hiddenCount = count ?? 0;
   }
@@ -76,10 +80,27 @@ export async function GET(request: NextRequest) {
     .eq("hidden_by_user", showHidden)
     .neq("flag", "geo_skip")
     .neq("flag", "scoring_failed");
-  if (searchId) totalCountQuery = totalCountQuery.eq("last_matched_search_id", searchId);
+  if (searchId) totalCountQuery = totalCountQuery.eq("last_matched_search_id", searchId).eq("is_new", true);
   const { count: totalCount } = await totalCountQuery;
 
-  if (!scored || scored.length === 0) return NextResponse.json({ offers: [], hidden_count: hiddenCount, total_count: totalCount ?? 0 });
+  // Solo per la vista search_id: conteggio delle riconferme (offerte già
+  // note che hanno semplicemente ri-matchato i criteri di questa ricerca,
+  // is_new=false) — usato per il messaggio quando questa run non ha
+  // trovato nulla di genuinamente nuovo, invece di una pagina vuota muta.
+  let reconfirmedCount = 0;
+  if (searchId) {
+    const { count } = await supabase
+      .from("scored_offers")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("last_matched_search_id", searchId)
+      .eq("is_new", false)
+      .neq("flag", "geo_skip")
+      .neq("flag", "scoring_failed");
+    reconfirmedCount = count ?? 0;
+  }
+
+  if (!scored || scored.length === 0) return NextResponse.json({ offers: [], hidden_count: hiddenCount, total_count: totalCount ?? 0, reconfirmed_count: reconfirmedCount });
 
   // Ordinamento a due livelli: prima la fascia di merito (Alta/Media/Bassa,
   // stessa mappatura flag→label di search-panel.tsx), poi il composite_score
@@ -121,5 +142,5 @@ export async function GET(request: NextRequest) {
     ...jobMap[o.offer_id],
   }));
 
-  return NextResponse.json({ offers: flat, hidden_count: hiddenCount, total_count: totalCount ?? 0 });
+  return NextResponse.json({ offers: flat, hidden_count: hiddenCount, total_count: totalCount ?? 0, reconfirmed_count: reconfirmedCount });
 }
