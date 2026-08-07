@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { useBlockingModal } from "@/contexts/blocking-modal-context";
 import { CANCELLATION_REASONS } from "@/lib/cancellation-reasons";
 import { PLAN_PRICES, CADENCE_LABELS, type Tier, type Cadence } from "@/lib/billing/plans";
+import { SUPPORT_EMAIL } from "@/lib/support-contact";
 
 type TrialStep = "info" | "feedback" | "thanks";
 
@@ -369,18 +370,10 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
                 {portalLoading ? "Attendere..." : "Aggiorna metodo di pagamento"}
               </button>
               <a
-                href="mailto:albertochioda@gmail.com?subject=Problema pagamento Job SB"
+                href={`mailto:${SUPPORT_EMAIL}?subject=Problema pagamento Job SB`}
                 className="inline-flex items-center justify-center rounded-lg border px-5 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
               >
                 Contatta Alberto
-              </a>
-              <a
-                href="https://wa.me/393332854256"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center rounded-lg border px-5 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
-              >
-                Scrivi su WhatsApp
               </a>
             </div>
           </>
@@ -407,18 +400,10 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
 
             <div className="flex flex-col gap-3 pt-2">
               <a
-                href="mailto:albertochioda@gmail.com?subject=Upgrade Job SSB"
+                href={`mailto:${SUPPORT_EMAIL}?subject=Upgrade Job SSB`}
                 className="inline-flex items-center justify-center rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
               >
                 Contatta Alberto
-              </a>
-              <a
-                href="https://wa.me/393332854256"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center rounded-lg border px-5 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
-              >
-                Scrivi su WhatsApp
               </a>
             </div>
           </>

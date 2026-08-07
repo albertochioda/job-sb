@@ -1,3 +1,5 @@
+import { SUPPORT_EMAIL } from "@/lib/support-contact";
+
 export default function TerminiDiServizio() {
   return (
     <main className="min-h-screen bg-white text-gray-900 px-6 py-12">
@@ -10,7 +12,7 @@ export default function TerminiDiServizio() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">1. Identificazione del Titolare</h2>
-          <p className="text-sm leading-relaxed">Il servizio Job SB (di seguito "Servizio" o "Piattaforma") è gestito da Alberto Chioda, con sede in Lodi (LO), Italia (di seguito "Titolare"). Per qualsiasi comunicazione: <a href="mailto:albertochioda@gmail.com" className="underline">albertochioda@gmail.com</a>.</p>
+          <p className="text-sm leading-relaxed">Il servizio Job SB (di seguito "Servizio" o "Piattaforma") è gestito da Alberto Chioda, con sede in Lodi (LO), Italia (di seguito "Titolare"). Per qualsiasi comunicazione: <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>.</p>
         </section>
 
         <section className="space-y-3">
@@ -80,7 +82,7 @@ export default function TerminiDiServizio() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">11. Contatti</h2>
-          <p className="text-sm leading-relaxed"><a href="mailto:albertochioda@gmail.com" className="underline">albertochioda@gmail.com</a></p>
+          <p className="text-sm leading-relaxed"><a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a></p>
         </section>
       </div>
     </main>

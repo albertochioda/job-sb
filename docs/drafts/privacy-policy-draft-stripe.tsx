@@ -6,6 +6,8 @@
  * Da ripubblicare in src/app/[locale]/privacy-policy/page.tsx quando sarà
  * pronto il flusso di ri-accettazione basato su terms_version.
  */
+import { SUPPORT_EMAIL } from "@/lib/support-contact";
+
 export default function PrivacyPolicy() {
   return (
     <main className="min-h-screen bg-white text-gray-900 px-6 py-12">
@@ -18,7 +20,7 @@ export default function PrivacyPolicy() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">1. Titolare del Trattamento</h2>
-          <p className="text-sm leading-relaxed">Titolare del trattamento è Alberto Chioda, con sede in Lodi (LO), Italia. Contatto: <a href="mailto:albertochioda@gmail.com" className="underline">albertochioda@gmail.com</a>.</p>
+          <p className="text-sm leading-relaxed">Titolare del trattamento è Alberto Chioda, con sede in Lodi (LO), Italia. Contatto: <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>.</p>
         </section>
 
         <section className="space-y-3">
@@ -77,7 +79,7 @@ export default function PrivacyPolicy() {
             <li>Ricevere i dati in formato strutturato — portabilità (art. 20 GDPR)</li>
             <li>Opporsi al trattamento (art. 21 GDPR)</li>
           </ul>
-          <p className="text-sm leading-relaxed">Per esercitare i propri diritti: <a href="mailto:albertochioda@gmail.com" className="underline">albertochioda@gmail.com</a>. L'utente ha inoltre il diritto di proporre reclamo all'Autorità Garante per la Protezione dei Dati Personali (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener noreferrer" className="underline">www.garanteprivacy.it</a>).</p>
+          <p className="text-sm leading-relaxed">Per esercitare i propri diritti: <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>. L'utente ha inoltre il diritto di proporre reclamo all'Autorità Garante per la Protezione dei Dati Personali (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener noreferrer" className="underline">www.garanteprivacy.it</a>).</p>
         </section>
 
         <section className="space-y-3">

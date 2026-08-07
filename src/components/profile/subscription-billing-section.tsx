@@ -4,6 +4,7 @@ import { useState } from "react";
 import SubscriptionCancelModal from "./subscription-cancel-modal";
 import SubscriptionChangePlanModal from "./subscription-change-plan-modal";
 import { CADENCE_LABELS, type Tier, type Cadence } from "@/lib/billing/plans";
+import { SUPPORT_EMAIL } from "@/lib/support-contact";
 
 type PendingTierChange = { tier: Tier; cadence: Cadence; effective_at: string } | null;
 
@@ -209,8 +210,8 @@ export default function SubscriptionBillingSection({
             {showNoSubscriptionNotice && (
               <p className="text-sm text-muted-foreground">
                 Per gestire il tuo abbonamento contattaci a{" "}
-                <a href="mailto:albertochioda@gmail.com" className="underline hover:text-foreground">
-                  albertochioda@gmail.com
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-foreground">
+                  {SUPPORT_EMAIL}
                 </a>
                 .
               </p>

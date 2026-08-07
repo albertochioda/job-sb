@@ -6,6 +6,8 @@
  * Da ripubblicare in src/app/[locale]/termini-di-servizio/page.tsx quando sarà
  * pronto il flusso di ri-accettazione basato su terms_version.
  */
+import { SUPPORT_EMAIL } from "@/lib/support-contact";
+
 export default function TerminiDiServizio() {
   return (
     <main className="min-h-screen bg-white text-gray-900 px-6 py-12">
@@ -18,7 +20,7 @@ export default function TerminiDiServizio() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">1. Identificazione del Titolare</h2>
-          <p className="text-sm leading-relaxed">Il servizio Job SB (di seguito "Servizio" o "Piattaforma") è gestito da Alberto Chioda, con sede in Lodi (LO), Italia (di seguito "Titolare"). Per qualsiasi comunicazione: <a href="mailto:albertochioda@gmail.com" className="underline">albertochioda@gmail.com</a>.</p>
+          <p className="text-sm leading-relaxed">Il servizio Job SB (di seguito "Servizio" o "Piattaforma") è gestito da Alberto Chioda, con sede in Lodi (LO), Italia (di seguito "Titolare"). Per qualsiasi comunicazione: <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>.</p>
         </section>
 
         <section className="space-y-3">
@@ -72,7 +74,7 @@ export default function TerminiDiServizio() {
             <li>Se l'Utente sottoscrive un piano a pagamento prima della scadenza del periodo di prova, la finestra di 14 giorni non riparte da zero al momento del pagamento: resta calcolata sui 14 giorni totali dalla registrazione.</li>
             <li>Se il periodo di prova scade completamente prima che l'Utente sottoscriva un piano a pagamento (conversione tardiva, ad esempio settimane dopo la fine del trial), la finestra di 14 giorni dalla registrazione risulta già trascorsa al momento del pagamento: in questo caso non si applica alcun rimborso volontario per "cambio idea" ai sensi del presente articolo.</li>
             <li>Rinnovi successivi al primo pagamento: nessun rimborso automatico per periodi parziali o non utilizzati. La cancellazione evita futuri addebiti ma non dà diritto al rimborso del periodo già in corso.</li>
-            <li>Addebiti errati o doppi addebiti: rimborso integrale sempre garantito, indipendentemente dalla finestra di 14 giorni sopra descritta, verificato caso per caso contattando <a href="mailto:albertochioda@gmail.com" className="underline">albertochioda@gmail.com</a>.</li>
+            <li>Addebiti errati o doppi addebiti: rimborso integrale sempre garantito, indipendentemente dalla finestra di 14 giorni sopra descritta, verificato caso per caso contattando <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>.</li>
           </ul>
           <p className="text-sm leading-relaxed bg-yellow-50 border border-yellow-300 rounded px-3 py-2">
             ⚠️ DA VERIFICARE CON LEGALE — Nello scenario di conversione tardiva (Utente che sottoscrive un piano a pagamento molte settimane dopo la fine del periodo di prova), questa politica commerciale volontaria lascerebbe l'Utente senza alcuna finestra di recesso sul pagamento realmente effettuato, dato che i 14 giorni dalla registrazione sono già trascorsi. Va verificato se questo è comunque compatibile con il diritto di recesso minimo previsto dalla normativa UE a tutela dei consumatori, che potrebbe applicarsi comunque a partire dal momento del pagamento (Art. 7.1) indipendentemente da questa policy commerciale interna — in tal caso l'Art. 7.1 (diritto di recesso di legge) prevarrebbe comunque su quanto sopra.
@@ -138,7 +140,7 @@ export default function TerminiDiServizio() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">15. Contatti</h2>
-          <p className="text-sm leading-relaxed"><a href="mailto:albertochioda@gmail.com" className="underline">albertochioda@gmail.com</a></p>
+          <p className="text-sm leading-relaxed"><a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a></p>
         </section>
       </div>
     </main>
