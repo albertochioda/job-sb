@@ -26,6 +26,24 @@ export async function GET(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
 
+  // Per la vista search_id: soglia temporale = created_at di QUELLA ricerca.
+  // is_new non basta a isolare "trovata da questa run" — resta true finché
+  // l'utente non apre l'offerta, quindi include anche scoperte di settimane
+  // fa mai cliccate (vedi diagnosi). scored_at >= searchCreatedAt isola le
+  // righe valutate fresche durante l'esecuzione di QUESTA run (nuove
+  // valutazioni Claude), escludendo sia le vecchie mai viste sia le vecchie
+  // riconfermate via cache-hit (che non toccano scored_at).
+  let searchCreatedAt: string | null = null;
+  if (searchId) {
+    const { data: searchRow } = await supabase
+      .from("searches")
+      .select("created_at")
+      .eq("id", searchId)
+      .eq("user_id", user.id)
+      .single();
+    searchCreatedAt = searchRow?.created_at ?? null;
+  }
+
   // PostgREST non ordina per espressioni calcolate — recuperiamo un batch più
   // ampio (500) ordinato per score_final, poi calcoliamo il punteggio
   // composito (score_final + bonus offerte nuove) e tagliamo a 200 lato
@@ -44,11 +62,15 @@ export async function GET(request: NextRequest) {
     .neq("flag", "scoring_failed")
     .order("score_final", { ascending: false })
     .limit(500);
-  // Vista "Risultati di questa ricerca": solo scoperte genuinamente nuove
-  // (is_new=true) — le cache-hit riconfermate restano collegate a
-  // last_matched_search_id nel DB (storico/conteggio) ma non compaiono qui,
-  // che deve mostrare solo ciò che questa run ha trovato di nuovo.
-  if (searchId) scoredQuery = scoredQuery.eq("last_matched_search_id", searchId).eq("is_new", true);
+  // Vista "Risultati di questa ricerca": solo righe valutate fresche
+  // durante QUESTA run (scored_at >= inizio ricerca) — le cache-hit e le
+  // vecchie mai viste restano collegate a last_matched_search_id nel DB
+  // (storico/conteggio) ma non compaiono qui.
+  if (searchId && searchCreatedAt) {
+    scoredQuery = scoredQuery.eq("last_matched_search_id", searchId).gte("scored_at", searchCreatedAt);
+  } else if (searchId) {
+    scoredQuery = scoredQuery.eq("id", "00000000-0000-0000-0000-000000000000"); // ricerca inesistente/non sua — nessun risultato
+  }
 
   const { data: scored } = await scoredQuery;
 
@@ -64,7 +86,8 @@ export async function GET(request: NextRequest) {
       .eq("hidden_by_user", true)
       .neq("flag", "geo_skip")
       .neq("flag", "scoring_failed");
-    if (searchId) hiddenQuery = hiddenQuery.eq("last_matched_search_id", searchId).eq("is_new", true);
+    if (searchId && searchCreatedAt) hiddenQuery = hiddenQuery.eq("last_matched_search_id", searchId).gte("scored_at", searchCreatedAt);
+    else if (searchId) hiddenQuery = hiddenQuery.eq("id", "00000000-0000-0000-0000-000000000000");
     const { count } = await hiddenQuery;
     hiddenCount = count ?? 0;
   }
@@ -80,21 +103,23 @@ export async function GET(request: NextRequest) {
     .eq("hidden_by_user", showHidden)
     .neq("flag", "geo_skip")
     .neq("flag", "scoring_failed");
-  if (searchId) totalCountQuery = totalCountQuery.eq("last_matched_search_id", searchId).eq("is_new", true);
+  if (searchId && searchCreatedAt) totalCountQuery = totalCountQuery.eq("last_matched_search_id", searchId).gte("scored_at", searchCreatedAt);
+  else if (searchId) totalCountQuery = totalCountQuery.eq("id", "00000000-0000-0000-0000-000000000000");
   const { count: totalCount } = await totalCountQuery;
 
-  // Solo per la vista search_id: conteggio delle riconferme (offerte già
-  // note che hanno semplicemente ri-matchato i criteri di questa ricerca,
-  // is_new=false) — usato per il messaggio quando questa run non ha
-  // trovato nulla di genuinamente nuovo, invece di una pagina vuota muta.
+  // Solo per la vista search_id: conteggio delle riconferme (offerte
+  // collegate a questa ricerca ma con scored_at precedente al suo avvio —
+  // cache-hit o vecchie mai viste, comunque non "fresche di questa run") —
+  // usato per il messaggio quando questa run non ha trovato nulla di
+  // genuinamente nuovo, invece di una pagina vuota muta.
   let reconfirmedCount = 0;
-  if (searchId) {
+  if (searchId && searchCreatedAt) {
     const { count } = await supabase
       .from("scored_offers")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .eq("last_matched_search_id", searchId)
-      .eq("is_new", false)
+      .lt("scored_at", searchCreatedAt)
       .neq("flag", "geo_skip")
       .neq("flag", "scoring_failed");
     reconfirmedCount = count ?? 0;
