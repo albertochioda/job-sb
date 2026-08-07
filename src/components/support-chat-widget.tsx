@@ -18,11 +18,19 @@ interface Props {
   requestKey?: number;
 }
 
+type Mode = "chat" | "report";
+
 export default function SupportChatWidget({ isOpen, onOpenChange, initialMessage, requestKey }: Props) {
+  const [mode, setMode] = useState<Mode>("chat");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const [reportText, setReportText] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState("");
+  const [reportSent, setReportSent] = useState(false);
 
   // Precompila il campo (mai invio automatico) quando il widget si apre con
   // un initialMessage da un'icona contestuale — l'utente conferma col click.
@@ -69,6 +77,42 @@ export default function SupportChatWidget({ isOpen, onOpenChange, initialMessage
     }
   };
 
+  const sendReport = async () => {
+    const text = reportText.trim();
+    if (!text || reportLoading) return;
+    setReportLoading(true);
+    setReportError("");
+    try {
+      const res = await fetch("/api/support-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          description: text,
+          page_context: typeof window !== "undefined" ? window.location.pathname : null,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setReportError(data.error ?? "Errore, riprova.");
+      } else {
+        setReportSent(true);
+        setReportText("");
+      }
+    } catch {
+      setReportError("Errore di rete, riprova.");
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const switchMode = (next: Mode) => {
+    setMode(next);
+    if (next === "report") {
+      setReportSent(false);
+      setReportError("");
+    }
+  };
+
   if (!isOpen) {
     return (
       <button
@@ -85,67 +129,120 @@ export default function SupportChatWidget({ isOpen, onOpenChange, initialMessage
   return (
     <div className="fixed bottom-5 right-5 z-40 w-[calc(100vw-2.5rem)] max-w-sm h-[28rem] max-h-[70vh] bg-background border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
-        <p className="text-sm font-semibold">Assistente Job SB</p>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => switchMode("chat")}
+            className={`text-sm px-2 py-1 rounded-md font-medium transition-colors ${
+              mode === "chat" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Assistente
+          </button>
+          <button
+            type="button"
+            onClick={() => switchMode("report")}
+            className={`text-sm px-2 py-1 rounded-md font-medium transition-colors ${
+              mode === "report" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Segnala un problema
+          </button>
+        </div>
         <button
           type="button"
           onClick={() => onOpenChange(false)}
           aria-label="Chiudi"
-          className="text-muted-foreground hover:text-foreground transition-colors"
+          className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-        {messages.length === 0 && (
-          <p className="text-xs text-muted-foreground text-center mt-6">
-            Chiedimi come funziona Job SB — score, template, trial, piani e altro.
-          </p>
-        )}
-        {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div
-              className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${
-                m.role === "user"
-                  ? "bg-primary text-primary-foreground rounded-br-sm"
-                  : m.limited
-                  ? "bg-amber-50 text-amber-900 border border-amber-200 rounded-bl-sm"
-                  : "bg-muted text-foreground rounded-bl-sm"
-              }`}
-            >
-              {m.content}
-            </div>
+      {mode === "chat" ? (
+        <>
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+            {messages.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center mt-6">
+                Chiedimi come funziona Job SB — score, template, trial, piani e altro.
+              </p>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${
+                    m.role === "user"
+                      ? "bg-primary text-primary-foreground rounded-br-sm"
+                      : m.limited
+                      ? "bg-amber-50 text-amber-900 border border-amber-200 rounded-bl-sm"
+                      : "bg-muted text-foreground rounded-bl-sm"
+                  }`}
+                >
+                  {m.content}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-muted text-muted-foreground rounded-2xl rounded-bl-sm px-3 py-2 text-sm">
+                  Sto scrivendo...
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
-        ))}
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-muted text-muted-foreground rounded-2xl rounded-bl-sm px-3 py-2 text-sm">
-              Sto scrivendo...
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
 
-      <div className="border-t p-3 shrink-0 flex items-end gap-2">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Scrivi un messaggio..."
-          rows={1}
-          className="flex-1 resize-none text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary max-h-24"
-        />
-        <button
-          type="button"
-          onClick={sendMessage}
-          disabled={!input.trim() || loading}
-          aria-label="Invia"
-          className="shrink-0 w-9 h-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 hover:opacity-90 transition-opacity"
-        >
-          <Send className="w-4 h-4" />
-        </button>
-      </div>
+          <div className="border-t p-3 shrink-0 flex items-end gap-2">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Scrivi un messaggio..."
+              rows={1}
+              className="flex-1 resize-none text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary max-h-24"
+            />
+            <button
+              type="button"
+              onClick={sendMessage}
+              disabled={!input.trim() || loading}
+              aria-label="Invia"
+              className="shrink-0 w-9 h-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 hover:opacity-90 transition-opacity"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
+          {reportSent ? (
+            <p className="text-sm text-muted-foreground text-center mt-6">
+              Grazie, la tua segnalazione è stata registrata. Ti risponderemo il prima possibile.
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Descrivi il problema che hai incontrato — non è una conversazione, solo una segnalazione diretta.
+              </p>
+              <textarea
+                value={reportText}
+                onChange={(e) => setReportText(e.target.value)}
+                placeholder="Cosa è successo?"
+                rows={6}
+                className="flex-1 resize-none text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              {reportError && <p className="text-xs text-destructive">{reportError}</p>}
+              <button
+                type="button"
+                onClick={sendReport}
+                disabled={!reportText.trim() || reportLoading}
+                className="w-full bg-primary text-primary-foreground text-sm py-2 rounded-lg font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+              >
+                {reportLoading ? "Invio..." : "Invia segnalazione"}
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
