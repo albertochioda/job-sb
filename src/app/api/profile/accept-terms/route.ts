@@ -15,7 +15,10 @@ export async function POST() {
     })
     .eq("id", user.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[profile/accept-terms] errore DB:", error.message);
+    return NextResponse.json({ error: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true });
 }

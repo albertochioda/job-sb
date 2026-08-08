@@ -24,7 +24,10 @@ export async function POST(request: NextRequest) {
 
   const result = await sendEmail({ to, subject, html, text });
   if (!result.success) {
-    return NextResponse.json({ error: result.error }, { status: 502 });
+    // Il dettaglio del provider (Resend) resta nei log, non torna al
+    // chiamante: stessa politica delle altre route dopo l'audit.
+    console.error("[internal/notify-email] invio fallito:", result.error);
+    return NextResponse.json({ error: "Invio email non riuscito" }, { status: 502 });
   }
 
   return NextResponse.json({ ok: true, id: result.id });

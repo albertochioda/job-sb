@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
+  // Proxy verso Nominatim, che ha una policy d'uso severa: senza
+  // autenticazione chiunque poteva inoltrare query illimitate con
+  // l'identità del nostro server, rischiando il ban dell'IP e la rottura
+  // del geo-check per tutti gli utenti reali.
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
+
   const q = request.nextUrl.searchParams.get("q")?.trim();
   if (!q || q.length < 2) return NextResponse.json([]);
 

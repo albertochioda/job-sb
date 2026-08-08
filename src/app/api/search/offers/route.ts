@@ -29,7 +29,10 @@ export async function DELETE(request: NextRequest) {
   }
 
   const { error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[search/offers] errore DB:", error.message);
+    return NextResponse.json({ error: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true });
 }

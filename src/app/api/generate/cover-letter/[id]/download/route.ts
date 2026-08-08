@@ -95,7 +95,8 @@ export async function GET(
     .createSignedUrl(filePath, 3600, { download: fileName });
 
   if (error || !signed?.signedUrl) {
-    return NextResponse.json({ error: error?.message ?? "Impossibile generare link download" }, { status: 500 });
+    console.error("[generate/cover-letter/[id]/download] errore signed URL:", error?.message);
+    return NextResponse.json({ error: "Impossibile generare link download" }, { status: 500 });
   }
 
   return NextResponse.redirect(signed.signedUrl);

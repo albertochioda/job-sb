@@ -21,7 +21,10 @@ export async function PATCH(
     .eq("offer_id", id)
     .eq("user_id", user.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[offers/[id]/hide] errore DB:", error.message);
+    return NextResponse.json({ error: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }

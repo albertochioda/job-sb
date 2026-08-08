@@ -47,6 +47,9 @@ export async function GET(req: NextRequest) {
       error: redisStatus?.error ?? null,
     });
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    // Dettaglio completo nei log server, messaggio generico al chiamante:
+    // String(e) qui poteva includere lo stack trace o l'endpoint Redis.
+    console.error("[search/status] errore:", e);
+    return NextResponse.json({ error: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
   }
 }

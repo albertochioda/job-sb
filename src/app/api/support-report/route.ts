@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, escapeHtml } from "@/lib/email";
 import { SUPPORT_EMAIL } from "@/lib/support-contact";
+
+// Finestra rolling di 24h come in support-chat, ma soglia più bassa: una
+// segnalazione è per natura un evento sporadico, non una conversazione.
+// 10/giorno resta ampiamente sopra l'uso legittimo anche nella giornata
+// peggiore, e limita sia le righe in tabella sia le email generate.
+const DAILY_REPORT_LIMIT = 10;
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -15,6 +21,19 @@ export async function POST(request: NextRequest) {
   // al momento dell'invio) — utile per capire da quale sezione arriva la
   // segnalazione senza dover dedurlo lato server.
   const pageContext = typeof body?.page_context === "string" ? body.page_context.slice(0, 500) : null;
+
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count: recentCount } = await supabase
+    .from("support_reports")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("created_at", since);
+
+  if ((recentCount ?? 0) >= DAILY_REPORT_LIMIT) {
+    return NextResponse.json({
+      error: `Hai raggiunto il limite di segnalazioni per oggi. Per casi urgenti scrivi a ${SUPPORT_EMAIL}.`,
+    }, { status: 429 });
+  }
 
   const { data: sub } = await supabase
     .from("subscriptions")
@@ -36,11 +55,14 @@ export async function POST(request: NextRequest) {
   }
 
   const userEmail = user.email ?? "email sconosciuta";
+  // Ogni valore passa da escapeHtml: description in particolare è testo
+  // libero scritto dall'utente. L'escape va PRIMA della conversione dei
+  // newline in <br>, altrimenti quei <br> verrebbero escapati a loro volta.
   const html = `
-    <p><strong>Da:</strong> ${userEmail} (tier: ${tier})</p>
-    ${pageContext ? `<p><strong>Pagina:</strong> ${pageContext}</p>` : ""}
+    <p><strong>Da:</strong> ${escapeHtml(userEmail)} (tier: ${escapeHtml(tier)})</p>
+    ${pageContext ? `<p><strong>Pagina:</strong> ${escapeHtml(pageContext)}</p>` : ""}
     <p><strong>Segnalazione:</strong></p>
-    <p>${description.replace(/\n/g, "<br>")}</p>
+    <p>${escapeHtml(description).replace(/\n/g, "<br>")}</p>
   `;
 
   const emailResult = await sendEmail({

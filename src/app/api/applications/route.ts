@@ -22,7 +22,10 @@ export async function GET(request: NextRequest) {
   if (status) query = query.eq("status", status);
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[applications] errore DB:", error.message);
+    return NextResponse.json({ error: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
+  }
 
   return NextResponse.json({ applications: data ?? [] });
 }
@@ -58,7 +61,10 @@ export async function POST(request: NextRequest) {
     .select("id")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[applications] errore DB:", error.message);
+    return NextResponse.json({ error: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
+  }
 
   return NextResponse.json({ application_id: data.id }, { status: 201 });
 }

@@ -35,7 +35,10 @@ export async function PATCH(request: NextRequest) {
     .eq("user_id", user.id)
     .eq("is_active", true);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[search-config] errore DB:", error.message);
+    return NextResponse.json({ error: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
+  }
   return NextResponse.json({ ok: true });
 }
 
@@ -72,7 +75,10 @@ export async function POST(request: NextRequest) {
     .select("id")
     .single();
 
-  if (error) return NextResponse.json({ error: "db_error", message: error.message }, { status: 500 });
+  if (error) {
+    console.error("[search-config] errore DB:", error.message);
+    return NextResponse.json({ error: "db_error", message: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
+  }
 
   return NextResponse.json({ config_id: data.id });
 }

@@ -70,7 +70,8 @@ export async function POST(request: NextRequest) {
     .createSignedUrl(filePath, 3600, { download: fileName });
 
   if (error || !signed?.signedUrl) {
-    return NextResponse.json({ error: error?.message ?? "Impossibile generare link download" }, { status: 500 });
+    console.error("[generate/cover-letter/download] errore signed URL:", error?.message);
+    return NextResponse.json({ error: "Impossibile generare link download" }, { status: 500 });
   }
 
   // Persiste il path del .docx appena generato (e il testo, che l'utente può

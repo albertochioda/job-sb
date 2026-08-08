@@ -284,7 +284,10 @@ export async function POST(request: NextRequest) {
     .select("id")
     .single();
 
-  if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
+  if (dbError) {
+    console.error("[adapt/cv] errore DB:", dbError.message);
+    return NextResponse.json({ error: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
+  }
 
   // Incrementa cvs_adapted_used (solo per CV nuovi, non cached)
   if (sub) {

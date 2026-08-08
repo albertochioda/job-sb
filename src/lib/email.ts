@@ -12,6 +12,25 @@ import type { CreateEmailOptions } from "resend";
  * silenziosamente in un ambiente non configurato).
  */
 
+/**
+ * Escape dei caratteri con significato speciale in HTML. Da applicare a
+ * QUALUNQUE valore proveniente da input utente o dal database prima di
+ * interpolarlo nel corpo di un'email: senza, un utente può iniettare
+ * markup arbitrario (link di phishing, immagini remote che tracciano
+ * l'apertura) nell'email che riceviamo noi.
+ *
+ * L'ordine conta: & va sostituito per primo, altrimenti ri-escaperebbe
+ * le entità generate dalle sostituzioni successive.
+ */
+export function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 let client: Resend | null = null;
 
 function getClient(): Resend | null {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, escapeHtml } from "@/lib/email";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.error("[reconciliation] errore lettura subscriptions:", error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
   }
 
   const rows = subs ?? [];
@@ -121,10 +121,12 @@ export async function POST(request: NextRequest) {
       d.email = emailByUserId.get(d.userId) ?? null;
     }
 
+    // Escape su ogni cella: email e valori arrivano dal DB e da Stripe,
+    // non sono costanti controllate da noi.
     const rowsHtml = discrepancies
       .map(
         (d) =>
-          `<tr><td>${d.email ?? d.userId}</td><td><code>${d.stripeSubscriptionId}</code></td><td>${d.field}</td><td>${d.supabaseValue}</td><td>${d.stripeValue}</td></tr>`
+          `<tr><td>${escapeHtml(d.email ?? d.userId)}</td><td><code>${escapeHtml(d.stripeSubscriptionId)}</code></td><td>${escapeHtml(d.field)}</td><td>${escapeHtml(d.supabaseValue)}</td><td>${escapeHtml(d.stripeValue)}</td></tr>`
       )
       .join("");
 
