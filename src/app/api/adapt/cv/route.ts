@@ -262,7 +262,8 @@ export async function POST(request: NextRequest) {
     }, template_id, cv.extracted_text ?? "", photoSignedUrl);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ error: `Generazione .docx fallita: ${msg}` }, { status: 500 });
+    console.error("[adapt/cv] generazione .docx fallita:", msg);
+    return NextResponse.json({ error: "Generazione del documento non riuscita, riprova più tardi" }, { status: 500 });
   }
 
   // Salva il path relativo (download via signed URL)

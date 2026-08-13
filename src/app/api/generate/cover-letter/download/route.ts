@@ -60,7 +60,15 @@ export async function POST(request: NextRequest) {
     filePath = data.file_path as string;
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ error: `Generazione .docx fallita: ${msg}` }, { status: 500 });
+    console.error("[generate/cover-letter/download] generazione .docx fallita:", msg);
+    return NextResponse.json({ error: "Generazione del documento non riuscita, riprova più tardi" }, { status: 500 });
+  }
+
+  // Vedi commento gemello in [id]/download: il worker può rispondere 200
+  // senza file_path, e createSignedUrl(undefined) darebbe un 500 opaco.
+  if (!filePath) {
+    console.error("[generate/cover-letter/download] worker ha risposto senza file_path");
+    return NextResponse.json({ error: "Generazione del documento non riuscita, riprova più tardi" }, { status: 500 });
   }
 
   const fileName = buildFileName(profile?.full_name ?? "", offer.company ?? "", offer.title ?? "", "_Lettera");

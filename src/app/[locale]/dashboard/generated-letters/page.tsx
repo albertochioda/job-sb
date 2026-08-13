@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import LogoutButton from "@/components/auth/logout-button";
+import LetterDownloadLink from "@/components/dashboard/letter-download-link";
 
 const TONE_LABELS: Record<string, string> = {
   diretto: "Diretto",
@@ -89,13 +90,7 @@ export default async function GeneratedLettersPage({
                       {letter.tone && ` · Tono: ${TONE_LABELS[letter.tone] ?? letter.tone}`}
                     </p>
                   </div>
-                  <a
-                    href={`/api/generate/cover-letter/${letter.id}/download`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="shrink-0 bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-md hover:bg-primary/90"
-                  >
-                    Scarica .docx
-                  </a>
+                  <LetterDownloadLink letterId={letter.id} />
                 </summary>
                 <p className="text-xs text-muted-foreground leading-relaxed border-t pt-3 whitespace-pre-wrap">
                   {letter.letter_text}

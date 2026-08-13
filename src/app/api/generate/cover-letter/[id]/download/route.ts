@@ -76,7 +76,16 @@ export async function GET(
       filePath = data.file_path as string;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      return NextResponse.json({ error: `Generazione .docx fallita: ${msg}` }, { status: 500 });
+      console.error("[generate/cover-letter/[id]/download] generazione .docx fallita:", msg);
+      return NextResponse.json({ error: "Generazione del documento non riuscita, riprova più tardi" }, { status: 500 });
+    }
+
+    // Il worker può rispondere 200 senza file_path: senza questo controllo
+    // createSignedUrl(undefined) fallirebbe più avanti con un 500 muto che
+    // nasconde la vera origine del problema.
+    if (!filePath) {
+      console.error("[generate/cover-letter/[id]/download] worker ha risposto senza file_path");
+      return NextResponse.json({ error: "Generazione del documento non riuscita, riprova più tardi" }, { status: 500 });
     }
 
     const { error: updateError } = await supabase
