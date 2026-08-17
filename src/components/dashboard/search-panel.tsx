@@ -60,7 +60,7 @@ export default function SearchPanel({ locale }: { locale: string }) {
   const [offers, setOffers] = useState<ScoredOffer[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<"all" | "green" | "yellow" | "red">("all");
-  const [estimatedMin, setEstimatedMin] = useState<number | null>(null);
+  const [searchRolesCount, setSearchRolesCount] = useState<number | null>(null);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [adaptingIds, setAdaptingIds] = useState<Set<string>>(new Set());
   const [adaptedIds, setAdaptedIds] = useState<Set<string>>(new Set());
@@ -190,7 +190,7 @@ export default function SearchPanel({ locale }: { locale: string }) {
         const cfg = await cfgRes.json();
         rolesCount = (cfg.roles ?? []).length || 3;
       }
-      setEstimatedMin(Math.max(1, rolesCount * 2));
+      setSearchRolesCount(rolesCount);
 
       const res = await fetch("/api/search/start", { method: "POST" });
       const data = await res.json();
@@ -472,9 +472,9 @@ export default function SearchPanel({ locale }: { locale: string }) {
       </div>
 
       {/* Banner stima durata */}
-      {isSearching && estimatedMin !== null && (
+      {isSearching && searchRolesCount !== null && (
         <div className="text-sm bg-blue-50 border border-blue-200 text-blue-800 rounded-md px-4 py-3">
-          La ricerca richiederà circa <strong>{estimatedMin} minuti</strong> — puoi navigare liberamente, ti avviseremo al termine.
+          La ricerca può richiedere da pochi minuti a circa un&apos;ora, in base al numero di ruoli selezionati (<strong>{searchRolesCount}</strong> in questo caso) — puoi navigare liberamente nel frattempo: ti avviseremo qui non appena è pronta, anche se chiudi e riapri l&apos;app.
         </div>
       )}
 
