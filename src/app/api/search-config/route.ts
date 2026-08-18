@@ -24,6 +24,27 @@ export async function PATCH(request: NextRequest) {
   const body = await request.json();
   const { roles, city, country, geo_id, radius_km, min_salary, work_mode, work_schedule, contract_types } = body;
 
+  // Difesa in profondità: la UI garantisce sempre un geo_id quando la
+  // città non è vuota (autocomplete obbligatorio). L'unica eccezione
+  // legittima per città-senza-geo_id è un valore già salvato in
+  // precedenza e non toccato in questa modifica (utente che cambia altri
+  // campi) — qualunque altro caso è un bypass della UI, non un utente
+  // reale che ha semplicemente lasciato un campo invariato.
+  if (city && !geo_id) {
+    const { data: existing } = await supabase
+      .from("search_configs")
+      .select("city")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .single();
+    if (!existing || existing.city !== city) {
+      return NextResponse.json({
+        error: "invalid_city",
+        message: "Seleziona una città dal menu di suggerimenti prima di salvare.",
+      }, { status: 400 });
+    }
+  }
+
   const { error } = await supabase
     .from("search_configs")
     .update({
@@ -48,10 +69,19 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const { cv_id, roles, city, country, radius_km, min_salary, work_mode, work_schedule, contract_types } = body;
+  const { cv_id, roles, city, geo_id, country, radius_km, min_salary, work_mode, work_schedule, contract_types } = body;
 
   if (!cv_id || !roles?.length) {
     return NextResponse.json({ error: "missing_fields", message: "cv_id e roles sono obbligatori" }, { status: 400 });
+  }
+  // Difesa in profondità: nessuna configurazione precedente da
+  // "grandfather" qui (è un inserimento nuovo), quindi nessuna eccezione —
+  // la UI garantisce sempre un geo_id quando la città non è vuota.
+  if (city && !geo_id) {
+    return NextResponse.json({
+      error: "invalid_city",
+      message: "Seleziona una città dal menu di suggerimenti prima di salvare.",
+    }, { status: 400 });
   }
 
   // Deactivate previous configs
@@ -64,6 +94,7 @@ export async function POST(request: NextRequest) {
       cv_id,
       roles,
       city: city || null,
+      geo_id: geo_id || null,
       country: country || "Italia",
       radius_km: radius_km || 50,
       min_salary: min_salary || null,

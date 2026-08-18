@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState } from "react";
+import CityAutocomplete, { type CityAutocompleteChange } from "@/components/city-autocomplete";
 
 const COUNTRIES = [
   ["Italia", "🇮🇹"], ["France", "🇫🇷"], ["Deutschland", "🇩🇪"],
@@ -19,15 +20,15 @@ interface SearchConfig {
   roles: string[];
 }
 
-interface GeoHit {
-  id: string;
-  label: string;
-}
-
 export default function SearchConfigForm({ config }: { config: SearchConfig }) {
   const [city, setCity] = useState(config.city ?? "");
   const [country, setCountry] = useState(config.country ?? "Italia");
   const [geoId, setGeoId] = useState((config as { geo_id?: string }).geo_id ?? "");
+  // Il valore già salvato è considerato valido finché l'utente non tocca il
+  // campo città in questa sessione — non forziamo una riselezione di
+  // qualcosa che è già stato salvato in precedenza, solo di modifiche
+  // fatte ora senza scegliere un suggerimento dal menu.
+  const [cityConfirmed, setCityConfirmed] = useState(true);
   const [radius, setRadius] = useState(config.radius_km ?? 50);
   const [minSalary, setMinSalary] = useState(config.min_salary ?? 0);
   const [workModes, setWorkModes] = useState<string[]>(() => {
@@ -42,43 +43,17 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
-  const [suggestions, setSuggestions] = useState<GeoHit[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  const fetchSuggestions = useCallback(async (q: string) => {
-    if (q.length < 2) { setSuggestions([]); return; }
-    const res = await fetch(`/api/geo-suggest?q=${encodeURIComponent(q)}`);
-    if (res.ok) setSuggestions(await res.json());
-  }, []);
-
-  const handleCityChange = (val: string) => {
-    setCity(val);
-    setShowSuggestions(true);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
+  const handleCityChange = (v: CityAutocompleteChange) => {
+    setCity(v.label);
+    setGeoId(v.geoId);
+    setCityConfirmed(v.isConfirmed);
   };
-
-  const selectSuggestion = (hit: GeoHit) => {
-    setCity(hit.label);
-    setGeoId(hit.id);
-    setSuggestions([]);
-    setShowSuggestions(false);
-  };
-
-  // Chiudi dropdown cliccando fuori
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
 
   const handleSave = async () => {
+    if (!cityConfirmed) {
+      setError("Seleziona una città dal menu di suggerimenti prima di salvare (o lascia il campo vuoto per cercare in tutta Italia).");
+      return;
+    }
     setSaving(true);
     setError("");
     setSaved(false);
@@ -124,28 +99,15 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <label className="text-muted-foreground">Città</label>
-            <div className="relative" ref={wrapperRef}>
-              <input
-                value={city}
-                onChange={e => handleCityChange(e.target.value)}
-                onFocus={() => city.length >= 2 && setShowSuggestions(true)}
-                placeholder="es. Lodi, Lombardia, Italy"
-                className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-              {showSuggestions && suggestions.length > 0 && (
-                <ul className="absolute z-50 mt-1 w-full bg-background border rounded-md shadow-md max-h-48 overflow-auto">
-                  {suggestions.map(hit => (
-                    <li
-                      key={hit.id}
-                      onMouseDown={() => selectSuggestion(hit)}
-                      className="px-3 py-2 cursor-pointer hover:bg-muted text-sm"
-                    >
-                      {hit.label}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <CityAutocomplete
+              initialValue={city}
+              onChange={handleCityChange}
+              placeholder="es. Lodi, Lombardia, Italy"
+              className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            {!cityConfirmed && (
+              <p className="text-xs text-destructive">Seleziona una città dal menu di suggerimenti (o lascia il campo vuoto).</p>
+            )}
           </div>
           <div className="space-y-1">
             <label className="text-muted-foreground">Raggio (km)</label>
@@ -248,7 +210,7 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
 
       <button
         onClick={handleSave}
-        disabled={saving}
+        disabled={saving || !cityConfirmed}
         className="bg-primary text-primary-foreground px-5 py-2 rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
       >
         {saving ? "Salvataggio..." : saved ? "Salvato ✓" : "Salva configurazione"}

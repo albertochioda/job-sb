@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import CityAutocomplete, { type CityAutocompleteChange } from "@/components/city-autocomplete";
 
 interface Props {
   locale: string;
@@ -16,6 +17,11 @@ export default function OnboardingWizard({ locale }: Props) {
   const [roles, setRoles] = useState<string[]>([]);
   const [newRole, setNewRole] = useState("");
   const [city, setCity] = useState("");
+  const [geoId, setGeoId] = useState("");
+  // Campo vuoto = nessuna preferenza di città, valido di default (l'intero
+  // step 5 è facoltativo). Digitare senza selezionare un suggerimento lo
+  // invalida finché non si sceglie dal menu o si svuota di nuovo il campo.
+  const [cityConfirmed, setCityConfirmed] = useState(true);
   const [country, setCountry] = useState("Italia");
   const [radiusKm, setRadiusKm] = useState(50);
   const [minSalary, setMinSalary] = useState("");
@@ -83,6 +89,13 @@ export default function OnboardingWizard({ locale }: Props) {
     setStep(5);
   }
 
+  // --- Step 5: Città ---
+  function handleCityChange(v: CityAutocompleteChange) {
+    setCity(v.label);
+    setGeoId(v.geoId);
+    setCityConfirmed(v.isConfirmed);
+  }
+
   // --- Step 5: Save config ---
   async function handleStart() {
     setSaving(true);
@@ -90,7 +103,7 @@ export default function OnboardingWizard({ locale }: Props) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        cv_id: cvId, roles, city, country, radius_km: radiusKm,
+        cv_id: cvId, roles, city, geo_id: geoId, country, radius_km: radiusKm,
         min_salary: minSalary ? parseInt(minSalary) : null,
         work_mode: workModes.length ? workModes.join(",") : "nessuna_preferenza",
         work_schedule: workSchedule,
@@ -290,12 +303,15 @@ export default function OnboardingWizard({ locale }: Props) {
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">Città</label>
-              <input
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
+              <CityAutocomplete
+                initialValue={city}
+                onChange={handleCityChange}
                 placeholder="es. Milano"
                 className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
+              {!cityConfirmed && (
+                <p className="text-xs text-destructive">Seleziona una città dal menu di suggerimenti (o lascia il campo vuoto per cercare in tutta Italia).</p>
+              )}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Raggio: <span className="font-bold">{radiusKm} km</span></label>
@@ -380,7 +396,11 @@ export default function OnboardingWizard({ locale }: Props) {
               />
             </div>
           </div>
-          <button onClick={() => setStep(6)} className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-medium hover:bg-primary/90">
+          <button
+            onClick={() => setStep(6)}
+            disabled={!cityConfirmed}
+            className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-medium hover:bg-primary/90 disabled:opacity-50"
+          >
             Avanti →
           </button>
         </div>
