@@ -25,21 +25,47 @@ export const metadata: Metadata = {
 // toccare nient'altro nel componente o nei messaggi.
 const HERO_VARIANT: "A" | "B" = "A";
 
-// Dati illustrativi della card hero (mockup) — sample UI, non copy di
-// marketing: nessuna traduzione dedicata, identici in entrambe le lingue,
-// come un mock-up di prodotto in uno screenshot.
-const SAMPLE_LISTINGS = [
-  { title: "Product Manager", meta: "Milano · Ibrido", score: 92, tier: "high" as const },
-  { title: "Marketing Specialist", meta: "Torino · Remoto", score: 87, tier: "high" as const },
-  { title: "Account Executive", meta: "Roma · Sede", score: 54, tier: "mid" as const },
+// 3 offerte reali (screenshot forniti dal founder, 2026-08-21) — solo
+// titolo/azienda/città/punteggio: MAI la motivazione dello Score A (che
+// nella dashboard reale cita competenze ed esperienza dedotte dal CV di
+// un candidato specifico — dato personale, non deve mai comparire su una
+// pagina pubblica). Sample UI illustrativa ma con contenuto vero,
+// identica in entrambe le lingue (come uno screenshot di prodotto).
+const REAL_LISTINGS = [
+  {
+    title: "Global Operational Excellence (PPI) & Digital Senior Manager",
+    company: "Thermo Fisher Scientific",
+    city: "Monza",
+    score: 8.7,
+    tier: "high" as const,
+  },
+  {
+    title: "Digital Media Specialist",
+    company: "Stellantis",
+    city: "Torino",
+    score: 8.0,
+    tier: "high" as const,
+  },
+  {
+    title: "ICQA Area Manager / Quality Operations Manager / Lean Manager / Continuo...",
+    company: "Amazon",
+    city: "Cividate al Piano",
+    score: 6.4,
+    tier: "mid" as const,
+  },
 ];
 
 // Stessa convenzione già in uso nella dashboard reale per i badge di
 // compatibilità (src/components/dashboard/search-results-list.tsx,
-// FLAG_COLORS) — riusata qui identica invece di inventarne una nuova.
+// FLAG_COLORS/FLAG_LABELS) — riusata identica invece di inventarne una
+// nuova.
 const SCORE_BADGE: Record<"high" | "mid", string> = {
   high: "bg-green-100 text-green-800",
   mid: "bg-yellow-100 text-yellow-800",
+};
+const SCORE_LABEL: Record<"high" | "mid", string> = {
+  high: "Alta",
+  mid: "Media",
 };
 
 type CompetitorRow = { label: string; diy: string; bot: string; us: string };
@@ -157,21 +183,24 @@ export default async function HomePage({
         <div className="max-w-2xl mx-auto bg-muted/40 rounded-xl p-5">
           <p className="text-xs text-muted-foreground mb-2.5">{t("heroCardLabel")}</p>
           <div className="flex flex-col gap-2">
-            {SAMPLE_LISTINGS.map((job) => (
+            {REAL_LISTINGS.map((job) => (
               <div
                 key={job.title}
-                className={`bg-card border rounded-md p-2.5 flex items-center gap-2.5 ${job.tier === "mid" ? "opacity-60" : ""}`}
+                className="bg-card border rounded-md p-2.5 flex items-center gap-2.5"
               >
                 <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center shrink-0">
                   <Building2 className="h-4 w-4 text-accent-foreground" aria-hidden="true" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{job.title}</p>
-                  <p className="text-xs text-muted-foreground">{job.meta}</p>
+                  <p className="text-xs text-muted-foreground truncate">{job.company} · {job.city}</p>
                 </div>
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-md shrink-0 ${SCORE_BADGE[job.tier]}`}>
-                  {job.score}%
-                </span>
+                <div className="flex flex-col items-end gap-0.5 shrink-0">
+                  <span className="text-sm font-semibold">{job.score.toFixed(1)}</span>
+                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md ${SCORE_BADGE[job.tier]}`}>
+                    {SCORE_LABEL[job.tier]}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
