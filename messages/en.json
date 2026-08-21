@@ -23,16 +23,102 @@
     "logout": "Log out"
   },
   "home": {
-    "headline": "Find jobs faster with AI",
-    "subheadline": "Job SB analyzes your CV, finds the best offers and adapts your CV for each application — automatically.",
+    "heroA": {
+      "headline": "More interviews, less time wasted. You win the interview."
+    },
+    "heroB": {
+      "headline": "We don't find the job for you. We get you to the right door, more often."
+    },
+    "subheadline": "Job SB searches, filters and tailors your CV for you. You stay focused on what really matters: the interview.",
     "cta": "Start for free",
+    "founderQuote": "I built this because I was job hunting myself. I saved listings by hand, fed them one by one to an AI to see if they made sense for my profile — most didn't. The good ones I adapted with prompt after prompt, never quite getting the format I wanted. And more than once, by the time I was ready to apply, the listing was already gone. Job SB does that part for you, start to finish, so you never lose an opportunity to the fatigue of endless scrolling.",
+    "founderName": "Alberto Chioda",
+    "founderRole": "Founder",
+    "pillar1Title": "Only the offers that fit",
+    "pillar1Desc": "Score A+B filters out the noise before you waste time reading it",
+    "pillar2Title": "Your CV adapts itself",
+    "pillar2Desc": "A ready .docx for every offer, in Italian or English",
+    "pillar3Title": "Everything in one place, stay focused on what matters",
+    "pillar3Desc": "Job SB never posts activity on your profiles and never sends applications without your consent",
     "howItWorks": "How it works",
-    "step1Title": "Upload your CV",
-    "step1Desc": "Upload your CV in PDF or Word. The AI analyzes your profile and suggests target roles.",
-    "step2Title": "Search offers",
-    "step2Desc": "The system scrapes LinkedIn and Indeed and scores each offer against your real profile.",
-    "step3Title": "Apply with an adapted CV",
-    "step3Desc": "For high-score offers, generate a tailored CV in one click. Download it and apply."
+    "step1Title": "Upload your CV and set up your search",
+    "step1Meta": "2 minutes",
+    "step1Desc": "Upload your CV, tell us where and how you want to work (area, salary, work mode), pick the CV style you prefer.",
+    "step2Title": "Start the search whenever you want.",
+    "step2Desc": "One click on \"Start search\" and Job SB looks for offers in your area, comparing them against your real CV. Off-target ones you never even see: only offers that fit arrive, with the reasoning behind the score.",
+    "step3Title": "Adapt your CV with one click.",
+    "step3Desc": "For the offers you're interested in, click \"Adapt CV\": it gets rewritten specifically for that role, automatically in the listing's language — Italian or English.",
+    "step4Title": "Track your application to the end.",
+    "step4Desc": "The tracker lets you follow every application from submission, through the interview, to the offer or rejection. The rest — the interview — is up to you.",
+    "competitorTitle": "Comparison",
+    "competitorIntro": "It's not an auto-apply bot: these products send applications automatically, often in violation of LinkedIn's Terms of Service, risking generic applications that don't reflect the specific role. Job SB never sends anything without an explicit click from you.",
+    "competitorSubhead": "We don't fire off applications for you. We give you the right CV for the right offer — you decide what to send.",
+    "competitor": {
+      "columns": ["Dimension", "DIY search", "Auto-apply bot", "Job SB"],
+      "rows": [
+        {
+          "label": "Finds offers that fit",
+          "diy": "Hours of manual scrolling",
+          "bot": "Often generic, off-target applications",
+          "us": "Scored against your real CV, only offers that fit"
+        },
+        {
+          "label": "Risk to your LinkedIn profile",
+          "diy": "None",
+          "bot": "Risk of restrictions for violating the Terms of Service",
+          "us": "No action on your LinkedIn account: zero access, zero automatic sending"
+        },
+        {
+          "label": "Tailored CV for every offer",
+          "diy": "Manual, one at a time",
+          "bot": "Often recycled or generic",
+          "us": "Adapted for every offer, automatically"
+        },
+        {
+          "label": "Score transparency",
+          "diy": "—",
+          "bot": "Almost never explained",
+          "us": "Score reasoning always visible"
+        },
+        {
+          "label": "Italian localization (salary, contracts, geo-radius)",
+          "diy": "Up to you",
+          "bot": "Not covered by global players",
+          "us": "Native"
+        },
+        {
+          "label": "Who decides what to send",
+          "diy": "You, always",
+          "bot": "The algorithm, automatically",
+          "us": "You, always"
+        },
+        {
+          "label": "Scam listing risk",
+          "diy": "Up to you",
+          "bot": "No source pre-screening",
+          "us": "Final review: no application without your OK"
+        }
+      ]
+    },
+    "pricingTitle": "Pricing",
+    "pricingTable": {
+      "plans": [
+        { "name": "Trial", "meta": "14 days" },
+        { "name": "Individual", "meta": "€19/month" },
+        { "name": "Professional", "meta": "€29/month", "badge": "Continuity from trial" }
+      ],
+      "rows": [
+        { "label": "Searches/month", "values": ["3", "10", "20"] },
+        { "label": "Adapted CVs/month", "values": ["3", "15", "30"] },
+        { "label": "Minimal Smart template", "values": [true, true, true] },
+        { "label": "Professional template", "values": [true, false, true] },
+        { "label": "Two Column template", "values": [true, false, true] },
+        { "label": "Bold Header template", "values": [true, false, true] },
+        { "label": "AI Scoring (Score A+B)", "values": [true, true, true] },
+        { "label": "IT/EN translation", "values": [true, true, true] }
+      ]
+    },
+    "pricingMicroNote": "If during your trial you used more than one template, or applied across more than one industry, Professional is the one that lets you keep going without giving anything up."
   },
   "auth": {
     "email": "Email",
