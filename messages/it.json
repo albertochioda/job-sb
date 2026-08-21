@@ -118,7 +118,9 @@
         { "label": "Traduzione IT/EN", "values": [true, true, true] }
       ]
     },
-    "pricingMicroNote": "Se durante il trial hai usato più di un template, o candidature in più di un settore, Professional è quello che ti fa continuare senza rinunce."
+    "pricingMicroNote": "Se durante il trial hai usato più di un template, o candidature in più di un settore, Professional è quello che ti fa continuare senza rinunce.",
+    "heroCardLabel": "Le tue offerte in target",
+    "heroCardCaption": "CV adattato automaticamente per ogni offerta"
   },
   "auth": {
     "email": "Email",

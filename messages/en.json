@@ -118,7 +118,9 @@
         { "label": "IT/EN translation", "values": [true, true, true] }
       ]
     },
-    "pricingMicroNote": "If during your trial you used more than one template, or applied across more than one industry, Professional is the one that lets you keep going without giving anything up."
+    "pricingMicroNote": "If during your trial you used more than one template, or applied across more than one industry, Professional is the one that lets you keep going without giving anything up.",
+    "heroCardLabel": "Your matching offers",
+    "heroCardCaption": "CV automatically tailored for every offer"
   },
   "auth": {
     "email": "Email",
