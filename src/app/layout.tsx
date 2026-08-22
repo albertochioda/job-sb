@@ -13,6 +13,14 @@ export const metadata: Metadata = {
   title: "Job SB — Più colloqui, meno tempo perso",
   description:
     "Job SB cerca, filtra e adatta il CV per te. Tu resti concentrato su quello che conta davvero: il colloquio.",
+  // favicon.ico e apple-icon.png in src/app/ vengono già rilevati in
+  // automatico da Next.js per convenzione (stesso meccanismo di
+  // opengraph-image.tsx) — dichiarati qui comunque in modo esplicito,
+  // niente più il triangolo Vercel di default.
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({

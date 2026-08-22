@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import Link from "next/link";
+import Logo from "@/components/logo";
 import {
   Target,
   FilePenLine,
@@ -176,7 +177,7 @@ export default async function HomePage({
       />
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-3 border-b">
-        <span className="font-medium text-lg">Job SB</span>
+        <Logo />
         <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
           <a href="#come-funziona" className="hover:text-foreground">{t("howItWorks")}</a>
           <a href="#confronto" className="hover:text-foreground">{t("competitorTitle")}</a>

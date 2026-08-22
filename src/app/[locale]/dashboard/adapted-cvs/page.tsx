@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import Logo from "@/components/logo";
 import LogoutButton from "@/components/auth/logout-button";
 import { AlertTriangle } from "lucide-react";
 
@@ -31,7 +32,7 @@ export default async function AdaptedCvsPage({
   return (
     <main className="min-h-screen">
       <nav className="flex items-center justify-between px-6 py-4 border-b">
-        <span className="font-bold text-xl">Job SB</span>
+        <Logo />
         <div className="flex items-center gap-4">
           <Link href={`/${locale}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground">
             Dashboard
