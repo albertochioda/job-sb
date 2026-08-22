@@ -58,9 +58,10 @@ export default async function OpengraphImage({
         >
           <span>{t("heroA.headlineLine1")}</span>
           <span>{t("heroA.headlineLine2")}</span>
+          <span>{t("heroA.headlineLine3")}</span>
         </div>
         <div style={{ display: "flex", fontSize: 26, fontWeight: 400, opacity: 0.85 }}>
-          {t("subheadlineLine1")} {t("subheadlineLine2")}
+          {t("subheadlineLine1")} {t("subheadlineLine2")} {t("subheadlineLine3")}
         </div>
       </div>
     ),

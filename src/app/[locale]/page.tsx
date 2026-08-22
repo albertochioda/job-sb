@@ -23,11 +23,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "home" });
 
-  // Solo la prima riga dell'headline — il titolo di pagina non deve
-  // portarsi dietro l'intera headline in due frasi.
-  const tagline = t("heroA.headlineLine1").replace(/\.$/, "");
+  // Prima frase dell'headline (ora divisa su due righe grafiche, riga 1+2)
+  // — il titolo di pagina non deve portarsi dietro l'intera headline.
+  const tagline = `${t("heroA.headlineLine1")} ${t("heroA.headlineLine2")}`.replace(/\.$/, "");
   const title = `Job SB — ${tagline}`;
-  const description = `${t("subheadlineLine1")} ${t("subheadlineLine2")}`;
+  const description = `${t("subheadlineLine1")} ${t("subheadlineLine2")} ${t("subheadlineLine3")}`;
   const url = `https://job-sb.vercel.app/${locale}`;
 
   return {
@@ -139,6 +139,7 @@ export default async function HomePage({
 
   const heroHeadlineLine1 = t(HERO_VARIANT === "A" ? "heroA.headlineLine1" : "heroB.headlineLine1");
   const heroHeadlineLine2 = t(HERO_VARIANT === "A" ? "heroA.headlineLine2" : "heroB.headlineLine2");
+  const heroHeadlineLine3 = t(HERO_VARIANT === "A" ? "heroA.headlineLine3" : "heroB.headlineLine3");
 
   const competitorColumns = t.raw("competitor.columns") as string[];
   const competitorRows = t.raw("competitor.rows") as CompetitorRow[];
@@ -153,7 +154,7 @@ export default async function HomePage({
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: "Job SB",
-    description: `${t("subheadlineLine1")} ${t("subheadlineLine2")}`,
+    description: `${t("subheadlineLine1")} ${t("subheadlineLine2")} ${t("subheadlineLine3")}`,
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     url: `https://job-sb.vercel.app/${locale}`,
@@ -204,11 +205,15 @@ export default async function HomePage({
             {heroHeadlineLine1}
             <br />
             {heroHeadlineLine2}
+            <br />
+            {heroHeadlineLine3}
           </h1>
           <p className="text-muted-foreground text-base md:text-lg leading-relaxed max-w-md">
             {t("subheadlineLine1")}
             <br />
             {t("subheadlineLine2")}
+            <br />
+            {t("subheadlineLine3")}
           </p>
           <Link
             href="/register"

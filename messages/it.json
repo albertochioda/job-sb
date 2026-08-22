@@ -24,15 +24,18 @@
   },
   "home": {
     "heroA": {
-      "headlineLine1": "Più colloqui, meno tempo perso.",
-      "headlineLine2": "Il colloquio lo vinci tu."
+      "headlineLine1": "Più colloqui,",
+      "headlineLine2": "meno tempo perso.",
+      "headlineLine3": "Il colloquio lo vinci tu."
     },
     "heroB": {
       "headlineLine1": "Non troviamo il lavoro al posto tuo.",
-      "headlineLine2": "Ti portiamo alla porta giusta, più spesso."
+      "headlineLine2": "Ti portiamo alla porta giusta,",
+      "headlineLine3": "più spesso."
     },
     "subheadlineLine1": "Job SB cerca, filtra e adatta il CV per te.",
-    "subheadlineLine2": "Tu resti concentrato su quello che conta davvero: il colloquio.",
+    "subheadlineLine2": "Tu resti concentrato su quello che conta davvero:",
+    "subheadlineLine3": "il colloquio.",
     "cta": "Inizia gratis",
     "founderQuote": "L'ho costruito perché cercavo lavoro anch'io. Salvavo gli annunci a mano, li passavo uno per uno a un'AI per capire se avevano senso per il mio profilo: la maggior parte no. Quelli buoni li adattavo con prompt su prompt, senza mai ottenere il formato che volevo. E più di una volta, quando finalmente ero pronto a candidarmi, l'offerta non era già più disponibile. Job SB fa quella parte al posto tuo, dall'inizio alla fine, senza farti perdere le occasioni per la stanchezza di uno scroll infinito.",
     "founderName": "Alberto Chioda",
