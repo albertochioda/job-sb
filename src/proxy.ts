@@ -24,10 +24,16 @@ function getLocaleFromRequest(request: NextRequest): Locale {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip static assets
+  // Skip static assets — inclusi i file di convenzione Next.js generati a
+  // livello radice (robots.ts/sitemap.ts): senza questa esclusione
+  // esplicita cadono nel ramo "aggiungi prefisso locale" più sotto e
+  // vengono rediretti a /it/robots.txt, mai serviti alla radice dove i
+  // crawler li cercano davvero.
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
     /\.(svg|png|jpg|jpeg|gif|webp|ico|css|js)$/.test(pathname)
   ) {
     return NextResponse.next();
@@ -96,6 +102,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

@@ -1,11 +1,14 @@
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { GeistSans } from "geist/font/sans";
 import { routing } from "@/i18n/routing";
 import SearchStatusBanner from "@/components/search-status-banner";
 import { SearchPollingProvider } from "@/contexts/search-polling-context";
 import { SupportChatProvider } from "@/contexts/support-chat-context";
 import { createClient } from "@/lib/supabase/server";
+
+const geist = { variable: GeistSans.variable };
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -44,8 +47,12 @@ export default async function LocaleLayout({
   );
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
-      {user ? <SupportChatProvider>{body}</SupportChatProvider> : body}
-    </NextIntlClientProvider>
+    <html lang={locale} className={`${geist.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-background text-foreground" suppressHydrationWarning>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          {user ? <SupportChatProvider>{body}</SupportChatProvider> : body}
+        </NextIntlClientProvider>
+      </body>
+    </html>
   );
 }

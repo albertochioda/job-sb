@@ -11,14 +11,55 @@ import {
   Minus,
 } from "lucide-react";
 
-// La pagina resta volutamente fuori dall'indicizzazione finché non viene
-// approvata per la pubblicazione — nessun robots.txt/robots.ts esiste nel
-// progetto (verificato: il sito è indicizzabile di default), quindi il
-// noindex va dichiarato esplicitamente qui. Rimuovere questo blocco (o
-// impostare index: true) è l'azione deliberata per pubblicare.
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
+// Metadata dinamici (non un semplice export const): title/description/OG
+// devono variare per locale, servono le stringhe già approvate via
+// getTranslations — uguale meccanismo della pagina stessa.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "home" });
+
+  // Solo la prima frase dell'headline (prima del primo punto) — il titolo
+  // di pagina non deve portarsi dietro l'intera headline in due frasi.
+  const tagline = t("heroA.headline").split(".")[0];
+  const title = `Job SB — ${tagline}`;
+  const description = t("subheadline");
+  const url = `https://job-sb.vercel.app/${locale}`;
+
+  return {
+    title,
+    description,
+    // La pagina resta volutamente fuori dall'indicizzazione finché non
+    // viene approvata per la pubblicazione — src/app/robots.ts blocca già
+    // tutto il sito, ma il noindex per-pagina resta comunque dichiarato
+    // esplicitamente qui: è lui il controllo reale, il robots.txt è solo
+    // un secondo segnale coerente. Rimuovere questo blocco (o impostare
+    // index: true) è l'azione deliberata per pubblicare.
+    robots: { index: false, follow: false },
+    alternates: {
+      languages: {
+        it: "https://job-sb.vercel.app/it",
+        en: "https://job-sb.vercel.app/en",
+      },
+    },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      locale: locale === "it" ? "it_IT" : "en_US",
+      url,
+      siteName: "Job SB",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
+}
 
 // Headline dell'hero pronta per un test A/B: cambiare questa singola riga
 // in "B" attiva la variante alternativa (home.heroB.headline) senza
@@ -102,8 +143,37 @@ export default async function HomePage({
   const pricingPlans = t.raw("pricingTable.plans") as PricingPlan[];
   const pricingRows = t.raw("pricingTable.rows") as PricingRow[];
 
+  // SoftwareApplication (schema.org) — per SEO tradizionale e GEO (i motori
+  // AI si affidano a dati strutturati per capire rapidamente cos'è il
+  // prodotto). Nessun dato inventato: solo campi già approvati altrove
+  // (subheadline) o verificabili nel codice reale (billing/plans.ts).
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Job SB",
+    description: t("subheadline"),
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    url: `https://job-sb.vercel.app/${locale}`,
+    offers: {
+      "@type": "Offer",
+      price: "19",
+      priceCurrency: "EUR",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: "19",
+        priceCurrency: "EUR",
+        unitText: "MONTH",
+      },
+    },
+  };
+
   return (
     <main className="flex flex-col min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-3 border-b">
         <span className="font-medium text-lg">Job SB</span>
@@ -145,6 +215,7 @@ export default async function HomePage({
 
       {/* Founder note */}
       <section className="px-6 py-12">
+        <h2 className="sr-only">{t("founderSectionHeading")}</h2>
         <blockquote className="max-w-2xl mx-auto border-l-2 border-foreground pl-5 py-1 space-y-2">
           <p className="italic text-foreground leading-relaxed">&ldquo;{t("founderQuote")}&rdquo;</p>
           <footer className="text-sm text-muted-foreground not-italic">
@@ -155,6 +226,7 @@ export default async function HomePage({
 
       {/* I tre pilastri */}
       <section className="px-6 py-12">
+        <h2 className="sr-only">{t("pillarsSectionHeading")}</h2>
         <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
           {(["1", "2", "3"] as const).map((n, i) => {
             const Icon = PILLAR_ICONS[i];
@@ -181,7 +253,7 @@ export default async function HomePage({
           ora, solo il contenuto illustrativo attuale. */}
       <section className="px-6 pb-12">
         <div className="max-w-2xl mx-auto bg-muted/40 rounded-xl p-5">
-          <p className="text-xs text-muted-foreground mb-2.5">{t("heroCardLabel")}</p>
+          <h2 className="text-xs font-normal text-muted-foreground mb-2.5">{t("heroCardLabel")}</h2>
           <div className="flex flex-col gap-2">
             {REAL_LISTINGS.map((job) => (
               <div

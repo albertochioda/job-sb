@@ -34,6 +34,8 @@
     "founderQuote": "I built this because I was job hunting myself. I saved listings by hand, fed them one by one to an AI to see if they made sense for my profile — most didn't. The good ones I adapted with prompt after prompt, never quite getting the format I wanted. And more than once, by the time I was ready to apply, the listing was already gone. Job SB does that part for you, start to finish, so you never lose an opportunity to the fatigue of endless scrolling.",
     "founderName": "Alberto Chioda",
     "founderRole": "Founder",
+    "founderSectionHeading": "Why we built Job SB",
+    "pillarsSectionHeading": "Why choose Job SB",
     "pillar1Title": "Only the offers that fit",
     "pillar1Desc": "Score A+B filters out the noise before you waste time reading it",
     "pillar2Title": "Your CV adapts itself",

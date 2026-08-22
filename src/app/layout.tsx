@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 
-const geist = { variable: GeistSans.variable };
-
+// <html>/<body> vivono in src/app/[locale]/layout.tsx, non qui — è l'unico
+// punto dell'albero che conosce la locale attiva (serve per l'attributo
+// lang, vedi punto 6 dell'audit SEO). Pattern standard next-intl: il
+// layout radice resta un pass-through puro, non renderizza JSX proprio.
+// L'import di globals.css resta qui: si applica a ogni route, inclusa
+// quella "/" bare (src/app/page.tsx, solo un redirect a /it) che non
+// passa mai da [locale]/layout.tsx.
 export const metadata: Metadata = {
-  title: "Job SB — Trova lavoro con l'AI",
+  metadataBase: new URL("https://job-sb.vercel.app"),
+  title: "Job SB — Più colloqui, meno tempo perso",
   description:
-    "Job SB automatizza la ricerca di lavoro: analizza il tuo CV, trova le offerte migliori e adatta il CV per ogni candidatura.",
+    "Job SB cerca, filtra e adatta il CV per te. Tu resti concentrato su quello che conta davvero: il colloquio.",
 };
 
 export default function RootLayout({
@@ -15,11 +20,5 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <html className={`${geist.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-background text-foreground" suppressHydrationWarning>
-        {children}
-      </body>
-    </html>
-  );
+  return children;
 }
