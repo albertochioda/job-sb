@@ -23,11 +23,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "home" });
 
-  // Solo la prima frase dell'headline (prima del primo punto) — il titolo
-  // di pagina non deve portarsi dietro l'intera headline in due frasi.
-  const tagline = t("heroA.headline").split(".")[0];
+  // Solo la prima riga dell'headline — il titolo di pagina non deve
+  // portarsi dietro l'intera headline in due frasi.
+  const tagline = t("heroA.headlineLine1").replace(/\.$/, "");
   const title = `Job SB — ${tagline}`;
-  const description = t("subheadline");
+  const description = `${t("subheadlineLine1")} ${t("subheadlineLine2")}`;
   const url = `https://job-sb.vercel.app/${locale}`;
 
   return {
@@ -63,7 +63,7 @@ export async function generateMetadata({
 }
 
 // Headline dell'hero pronta per un test A/B: cambiare questa singola riga
-// in "B" attiva la variante alternativa (home.heroB.headline) senza
+// in "B" attiva la variante alternativa (home.heroB.headlineLine1/2) senza
 // toccare nient'altro nel componente o nei messaggi.
 const HERO_VARIANT: "A" | "B" = "A";
 
@@ -137,7 +137,8 @@ export default async function HomePage({
   const t = await getTranslations({ locale, namespace: "home" });
   const tNav = await getTranslations({ locale, namespace: "nav" });
 
-  const heroHeadline = t(HERO_VARIANT === "A" ? "heroA.headline" : "heroB.headline");
+  const heroHeadlineLine1 = t(HERO_VARIANT === "A" ? "heroA.headlineLine1" : "heroB.headlineLine1");
+  const heroHeadlineLine2 = t(HERO_VARIANT === "A" ? "heroA.headlineLine2" : "heroB.headlineLine2");
 
   const competitorColumns = t.raw("competitor.columns") as string[];
   const competitorRows = t.raw("competitor.rows") as CompetitorRow[];
@@ -152,7 +153,7 @@ export default async function HomePage({
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: "Job SB",
-    description: t("subheadline"),
+    description: `${t("subheadlineLine1")} ${t("subheadlineLine2")}`,
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     url: `https://job-sb.vercel.app/${locale}`,
@@ -200,10 +201,14 @@ export default async function HomePage({
       <section className="px-6 py-16 md:py-20">
         <div className="flex flex-col items-center text-center gap-4 max-w-2xl mx-auto">
           <h1 className="text-3xl md:text-5xl font-medium leading-tight">
-            {heroHeadline}
+            {heroHeadlineLine1}
+            <br />
+            {heroHeadlineLine2}
           </h1>
           <p className="text-muted-foreground text-base md:text-lg leading-relaxed max-w-md">
-            {t("subheadline")}
+            {t("subheadlineLine1")}
+            <br />
+            {t("subheadlineLine2")}
           </p>
           <Link
             href="/register"
@@ -220,7 +225,7 @@ export default async function HomePage({
         <blockquote className="max-w-2xl mx-auto border-l-2 border-foreground pl-5 py-1 space-y-2">
           <p className="italic text-foreground leading-relaxed">&ldquo;{t("founderQuote")}&rdquo;</p>
           <footer className="text-sm text-muted-foreground not-italic">
-            — {t("founderName")}, {t("founderRole")}
+            {t("founderName")}, {t("founderRole")}
           </footer>
         </blockquote>
       </section>

@@ -24,14 +24,17 @@
   },
   "home": {
     "heroA": {
-      "headline": "More interviews, less time wasted. You win the interview."
+      "headlineLine1": "More interviews, less time wasted.",
+      "headlineLine2": "You win the interview."
     },
     "heroB": {
-      "headline": "We don't find the job for you. We get you to the right door, more often."
+      "headlineLine1": "We don't find the job for you.",
+      "headlineLine2": "We get you to the right door, more often."
     },
-    "subheadline": "Job SB searches, filters and tailors your CV for you. You stay focused on what really matters: the interview.",
+    "subheadlineLine1": "Job SB searches, filters and tailors your CV for you.",
+    "subheadlineLine2": "You stay focused on what really matters: the interview.",
     "cta": "Start for free",
-    "founderQuote": "I built this because I was job hunting myself. I saved listings by hand, fed them one by one to an AI to see if they made sense for my profile — most didn't. The good ones I adapted with prompt after prompt, never quite getting the format I wanted. And more than once, by the time I was ready to apply, the listing was already gone. Job SB does that part for you, start to finish, so you never lose an opportunity to the fatigue of endless scrolling.",
+    "founderQuote": "I built this because I was job hunting myself. I saved listings by hand, fed them one by one to an AI to see if they made sense for my profile: most didn't. The good ones I adapted with prompt after prompt, never quite getting the format I wanted. And more than once, by the time I was ready to apply, the listing was already gone. Job SB does that part for you, start to finish, so you never lose an opportunity to the fatigue of endless scrolling.",
     "founderName": "Alberto Chioda",
     "founderRole": "Founder",
     "founderSectionHeading": "Why we built Job SB",
@@ -49,12 +52,12 @@
     "step2Title": "Start the search whenever you want.",
     "step2Desc": "One click on \"Start search\" and Job SB looks for offers in your area, comparing them against your real CV. Off-target ones you never even see: only offers that fit arrive, with the reasoning behind the score.",
     "step3Title": "Adapt your CV with one click.",
-    "step3Desc": "For the offers you're interested in, click \"Adapt CV\": it gets rewritten specifically for that role, automatically in the listing's language — Italian or English.",
+    "step3Desc": "For the offers you're interested in, click \"Adapt CV\": it gets rewritten specifically for that role, automatically in the listing's language: Italian or English.",
     "step4Title": "Track your application to the end.",
-    "step4Desc": "The tracker lets you follow every application from submission, through the interview, to the offer or rejection. The rest — the interview — is up to you.",
+    "step4Desc": "The tracker lets you follow every application from submission, through the interview, to the offer or rejection. The rest (the interview) is up to you.",
     "competitorTitle": "Comparison",
     "competitorIntro": "It's not an auto-apply bot: these products send applications automatically, often in violation of LinkedIn's Terms of Service, risking generic applications that don't reflect the specific role. Job SB never sends anything without an explicit click from you.",
-    "competitorSubhead": "We don't fire off applications for you. We give you the right CV for the right offer — you decide what to send.",
+    "competitorSubhead": "We don't fire off applications for you. We give you the right CV for the right offer: you decide what to send.",
     "competitor": {
       "columns": ["Dimension", "DIY search", "Auto-apply bot", "Job SB"],
       "rows": [

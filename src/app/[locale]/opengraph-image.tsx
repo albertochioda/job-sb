@@ -48,6 +48,7 @@ export default async function OpengraphImage({
         <div
           style={{
             display: "flex",
+            flexDirection: "column",
             fontSize: 58,
             fontWeight: 600,
             lineHeight: 1.15,
@@ -55,10 +56,11 @@ export default async function OpengraphImage({
             letterSpacing: -1,
           }}
         >
-          {t("heroA.headline")}
+          <span>{t("heroA.headlineLine1")}</span>
+          <span>{t("heroA.headlineLine2")}</span>
         </div>
         <div style={{ display: "flex", fontSize: 26, fontWeight: 400, opacity: 0.85 }}>
-          {t("subheadline")}
+          {t("subheadlineLine1")} {t("subheadlineLine2")}
         </div>
       </div>
     ),
