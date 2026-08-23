@@ -133,6 +133,8 @@
   "auth": {
     "email": "Email",
     "password": "Password",
+    "passwordRequirements": "At least 8 characters, with at least one letter and one number.",
+    "passwordTooWeak": "Password must be at least 8 characters, with at least one letter and one number.",
     "fullName": "Full name",
     "loginTitle": "Log in to Job SB",
     "registerTitle": "Create your account",

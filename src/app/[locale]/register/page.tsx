@@ -14,6 +14,8 @@ export default async function RegisterPage({
     fullName: t("fullName"),
     email: t("email"),
     password: t("password"),
+    passwordRequirements: t("passwordRequirements"),
+    passwordTooWeak: t("passwordTooWeak"),
     registerLink: t("registerLink"),
     alreadyAccount: t("alreadyAccount"),
     loginLink: t("loginLink"),

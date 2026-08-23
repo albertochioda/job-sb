@@ -23,6 +23,15 @@ export default function RegisterForm({ locale, t }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    // Requisito lato client, più severo del minimo reale imposto da Supabase
+    // Auth (verificato: solo 6 caratteri, nessuna complessità richiesta) —
+    // vedi commento su passwordRequirements per il dettaglio.
+    if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/\d/.test(password)) {
+      setError(t.passwordTooWeak);
+      return;
+    }
+
     setLoading(true);
 
     const supabase = createClient();
@@ -91,6 +100,7 @@ export default function RegisterForm({ locale, t }: Props) {
           minLength={8}
           className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         />
+        <p className="text-xs text-muted-foreground">{t.passwordRequirements}</p>
       </div>
       <label className="flex items-start gap-2 cursor-pointer">
         <input

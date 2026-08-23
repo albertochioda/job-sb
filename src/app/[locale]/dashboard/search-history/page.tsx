@@ -4,14 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import Logo from "@/components/logo";
 import LogoutButton from "@/components/auth/logout-button";
-
-const STATUS_LABELS: Record<string, string> = {
-  completed: "Completata",
-  queued: "In coda",
-  running: "In corso",
-  error: "Errore",
-  cancelled: "Interrotta",
-};
+import SearchHistoryPanel from "@/components/dashboard/search-history-panel";
 
 export default async function SearchHistoryPage({
   params,
@@ -70,39 +63,7 @@ export default async function SearchHistoryPage({
         {!searches || searches.length === 0 ? (
           <p className="text-sm text-muted-foreground py-16 text-center">Nessuna ricerca ancora lanciata.</p>
         ) : (
-          <div className="space-y-2">
-            {searches.map((s) => {
-              const dateLabel = new Date(s.created_at).toLocaleDateString("it-IT", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-              const isCompleted = s.status === "completed";
-              const content = (
-                <div className="border rounded-lg p-4 flex items-center justify-between gap-3 hover:border-foreground/30 transition-colors">
-                  <div>
-                    <p className="text-sm font-medium">{dateLabel}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {STATUS_LABELS[s.status] ?? s.status}
-                      {isCompleted && s.total_jobs != null ? ` · ${s.total_jobs} offerte analizzate` : ""}
-                    </p>
-                  </div>
-                  {isCompleted && (
-                    <span className="text-xs text-primary shrink-0">Vedi risultati →</span>
-                  )}
-                </div>
-              );
-              return isCompleted ? (
-                <Link key={s.id} href={`/${locale}/dashboard/search-results/${s.id}`}>
-                  {content}
-                </Link>
-              ) : (
-                <div key={s.id}>{content}</div>
-              );
-            })}
-          </div>
+          <SearchHistoryPanel searches={searches} locale={locale} />
         )}
       </div>
     </main>

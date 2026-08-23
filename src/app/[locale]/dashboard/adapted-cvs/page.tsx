@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { fetchLatestFlags } from "@/lib/latest-flags";
 import Link from "next/link";
 import Logo from "@/components/logo";
 import LogoutButton from "@/components/auth/logout-button";
-import { AlertTriangle } from "lucide-react";
+import AdaptedCvsPanel from "@/components/dashboard/adapted-cvs-panel";
 
 export default async function AdaptedCvsPage({
   params,
@@ -22,12 +23,19 @@ export default async function AdaptedCvsPage({
   const { data: adaptedCvs } = await supabase
     .from("adapted_cvs")
     .select(`
-      id, file_url, language, created_at,
+      id, offer_id, file_url, language, created_at,
       profilo_adattato, note_strategiche, keywords_ats,
       job_offers (title, company, location)
     `)
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
+
+  const offerIds = (adaptedCvs ?? []).map((a) => a.offer_id).filter((id): id is string => !!id);
+  const flagByOffer = await fetchLatestFlags(supabase, user.id, offerIds);
+  const enrichedCvs = (adaptedCvs ?? []).map((acv: any) => ({
+    ...acv,
+    flag: flagByOffer[acv.offer_id] ?? null,
+  }));
 
   return (
     <main className="min-h-screen">
@@ -61,7 +69,7 @@ export default async function AdaptedCvsPage({
           </p>
         </div>
 
-        {!adaptedCvs || adaptedCvs.length === 0 ? (
+        {enrichedCvs.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">
             <p className="text-lg">Nessun CV adattato ancora.</p>
             <p className="text-sm mt-1">
@@ -72,60 +80,7 @@ export default async function AdaptedCvsPage({
             </Link>
           </div>
         ) : (
-          <div className="space-y-4">
-            {adaptedCvs.map((acv: any) => (
-              <div key={acv.id} className="border rounded-lg p-5 space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-sm">{acv.job_offers?.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {acv.job_offers?.company} · {acv.job_offers?.location}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {new Date(acv.created_at).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })}
-                      {" · "}{acv.language === "en" ? "🇬🇧 EN" : "🇮🇹 IT"}
-                    </p>
-                  </div>
-                  {acv.file_url && (
-                    <div className="shrink-0 flex flex-col items-end gap-1">
-                      <a
-                        href={`/api/adapt/cv/${acv.id}/download`}
-                        className="bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-md hover:bg-primary/90"
-                      >
-                        Scarica .docx
-                      </a>
-                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
-                        {t("cv_warning")}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {acv.profilo_adattato && (
-                  <p className="text-xs text-muted-foreground leading-relaxed border-t pt-3">
-                    {acv.profilo_adattato}
-                  </p>
-                )}
-
-                {acv.keywords_ats?.length > 0 && (
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {acv.keywords_ats.map((kw: string) => (
-                      <span key={kw} className="text-[10px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
-                        {kw}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {acv.note_strategiche && (
-                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-                    💡 {acv.note_strategiche}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
+          <AdaptedCvsPanel cvs={enrichedCvs} cvWarning={t("cv_warning")} />
         )}
       </div>
     </main>

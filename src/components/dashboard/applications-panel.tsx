@@ -7,6 +7,9 @@ import TemplateSelector from "@/components/dashboard/template-selector";
 import CoverLetterSettingsForm from "@/components/profile/cover-letter-settings-form";
 import { useBlockingModal } from "@/contexts/blocking-modal-context";
 import SupportChatIcon from "@/components/support-chat-icon";
+import SearchFilterBar from "@/components/dashboard/search-filter-bar";
+
+const FLAG_LABELS: Record<string, string> = { green: "Alta", yellow: "Media", red: "Bassa" };
 
 const STATUSES = ["saved", "applied", "interview", "offer", "rejected"] as const;
 type Status = typeof STATUSES[number];
@@ -51,12 +54,15 @@ interface Application {
   adapted_cv_id: string | null;
   job_offers: JobOffer | null;
   adapted_cvs: AdaptedCv | null;
+  flag: "green" | "yellow" | "red" | null;
 }
 
 export default function ApplicationsPanel({ initial }: { initial: Application[] }) {
   const { locale } = useParams<{ locale: string }>();
   const [applications, setApplications] = useState<Application[]>(initial);
   const [filterStatus, setFilterStatus] = useState<Status | "all">("all");
+  const [filterFlag, setFilterFlag] = useState<"all" | "green" | "yellow" | "red">("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -216,13 +222,29 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
     adaptCv(app, pickerTemplate, isRegenerate);
   };
 
-  const filtered = filterStatus === "all"
+  const byStatus = filterStatus === "all"
     ? applications
     : applications.filter(a => a.status === filterStatus);
+  const byFlag = filterFlag === "all"
+    ? byStatus
+    : byStatus.filter(a => a.flag === filterFlag);
+  const q = searchQuery.trim().toLowerCase();
+  const filtered = q
+    ? byFlag.filter(a =>
+        a.job_offers?.title?.toLowerCase().includes(q) || a.job_offers?.company?.toLowerCase().includes(q)
+      )
+    : byFlag;
 
   const counts = Object.fromEntries(
     STATUSES.map(s => [s, applications.filter(a => a.status === s).length])
   ) as Record<Status, number>;
+
+  const flagCounts = {
+    all: applications.length,
+    green: applications.filter(a => a.flag === "green").length,
+    yellow: applications.filter(a => a.flag === "yellow").length,
+    red: applications.filter(a => a.flag === "red").length,
+  };
 
   const updateApplication = useCallback(async (
     id: string,
@@ -274,7 +296,22 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
 
   return (
     <div className="space-y-6">
-      {/* Filtri */}
+      {/* Ricerca + filtro fascia compatibilità */}
+      <SearchFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Cerca per titolo o azienda..."
+        filter={filterFlag}
+        onFilterChange={(f) => setFilterFlag(f as typeof filterFlag)}
+        options={[
+          { value: "all", label: "Tutti", count: flagCounts.all },
+          { value: "green", label: "Alta", count: flagCounts.green },
+          { value: "yellow", label: "Media", count: flagCounts.yellow },
+          { value: "red", label: "Bassa", count: flagCounts.red },
+        ]}
+      />
+
+      {/* Filtro stato candidatura */}
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setFilterStatus("all")}
@@ -314,9 +351,16 @@ export default function ApplicationsPanel({ initial }: { initial: Application[] 
               {/* Header */}
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-0.5 min-w-0">
-                  <p className="font-medium text-sm leading-tight truncate">
-                    {app.job_offers?.title ?? "Offerta sconosciuta"}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-sm leading-tight truncate">
+                      {app.job_offers?.title ?? "Offerta sconosciuta"}
+                    </p>
+                    {app.flag && (
+                      <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full border font-medium text-muted-foreground">
+                        {FLAG_LABELS[app.flag]}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     {app.job_offers?.company} · {app.job_offers?.location}
                   </p>

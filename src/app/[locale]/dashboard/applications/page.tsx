@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { fetchLatestFlags } from "@/lib/latest-flags";
 import Link from "next/link";
 import Logo from "@/components/logo";
 import LogoutButton from "@/components/auth/logout-button";
@@ -37,10 +38,14 @@ export default async function ApplicationsPage({
     (adaptedCvs ?? []).map((a: { id: string; offer_id: string; file_url: string; language: string }) => [a.offer_id, a])
   );
 
+  const offerIds = (applications ?? []).map((a) => a.offer_id).filter((id): id is string => !!id);
+  const flagByOffer = await fetchLatestFlags(supabase, user.id, offerIds);
+
   // Merge: se l'application non ha adapted_cvs diretto, usa quello trovato per offer_id
   const enriched = (applications ?? []).map((app: any) => ({
     ...app,
     adapted_cvs: app.adapted_cvs ?? adaptedByOffer[app.offer_id] ?? null,
+    flag: flagByOffer[app.offer_id] ?? null,
   }));
 
   return (

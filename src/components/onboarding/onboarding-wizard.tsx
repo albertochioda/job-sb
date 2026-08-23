@@ -149,7 +149,7 @@ export default function OnboardingWizard({ locale }: Props) {
           <ul className="space-y-3 text-sm">
             {["Analizziamo il tuo CV e identifichiamo i ruoli per cui sei qualificato",
               "Cerchiamo le offerte migliori su LinkedIn e Indeed",
-              "Scoriamo ogni offerta rispetto al tuo profilo reale"].map((t, i) => (
+              "Valutiamo ogni offerta rispetto al tuo profilo reale"].map((t, i) => (
               <li key={i} className="flex gap-3">
                 <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
                 <span>{t}</span>

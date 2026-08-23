@@ -133,6 +133,8 @@
   "auth": {
     "email": "Email",
     "password": "Password",
+    "passwordRequirements": "Minimo 8 caratteri, con almeno una lettera e un numero.",
+    "passwordTooWeak": "La password deve contenere almeno 8 caratteri, con almeno una lettera e un numero.",
     "fullName": "Nome completo",
     "loginTitle": "Accedi a Job SB",
     "registerTitle": "Crea il tuo account",
@@ -155,7 +157,7 @@
     "welcomeDesc": "In 5 minuti configuri la tua ricerca automatica. Ecco cosa faremo:",
     "welcomeBullet1": "Analizziamo il tuo CV e identifichiamo i ruoli per cui sei qualificato",
     "welcomeBullet2": "Cerchiamo le offerte migliori su LinkedIn e Indeed",
-    "welcomeBullet3": "Scoriamo ogni offerta rispetto al tuo profilo reale",
+    "welcomeBullet3": "Valutiamo ogni offerta rispetto al tuo profilo reale",
     "uploadTitle": "Carica il tuo CV",
     "uploadDesc": "Formati accettati: PDF, .docx. Dimensione massima: 5MB.",
     "uploadDrag": "Trascina il file qui o clicca per selezionarlo",
