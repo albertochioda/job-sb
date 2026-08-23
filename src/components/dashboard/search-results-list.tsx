@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import SearchFilterBar from "@/components/dashboard/search-filter-bar";
 
 interface ScoredOffer {
   id: string;
@@ -43,6 +44,8 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
   const [loading, setLoading] = useState(true);
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<"all" | "green" | "yellow" | "red">("all");
 
   useEffect(() => {
     fetch(`/api/offers?search_id=${searchId}`)
@@ -100,53 +103,89 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
     );
   }
 
+  const flagFiltered = filter === "all" ? offers : offers.filter((o) => o.flag === filter);
+  const q = searchQuery.trim().toLowerCase();
+  const filteredOffers = q
+    ? flagFiltered.filter(
+        (o) => o.title?.toLowerCase().includes(q) || o.company?.toLowerCase().includes(q)
+      )
+    : flagFiltered;
+
+  const counts = {
+    all: offers.length,
+    green: offers.filter((o) => o.flag === "green").length,
+    yellow: offers.filter((o) => o.flag === "yellow").length,
+    red: offers.filter((o) => o.flag === "red").length,
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <p className="text-sm text-muted-foreground">{offers.length} nuove offerte trovate da questa ricerca, in linea con il tuo profilo.</p>
-      {offers.map((offer) => {
-        const offerId = offer.offer_id ?? offer.id;
-        return (
-          <div key={offer.id} className="border rounded-lg p-4 space-y-2">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-medium text-sm">{offer.title}</p>
-                <p className="text-xs text-muted-foreground">
-                  {offer.company} · {offer.location}
-                </p>
+
+      <SearchFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Cerca per titolo o azienda..."
+        filter={filter}
+        onFilterChange={(f) => setFilter(f as typeof filter)}
+        options={[
+          { value: "all", label: "Tutte", count: counts.all },
+          { value: "green", label: "Alta", count: counts.green },
+          { value: "yellow", label: "Media", count: counts.yellow },
+          { value: "red", label: "Bassa", count: counts.red },
+        ]}
+      />
+
+      {filteredOffers.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-16 text-center">Nessuna offerta corrisponde alla ricerca.</p>
+      ) : (
+        <div className="space-y-3">
+          {filteredOffers.map((offer) => {
+            const offerId = offer.offer_id ?? offer.id;
+            return (
+              <div key={offer.id} className="border rounded-lg p-4 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-sm">{offer.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {offer.company} · {offer.location}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 text-xs px-2 py-1 rounded-full border font-medium ${FLAG_COLORS[offer.flag]}`}>
+                    {FLAG_LABELS[offer.flag]} · {offer.score_final?.toFixed(1)}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">{offer.motivo}</p>
+                <div className="flex items-center gap-3 pt-1">
+                  {offer.url && (
+                    <a
+                      href={offer.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary underline hover:no-underline"
+                    >
+                      Apri offerta →
+                    </a>
+                  )}
+                  <button
+                    onClick={() => saveApplication(offerId)}
+                    disabled={savingIds.has(offerId) || savedIds.has(offerId)}
+                    className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 disabled:opacity-50 font-medium"
+                  >
+                    {savedIds.has(offerId) ? "✓ Salvata" : savingIds.has(offerId) ? "Salvataggio..." : "Salva candidatura"}
+                  </button>
+                  <a
+                    href={`/${locale}/dashboard`}
+                    className="text-xs text-muted-foreground hover:text-foreground underline"
+                  >
+                    Adatta CV / genera lettera dalla dashboard →
+                  </a>
+                </div>
               </div>
-              <span className={`shrink-0 text-xs px-2 py-1 rounded-full border font-medium ${FLAG_COLORS[offer.flag]}`}>
-                {FLAG_LABELS[offer.flag]} · {offer.score_final?.toFixed(1)}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">{offer.motivo}</p>
-            <div className="flex items-center gap-3 pt-1">
-              {offer.url && (
-                <a
-                  href={offer.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-primary underline hover:no-underline"
-                >
-                  Apri offerta →
-                </a>
-              )}
-              <button
-                onClick={() => saveApplication(offerId)}
-                disabled={savingIds.has(offerId) || savedIds.has(offerId)}
-                className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 disabled:opacity-50 font-medium"
-              >
-                {savedIds.has(offerId) ? "✓ Salvata" : savingIds.has(offerId) ? "Salvataggio..." : "Salva candidatura"}
-              </button>
-              <a
-                href={`/${locale}/dashboard`}
-                className="text-xs text-muted-foreground hover:text-foreground underline"
-              >
-                Adatta CV / genera lettera dalla dashboard →
-              </a>
-            </div>
-          </div>
-        );
-      })}
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
