@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { computeKpiBundle, type Period, type RawKpiData } from "@/lib/kpi/compute";
+import type { RawKpiData } from "@/lib/kpi/compute";
 import KpiDashboardClient from "@/components/dashboard/kpi-dashboard-client";
 import { OWNER_EMAIL } from "@/lib/owner";
 
@@ -59,11 +59,10 @@ export default async function KpiDashboardPage({
     cancellationFeedback: cancellationRes.data ?? [],
   };
 
-  const periods: Period[] = ["7d", "30d", "all"];
-  const bundles = Object.fromEntries(periods.map((p) => [p, computeKpiBundle(rawData, p)])) as Record<
-    Period,
-    ReturnType<typeof computeKpiBundle>
-  >;
+  // Il calcolo (periodo/range personalizzato, serie settimanali, confronto
+  // periodo precedente) è tutto lato client — email di altri utenti non
+  // serve a compute.ts, quindi non la mandiamo al browser.
+  const clientData: RawKpiData = { ...rawData, users: rawData.users.map((u) => ({ ...u, email: null })) };
 
-  return <KpiDashboardClient bundles={bundles} locale={locale} />;
+  return <KpiDashboardClient rawData={clientData} locale={locale} />;
 }
