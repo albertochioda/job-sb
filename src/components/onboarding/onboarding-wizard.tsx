@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import CityAutocomplete, { type CityAutocompleteChange } from "@/components/city-autocomplete";
+import Logo from "@/components/logo";
 
 interface Props {
   locale: string;
@@ -119,6 +120,10 @@ export default function OnboardingWizard({ locale }: Props) {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-12 space-y-8">
+      <div className="flex justify-center">
+        <Logo className="h-5 w-auto" />
+      </div>
+
       {/* Stepper */}
       <div className="flex items-center gap-2">
         {steps.map((label, i) => {

@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import LoginForm from "@/components/auth/login-form";
+import Logo from "@/components/logo";
 
 export default async function LoginPage({
   params,
@@ -22,6 +23,9 @@ export default async function LoginPage({
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-6">
+        <div className="flex justify-center">
+          <Logo className="h-5 w-auto" />
+        </div>
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-bold">{t("loginTitle")}</h1>
         </div>
