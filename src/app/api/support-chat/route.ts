@@ -23,7 +23,7 @@ const DAILY_MESSAGE_LIMIT = 30;
 const REDIRECT_MARKER = "[REDIRECT]";
 const CAREER_ADVICE_MARKER = "[CAREER_ADVICE]";
 const CAREER_ADVICE_MESSAGE =
-  "Al momento non forniamo consigli di carriera all'interno del servizio — Job SB ti aiuta a trovare e candidarti alle offerte, ma la scelta del percorso professionale resta tua.";
+  "Al momento non forniamo consigli di carriera all'interno del servizio — Job Search Bridge ti aiuta a trovare e candidarti alle offerte, ma la scelta del percorso professionale resta tua.";
 
 function loadKnowledgeBase(): string {
   const filePath = path.join(process.cwd(), "docs", "support-knowledge.md");
@@ -31,7 +31,7 @@ function loadKnowledgeBase(): string {
 }
 
 function buildSystemPrompt(knowledgeBase: string): string {
-  return `Sei l'assistente di supporto di Job SB, un'app che aiuta le persone nella ricerca di lavoro.
+  return `Sei l'assistente di supporto di Job Search Bridge, un'app che aiuta le persone nella ricerca di lavoro.
 
 Qui sotto trovi la UNICA fonte di verità per le tue risposte — un documento che descrive esattamente come funziona il prodotto:
 
@@ -48,7 +48,7 @@ Regole:
   ${REDIRECT_MARKER} va usato SOLO quando l'utente chiede esplicitamente a TE di eseguire l'azione adesso, al posto suo (es. "cambiami TU il piano a Professional", "fallo per me", "esegui il cambio ora", "cambiami il piano" detto come imperativo rivolto a te) — in quel caso rispondi ESATTAMENTE con questo formato, sostituendo solo il messaggio:
   ${REDIRECT_MARKER}Per questo ti conviene scrivere direttamente ad Alberto via email (${SUPPORT_EMAIL}).
 - ${REDIRECT_MARKER} resta anche per: problemi tecnici specifici, richieste commerciali, o qualunque azione sull'account non descritta come self-service nel documento.
-- Se la domanda è chiaramente fuori scope rispetto al documento (nulla a che vedere con Job SB): stesso reindirizzamento ad Alberto con lo stesso formato di ${REDIRECT_MARKER}, non improvvisare una risposta.
+- Se la domanda è chiaramente fuori scope rispetto al documento (nulla a che vedere con Job Search Bridge): stesso reindirizzamento ad Alberto con lo stesso formato di ${REDIRECT_MARKER}, non improvvisare una risposta.
 - Se invece la domanda è coperta dal documento, rispondi normalmente e in modo utile, senza alcun marcatore.`;
 }
 

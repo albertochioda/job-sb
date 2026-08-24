@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
 
     const emailResult = await sendEmail({
       to: ALERT_EMAIL_TO,
-      subject: `⚠️ Job SB — ${discrepancies.length} discrepanze Stripe↔Supabase rilevate`,
+      subject: `⚠️ Job Search Bridge — ${discrepancies.length} discrepanze Stripe↔Supabase rilevate`,
       html,
     });
     // sendEmail() fallisce "silenziosamente" per design (mai un throw, per

@@ -12,11 +12,11 @@ Adatta CV riscrive il tuo curriculum su misura per quell'offerta specifica, evid
 
 ## I 4 template
 
-Job SB offre 4 template per il CV: Professional, Two Column, Bold Header e Minimal Smart, ognuno con uno stile grafico diverso — tutti pensati per passare bene i filtri ATS (i sistemi automatici che le aziende usano per leggere e selezionare i CV prima ancora che li veda una persona). Il piano Individual include solo Minimal Smart; i piani Trial e Professional danno accesso a tutti e 4.
+Job Search Bridge offre 4 template per il CV: Professional, Two Column, Bold Header e Minimal Smart, ognuno con uno stile grafico diverso — tutti pensati per passare bene i filtri ATS (i sistemi automatici che le aziende usano per leggere e selezionare i CV prima ancora che li veda una persona). Il piano Individual include solo Minimal Smart; i piani Trial e Professional danno accesso a tutti e 4.
 
 ## Meccanica trial
 
-Il trial dura 14 giorni dalla registrazione, gratis e senza carta di credito. Durante il trial hai a disposizione 3 ricerche, 5 CV adattati e 5 lettere di motivazione, con accesso a tutti e 4 i template. Alla scadenza, per continuare a usare Job SB serve sottoscrivere un piano a pagamento.
+Il trial dura 14 giorni dalla registrazione, gratis e senza carta di credito. Durante il trial hai a disposizione 3 ricerche, 5 CV adattati e 5 lettere di motivazione, con accesso a tutti e 4 i template. Alla scadenza, per continuare a usare Job Search Bridge serve sottoscrivere un piano a pagamento.
 
 ## Limiti per tier
 
@@ -40,11 +40,11 @@ Puoi nascondere un'offerta che non ti interessa cliccando l'icona dedicata sulla
 
 ## Geo-check
 
-Job SB cerca offerte entro il raggio che imposti tu dal tuo indirizzo di riferimento. Se un'offerta indica solo una regione generica invece di una città precisa, il sistema prova comunque a stimarne la distanza reale prima di deciderla dentro o fuori dal tuo raggio — così eviti sia offerte troppo lontane sia di perdere offerte valide solo per una posizione scritta in modo vago.
+Job Search Bridge cerca offerte entro il raggio che imposti tu dal tuo indirizzo di riferimento. Se un'offerta indica solo una regione generica invece di una città precisa, il sistema prova comunque a stimarne la distanza reale prima di deciderla dentro o fuori dal tuo raggio — così eviti sia offerte troppo lontane sia di perdere offerte valide solo per una posizione scritta in modo vago.
 
 ## Fonti delle offerte
 
-Job SB cerca offerte da più fonti (LinkedIn, Manpower, Randstad), non solo da un sito. Per gli annunci pubblicati da agenzie di collocamento, il nome dell'azienda cliente finale a volte non è indicato dalla fonte stessa — in quel caso il CV e la lettera vengono adattati sul ruolo e sul contesto descritto, senza inventare dettagli sull'azienda che non conosciamo.
+Job Search Bridge cerca offerte da più fonti (LinkedIn, Manpower, Randstad), non solo da un sito. Per gli annunci pubblicati da agenzie di collocamento, il nome dell'azienda cliente finale a volte non è indicato dalla fonte stessa — in quel caso il CV e la lettera vengono adattati sul ruolo e sul contesto descritto, senza inventare dettagli sull'azienda che non conosciamo.
 
 ## Regime orario e contratto
 

@@ -83,7 +83,7 @@ export function SearchPollingProvider({ children }: { children: React.ReactNode 
             setCompletedData({ newOffers: total, matchedOffers, searchId });
 
             if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-              new Notification("Job SB", {
+              new Notification("Job Search Bridge", {
                 body: `${total} offerte analizzate, ${matchedOffers} in linea con la tua esperienza e i tuoi criteri di ricerca.`,
               });
             }

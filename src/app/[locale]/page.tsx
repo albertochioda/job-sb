@@ -26,7 +26,7 @@ export async function generateMetadata({
   // Prima frase dell'headline (ora divisa su due righe grafiche, riga 1+2)
   // — il titolo di pagina non deve portarsi dietro l'intera headline.
   const tagline = `${t("heroA.headlineLine1")} ${t("heroA.headlineLine2")}`.replace(/\.$/, "");
-  const title = `Job SB — ${tagline}`;
+  const title = `Job Search Bridge — ${tagline}`;
   const description = `${t("subheadlineLine1")} ${t("subheadlineLine2")} ${t("subheadlineLine3")}`;
   const url = `https://job-sb.vercel.app/${locale}`;
 
@@ -52,7 +52,7 @@ export async function generateMetadata({
       type: "website",
       locale: locale === "it" ? "it_IT" : "en_US",
       url,
-      siteName: "Job SB",
+      siteName: "Job Search Bridge",
     },
     twitter: {
       card: "summary_large_image",
@@ -153,7 +153,7 @@ export default async function HomePage({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "Job SB",
+    name: "Job Search Bridge",
     description: `${t("subheadlineLine1")} ${t("subheadlineLine2")} ${t("subheadlineLine3")}`,
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
@@ -324,7 +324,7 @@ export default async function HomePage({
         </div>
       </section>
 
-      {/* Confronto competitor — tabella compatta, colonna Job SB evidenziata */}
+      {/* Confronto competitor — tabella compatta, colonna Job Search Bridge evidenziata */}
       <section id="confronto" className="px-6 py-16 scroll-mt-16">
         <div className="max-w-3xl mx-auto space-y-5">
           <div>

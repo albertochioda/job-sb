@@ -10,9 +10,9 @@ import "./globals.css";
 // passa mai da [locale]/layout.tsx.
 export const metadata: Metadata = {
   metadataBase: new URL("https://job-sb.vercel.app"),
-  title: "Job SB — Più colloqui, meno tempo perso",
+  title: "Job Search Bridge — Più colloqui, meno tempo perso",
   description:
-    "Job SB cerca, filtra e adatta il CV per te. Tu resti concentrato su quello che conta davvero: il colloquio.",
+    "Job Search Bridge cerca, filtra e adatta il CV per te. Tu resti concentrato su quello che conta davvero: il colloquio.",
   // favicon.ico e apple-icon.png in src/app/ vengono già rilevati in
   // automatico da Next.js per convenzione (stesso meccanismo di
   // opengraph-image.tsx) — dichiarati qui comunque in modo esplicito,

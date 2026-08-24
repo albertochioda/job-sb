@@ -13,19 +13,19 @@ export default function TerminiDiServizio() {
     <main className="min-h-screen bg-white text-gray-900 px-6 py-12">
       <div className="max-w-3xl mx-auto space-y-8">
         <div className="text-center space-y-1">
-          <p className="text-xl font-bold tracking-tight">Job SB</p>
+          <p className="text-xl font-bold tracking-tight">Job Search Bridge</p>
           <h1 className="text-2xl font-bold">Termini e Condizioni di Utilizzo</h1>
           <p className="text-sm text-gray-500">Versione Beta — 24 giugno 2026</p>
         </div>
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">1. Identificazione del Titolare</h2>
-          <p className="text-sm leading-relaxed">Il servizio Job SB (di seguito "Servizio" o "Piattaforma") è gestito da Alberto Chioda, con sede in Lodi (LO), Italia (di seguito "Titolare"). Per qualsiasi comunicazione: <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>.</p>
+          <p className="text-sm leading-relaxed">Il servizio Job Search Bridge (di seguito "Servizio" o "Piattaforma") è gestito da Alberto Chioda, con sede in Lodi (LO), Italia (di seguito "Titolare"). Per qualsiasi comunicazione: <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>.</p>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">2. Oggetto e Natura del Servizio</h2>
-          <p className="text-sm leading-relaxed">Job SB è una piattaforma software in fase di beta testing che assiste i candidati nella ricerca di offerte di lavoro, nell'analisi di compatibilità con il proprio profilo professionale e nell'adattamento del curriculum vitae alle offerte identificate. Il Servizio utilizza tecnologie di intelligenza artificiale di terze parti (Anthropic PBC) per elaborare i dati.</p>
+          <p className="text-sm leading-relaxed">Job Search Bridge è una piattaforma software in fase di beta testing che assiste i candidati nella ricerca di offerte di lavoro, nell'analisi di compatibilità con il proprio profilo professionale e nell'adattamento del curriculum vitae alle offerte identificate. Il Servizio utilizza tecnologie di intelligenza artificiale di terze parti (Anthropic PBC) per elaborare i dati.</p>
           <p className="text-sm leading-relaxed">Il Servizio è offerto nella versione e con le funzionalità disponibili al momento dell'accesso. Il Titolare si riserva il diritto di introdurre nuove funzionalità, modificare o sospendere temporaneamente il Servizio per finalità di manutenzione, test o miglioramento, con adeguato preavviso quando ragionevolmente possibile.</p>
         </section>
 
@@ -65,10 +65,10 @@ export default function TerminiDiServizio() {
           <p className="text-sm leading-relaxed">Al momento del checkout, l'Utente è tenuto a esprimere consenso esplicito (tramite apposita casella da selezionare attivamente, non pre-selezionata) con la seguente dichiarazione:</p>
           <p className="text-sm leading-relaxed italic">"Richiedo che l'esecuzione del Servizio abbia inizio immediatamente, anche prima della scadenza del termine di 14 giorni per l'esercizio del diritto di recesso, e sono consapevole che, qualora inizi a utilizzare il Servizio durante tale periodo, perderò il diritto di recesso e al connesso rimborso."</p>
           <p className="text-sm leading-relaxed">In assenza di tale consenso, il Servizio non viene attivato prima dello scadere dei 14 giorni.</p>
-          <p className="text-sm leading-relaxed">In pratica: se l'Utente utilizza il Servizio (es. avvia una ricerca, genera un CV o una lettera) entro i 14 giorni dal primo pagamento, il diritto di recesso si considera esercitato tramite consenso a esecuzione immediata e non è previsto rimborso automatico per legge. Tuttavia, Job SB adotta — per ora, come politica commerciale volontaria e non come obbligo di legge — un rimborso integrale su richiesta, per qualunque motivo, entro 14 giorni dal primo pagamento, indipendentemente dall'uso effettivo del Servizio. Vedi Art. 7.2.</p>
+          <p className="text-sm leading-relaxed">In pratica: se l'Utente utilizza il Servizio (es. avvia una ricerca, genera un CV o una lettera) entro i 14 giorni dal primo pagamento, il diritto di recesso si considera esercitato tramite consenso a esecuzione immediata e non è previsto rimborso automatico per legge. Tuttavia, Job Search Bridge adotta — per ora, come politica commerciale volontaria e non come obbligo di legge — un rimborso integrale su richiesta, per qualunque motivo, entro 14 giorni dal primo pagamento, indipendentemente dall'uso effettivo del Servizio. Vedi Art. 7.2.</p>
 
-          <h3 className="text-base font-semibold">7.2 Politica di rimborso di Job SB (fase attuale)</h3>
-          <p className="text-sm leading-relaxed">Indipendentemente da quanto previsto per legge all'Art. 7.1, Job SB si impegna volontariamente a:</p>
+          <h3 className="text-base font-semibold">7.2 Politica di rimborso di Job Search Bridge (fase attuale)</h3>
+          <p className="text-sm leading-relaxed">Indipendentemente da quanto previsto per legge all'Art. 7.1, Job Search Bridge si impegna volontariamente a:</p>
           <ul className="text-sm leading-relaxed list-disc pl-5 space-y-1">
             <li>La finestra di rimborso volontario di 14 (quattordici) giorni decorre dalla data di registrazione dell'account (inizio del periodo di prova), non dalla data del primo pagamento — e comprende quindi il periodo di prova già utilizzato dall'Utente prima di sottoscrivere un piano a pagamento.</li>
             <li>Se l'Utente sottoscrive un piano a pagamento prima della scadenza del periodo di prova, la finestra di 14 giorni non riparte da zero al momento del pagamento: resta calcolata sui 14 giorni totali dalla registrazione.</li>
@@ -84,7 +84,7 @@ export default function TerminiDiServizio() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">8. Modifiche al prezzo e alle condizioni dell'abbonamento</h2>
-          <p className="text-sm leading-relaxed">Job SB si riserva il diritto di modificare, in futuro, il prezzo o le condizioni dei piani di abbonamento, per una o più delle seguenti ragioni:</p>
+          <p className="text-sm leading-relaxed">Job Search Bridge si riserva il diritto di modificare, in futuro, il prezzo o le condizioni dei piani di abbonamento, per una o più delle seguenti ragioni:</p>
           <ul className="text-sm leading-relaxed list-disc pl-5 space-y-1">
             <li>variazione dei costi di fornitura del Servizio (inclusi, a titolo esemplificativo, costi di infrastruttura tecnologica e servizi di intelligenza artificiale di terze parti);</li>
             <li>introduzione di nuove funzionalità o significativa evoluzione del Servizio;</li>

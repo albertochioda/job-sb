@@ -14,12 +14,12 @@ export default function AccordoRiservatezzaBeta() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Premesse</h2>
-          <p className="text-sm leading-relaxed">Il presente Accordo di Riservatezza è stipulato tra Alberto Chioda (di seguito "Titolare") e l'utente che accetta le condizioni di accesso al programma beta di Job SB (di seguito "Beta Tester"). Il Titolare ha sviluppato una piattaforma software denominata "Job SB" attualmente in fase sperimentale di beta testing.</p>
+          <p className="text-sm leading-relaxed">Il presente Accordo di Riservatezza è stipulato tra Alberto Chioda (di seguito "Titolare") e l'utente che accetta le condizioni di accesso al programma beta di Job Search Bridge (di seguito "Beta Tester"). Il Titolare ha sviluppato una piattaforma software denominata "Job Search Bridge" attualmente in fase sperimentale di beta testing.</p>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">1. Definizione di Informazioni Riservate</h2>
-          <p className="text-sm leading-relaxed">Per "Informazioni Riservate" si intendono tutte le informazioni relative a Job SB che il Beta Tester viene a conoscenza nel corso del programma beta, incluse ma non limitate a:</p>
+          <p className="text-sm leading-relaxed">Per "Informazioni Riservate" si intendono tutte le informazioni relative a Job Search Bridge che il Beta Tester viene a conoscenza nel corso del programma beta, incluse ma non limitate a:</p>
           <ul className="text-sm leading-relaxed list-disc pl-5 space-y-1">
             <li>Codice sorgente, algoritmi, architettura tecnica e metodologie della piattaforma</li>
             <li>Funzionalità, caratteristiche e interfaccia utente della piattaforma</li>
@@ -36,7 +36,7 @@ export default function AccordoRiservatezzaBeta() {
           <ul className="text-sm leading-relaxed list-disc pl-5 space-y-1">
             <li>Mantenere strettamente riservate tutte le Informazioni Riservate</li>
             <li>Non divulgare le Informazioni Riservate a terzi, in qualsiasi forma, senza previa autorizzazione scritta del Titolare</li>
-            <li>Non pubblicare recensioni, articoli, post sui social media, video o qualsiasi altro contenuto relativo a Job SB senza previa autorizzazione scritta del Titolare</li>
+            <li>Non pubblicare recensioni, articoli, post sui social media, video o qualsiasi altro contenuto relativo a Job Search Bridge senza previa autorizzazione scritta del Titolare</li>
             <li>Utilizzare il Servizio esclusivamente per i propri scopi personali di ricerca lavoro</li>
             <li>Non tentare di accedere a parti del sistema non autorizzate o di analizzare il codice sorgente</li>
             <li>Segnalare tempestivamente al Titolare qualsiasi bug o comportamento anomalo riscontrato</li>

@@ -24,7 +24,7 @@ export default async function LoginPage({
     <main className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex justify-center">
-          <Logo className="h-5 w-auto" />
+          <Logo className="h-[60px] w-auto" stacked />
         </div>
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-bold">{t("loginTitle")}</h1>

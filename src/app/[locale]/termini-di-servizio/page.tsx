@@ -15,12 +15,12 @@ export default function TerminiDiServizio() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">1. Identificazione del Titolare</h2>
-          <p className="text-sm leading-relaxed">Il servizio Job SB (di seguito "Servizio" o "Piattaforma") è gestito da Alberto Chioda, con sede in Lodi (LO), Italia (di seguito "Titolare"). Per qualsiasi comunicazione: <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>.</p>
+          <p className="text-sm leading-relaxed">Il servizio Job Search Bridge (di seguito "Servizio" o "Piattaforma") è gestito da Alberto Chioda, con sede in Lodi (LO), Italia (di seguito "Titolare"). Per qualsiasi comunicazione: <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>.</p>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">2. Oggetto e Natura del Servizio</h2>
-          <p className="text-sm leading-relaxed">Job SB è una piattaforma software in fase di beta testing che assiste i candidati nella ricerca di offerte di lavoro, nell'analisi di compatibilità con il proprio profilo professionale e nell'adattamento del curriculum vitae alle offerte identificate. Il Servizio utilizza tecnologie di intelligenza artificiale di terze parti (Anthropic PBC) per elaborare i dati.</p>
+          <p className="text-sm leading-relaxed">Job Search Bridge è una piattaforma software in fase di beta testing che assiste i candidati nella ricerca di offerte di lavoro, nell'analisi di compatibilità con il proprio profilo professionale e nell'adattamento del curriculum vitae alle offerte identificate. Il Servizio utilizza tecnologie di intelligenza artificiale di terze parti (Anthropic PBC) per elaborare i dati.</p>
           <p className="text-sm leading-relaxed">Il presente Servizio è attualmente in fase <strong>BETA</strong>, ovvero in una fase sperimentale non definitiva. L'accesso è concesso a un numero limitato di utenti selezionati esclusivamente a fini di test e valutazione.</p>
         </section>
 

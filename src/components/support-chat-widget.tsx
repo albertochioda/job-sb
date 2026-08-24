@@ -164,7 +164,7 @@ export default function SupportChatWidget({ isOpen, onOpenChange, initialMessage
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
             {messages.length === 0 && (
               <p className="text-xs text-muted-foreground text-center mt-6">
-                Chiedimi come funziona Job SB — score, template, trial, piani e altro.
+                Chiedimi come funziona Job Search Bridge — score, template, trial, piani e altro.
               </p>
             )}
             {messages.map((m, i) => (

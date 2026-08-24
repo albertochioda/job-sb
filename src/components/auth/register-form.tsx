@@ -128,7 +128,7 @@ export default function RegisterForm({ locale, t }: Props) {
           <a href={`/${locale}/privacy-policy`} target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:no-underline">Privacy Policy</a>
           {" "}e l&apos;
           <a href={`/${locale}/accordo-riservatezza-beta`} target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:no-underline">Accordo di Riservatezza Beta</a>
-          {" "}di Job SB.
+          {" "}di Job Search Bridge.
         </span>
       </label>
       <label className="flex items-start gap-2 cursor-pointer">

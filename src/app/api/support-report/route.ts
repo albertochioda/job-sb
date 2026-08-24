@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
   const emailResult = await sendEmail({
     to: SUPPORT_EMAIL,
-    subject: `🐛 Job SB — Segnalazione da ${userEmail}`,
+    subject: `🐛 Job Search Bridge — Segnalazione da ${userEmail}`,
     html,
   });
   // sendEmail() non lancia mai eccezioni per design (fail-safe per il

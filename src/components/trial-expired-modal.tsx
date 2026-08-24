@@ -341,7 +341,7 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
                 <p className="text-sm text-muted-foreground">
                   {isFoundJob
                     ? "Congratulazioni! Grazie per averci provato."
-                    : "Il tuo feedback ci aiuta a migliorare Job SB."}
+                    : "Il tuo feedback ci aiuta a migliorare Job Search Bridge."}
                 </p>
               </div>
             )}
@@ -370,7 +370,7 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
                 {portalLoading ? "Attendere..." : "Aggiorna metodo di pagamento"}
               </button>
               <a
-                href={`mailto:${SUPPORT_EMAIL}?subject=Problema pagamento Job SB`}
+                href={`mailto:${SUPPORT_EMAIL}?subject=Problema pagamento Job Search Bridge`}
                 className="inline-flex items-center justify-center rounded-lg border px-5 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
               >
                 Contatta Alberto

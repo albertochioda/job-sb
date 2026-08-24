@@ -36,7 +36,7 @@ export default function MarketingConsentToggle({ initialConsent }: { initialCons
       <h2 className="font-semibold text-lg">Comunicazioni promozionali</h2>
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground max-w-xs">
-          Ricevi via email aggiornamenti su nuove funzionalità e offerte promozionali di Job SB.
+          Ricevi via email aggiornamenti su nuove funzionalità e offerte promozionali di Job Search Bridge.
         </p>
         <button
           type="button"

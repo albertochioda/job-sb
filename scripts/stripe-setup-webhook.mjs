@@ -1,5 +1,5 @@
 /**
- * Crea (o recupera, se già esistente) il Webhook Endpoint di Job SB su Stripe,
+ * Crea (o recupera, se già esistente) il Webhook Endpoint di Job Search Bridge su Stripe,
  * puntato a /api/webhooks/stripe con i 5 eventi gestiti da quella route.
  * Idempotente: se un endpoint con la stessa URL esiste già, viene riusato
  * (aggiornando gli eventi se necessario) invece di crearne uno duplicato.
@@ -65,7 +65,7 @@ async function main() {
   const created = await stripe.webhookEndpoints.create({
     url: ENDPOINT_URL,
     enabled_events: EVENTS,
-    description: "Job SB - sync abbonamenti/contatori",
+    description: "Job Search Bridge - sync abbonamenti/contatori",
   });
 
   console.log(`[webhook] creato: ${created.id} (${created.url})`);

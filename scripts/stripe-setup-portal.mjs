@@ -1,6 +1,6 @@
 /**
  * Crea (o aggiorna, se già esistente) la configurazione di default del
- * Customer Billing Portal di Job SB: SOLO cambio metodo di pagamento e
+ * Customer Billing Portal di Job Search Bridge: SOLO cambio metodo di pagamento e
  * storico fatture. Cancellazione e cambio piano sono esplicitamente
  * disabilitati dal portale nativo perché gestiti con flussi custom
  * (POST /api/billing/cancel-subscription, /api/billing/reactivate-subscription).
@@ -35,7 +35,7 @@ if (!apiKey) {
 
 const stripe = new Stripe(apiKey);
 
-const HEADLINE_MARKER = "Job SB — Gestione pagamento e fatture";
+const HEADLINE_MARKER = "Job Search Bridge — Gestione pagamento e fatture";
 
 const CONFIG_PARAMS = {
   business_profile: { headline: HEADLINE_MARKER },
@@ -44,7 +44,7 @@ const CONFIG_PARAMS = {
     invoice_history: { enabled: true },
     customer_update: { enabled: true, allowed_updates: ["email", "address"] },
     // Disabilitati esplicitamente: cancellazione e cambio piano sono
-    // gestiti dai flussi custom di Job SB, non dal portale nativo.
+    // gestiti dai flussi custom di Job Search Bridge, non dal portale nativo.
     subscription_cancel: { enabled: false },
     subscription_update: { enabled: false },
   },
@@ -73,7 +73,7 @@ async function main() {
   }
 
   console.log("\nFeature abilitate: cambio metodo di pagamento, storico fatture, aggiornamento email/indirizzo.");
-  console.log("Feature disabilitate: cancellazione abbonamento, cambio piano (gestiti da Job SB).");
+  console.log("Feature disabilitate: cancellazione abbonamento, cambio piano (gestiti da Job Search Bridge).");
 }
 
 main().catch((err) => {

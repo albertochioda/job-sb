@@ -13,7 +13,7 @@ export default function PrivacyPolicy() {
     <main className="min-h-screen bg-white text-gray-900 px-6 py-12">
       <div className="max-w-3xl mx-auto space-y-8">
         <div className="text-center space-y-1">
-          <p className="text-xl font-bold tracking-tight">Job SB</p>
+          <p className="text-xl font-bold tracking-tight">Job Search Bridge</p>
           <h1 className="text-2xl font-bold">Informativa sul Trattamento dei Dati Personali</h1>
           <p className="text-sm text-gray-500">ai sensi dell&apos;art. 13 del Regolamento UE 2016/679 (GDPR) — 24 giugno 2026</p>
         </div>
@@ -31,7 +31,7 @@ export default function PrivacyPolicy() {
             <li>Dati del profilo professionale: curriculum vitae, esperienze lavorative, competenze, formazione</li>
             <li>Dati di configurazione: ruoli cercati, città di preferenza, RAL minima desiderata, modalità di lavoro preferita</li>
             <li>Foto profilo (opzionale)</li>
-            <li>Dati di pagamento: per gli abbonamenti a pagamento, i dati della carta e delle transazioni sono raccolti ed elaborati direttamente da Stripe Inc., nostro fornitore di servizi di pagamento — Job SB non memorizza né ha accesso ai dati completi della carta</li>
+            <li>Dati di pagamento: per gli abbonamenti a pagamento, i dati della carta e delle transazioni sono raccolti ed elaborati direttamente da Stripe Inc., nostro fornitore di servizi di pagamento — Job Search Bridge non memorizza né ha accesso ai dati completi della carta</li>
           </ul>
           <p className="text-sm font-medium">2.2 Dati raccolti automaticamente</p>
           <ul className="text-sm leading-relaxed list-disc pl-5 space-y-1">

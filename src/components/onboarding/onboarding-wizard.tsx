@@ -121,7 +121,7 @@ export default function OnboardingWizard({ locale }: Props) {
   return (
     <div className="max-w-lg mx-auto px-4 py-12 space-y-8">
       <div className="flex justify-center">
-        <Logo className="h-5 w-auto" />
+        <Logo className="h-[60px] w-auto" stacked />
       </div>
 
       {/* Stepper */}
@@ -148,7 +148,7 @@ export default function OnboardingWizard({ locale }: Props) {
       {step === 1 && (
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-bold">Benvenuto in Job SB</h1>
+            <h1 className="text-2xl font-bold">Benvenuto in Job Search Bridge</h1>
             <p className="text-muted-foreground mt-2">In 5 minuti configuri la tua ricerca automatica. Ecco cosa faremo:</p>
           </div>
           <ul className="space-y-3 text-sm">

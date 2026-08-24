@@ -57,7 +57,7 @@ export default function TermsReacceptanceModal({ locale }: { locale: string }) {
           </h2>
           <p className="text-sm text-muted-foreground">
             Abbiamo introdotto piani di abbonamento a pagamento e aggiornato i documenti legali di conseguenza.
-            Per continuare a usare Job SB ti chiediamo di leggerli e accettarli.
+            Per continuare a usare Job Search Bridge ti chiediamo di leggerli e accettarli.
           </p>
         </div>
 

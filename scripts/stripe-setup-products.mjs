@@ -1,5 +1,5 @@
 /**
- * Crea (o recupera, se già esistenti) i 2 Product e 6 Price di Job SB su Stripe.
+ * Crea (o recupera, se già esistenti) i 2 Product e 6 Price di Job Search Bridge su Stripe.
  * Idempotente: usa `lookup_key` sui Price per evitare duplicati a run ripetuti —
  * se un Price con quel lookup_key esiste già, viene riusato invece di ricreato.
  *
@@ -33,7 +33,7 @@ const stripe = new Stripe(apiKey);
 const PLANS = [
   {
     tier: "individual",
-    productName: "Job SB Individual",
+    productName: "Job Search Bridge Individual",
     productMetadata: { job_sb_tier: "individual" },
     prices: [
       { cadence: "monthly", lookup_key: "individual_monthly", amount: 1900, interval: "month", interval_count: 1 },
@@ -43,7 +43,7 @@ const PLANS = [
   },
   {
     tier: "professional",
-    productName: "Job SB Professional",
+    productName: "Job Search Bridge Professional",
     productMetadata: { job_sb_tier: "professional" },
     prices: [
       { cadence: "monthly", lookup_key: "professional_monthly", amount: 2900, interval: "month", interval_count: 1 },

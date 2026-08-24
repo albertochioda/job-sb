@@ -5,7 +5,7 @@ import { getTranslations } from "next-intl/server";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "Job SB";
+export const alt = "Job Search Bridge";
 
 // Colore d'accento SOLO per questa card condivisibile — non il resto del
 // sito, che resta scala di grigi (nessun token --teal esiste nel design
@@ -43,7 +43,7 @@ export default async function OpengraphImage({
         }}
       >
         <div style={{ display: "flex", fontSize: 34, fontWeight: 600, letterSpacing: -0.5 }}>
-          Job SB
+          Job Search Bridge
         </div>
         <div
           style={{
