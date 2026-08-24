@@ -4,12 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { computeKpiBundle, type Period, type RawKpiData } from "@/lib/kpi/compute";
 import KpiDashboardClient from "@/components/dashboard/kpi-dashboard-client";
+import { OWNER_EMAIL } from "@/lib/owner";
 
-// Pagina riservata al founder — nessun link nella nav, nessun errore
+// Pagina riservata al founder — link di scorciatoia visibile solo a lui
+// nella nav della dashboard normale (dashboard/page.tsx), nessun errore
 // distintivo per chi non ha i permessi: chiunque altro (anche loggato,
 // anche beta tester) viene rimandato silenziosamente alla dashboard
 // normale, come se questa route non esistesse.
-const OWNER_EMAIL = "albertochioda@gmail.com";
 
 export default async function KpiDashboardPage({
   params,

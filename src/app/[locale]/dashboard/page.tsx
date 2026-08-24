@@ -5,6 +5,7 @@ import LogoutButton from "@/components/auth/logout-button";
 import Link from "next/link";
 import Logo from "@/components/logo";
 import SearchPanel from "@/components/dashboard/search-panel";
+import { OWNER_EMAIL } from "@/lib/owner";
 
 export default async function DashboardPage({
   params,
@@ -54,6 +55,11 @@ export default async function DashboardPage({
           <Link href={`/${locale}/profile`} className="text-sm text-muted-foreground hover:text-foreground">
             Profilo
           </Link>
+          {user.email?.toLowerCase() === OWNER_EMAIL && (
+            <Link href={`/${locale}/dashboard/kpi`} className="text-sm text-muted-foreground hover:text-foreground">
+              KPI
+            </Link>
+          )}
           <LogoutButton locale={locale} label="Esci" />
         </div>
       </nav>
