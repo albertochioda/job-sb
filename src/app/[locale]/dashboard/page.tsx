@@ -1,9 +1,7 @@
 import { redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import LogoutButton from "@/components/auth/logout-button";
-import Link from "next/link";
-import Logo from "@/components/logo";
+import DashboardNav from "@/components/dashboard/dashboard-nav";
 import SearchPanel from "@/components/dashboard/search-panel";
 import { OWNER_EMAIL } from "@/lib/owner";
 
@@ -35,34 +33,18 @@ export default async function DashboardPage({
     .eq("id", user.id)
     .single();
 
+  const navLinks = [
+    { href: `/${locale}/dashboard/applications`, label: "Candidature" },
+    { href: `/${locale}/dashboard/adapted-cvs`, label: "CV Adattati" },
+    { href: `/${locale}/dashboard/generated-letters`, label: "Lettere Generate" },
+    { href: `/${locale}/dashboard/search-history`, label: "Storico ricerche" },
+    { href: `/${locale}/profile`, label: "Profilo" },
+    ...(user.email?.toLowerCase() === OWNER_EMAIL ? [{ href: `/${locale}/dashboard/kpi`, label: "KPI" }] : []),
+  ];
+
   return (
     <main className="min-h-screen">
-      <nav className="flex items-center justify-between px-6 py-4 border-b">
-        <Logo />
-        <div className="flex items-center gap-4">
-          <Link href={`/${locale}/dashboard/applications`} className="text-sm text-muted-foreground hover:text-foreground">
-            Candidature
-          </Link>
-          <Link href={`/${locale}/dashboard/adapted-cvs`} className="text-sm text-muted-foreground hover:text-foreground">
-            CV Adattati
-          </Link>
-          <Link href={`/${locale}/dashboard/generated-letters`} className="text-sm text-muted-foreground hover:text-foreground">
-            Lettere Generate
-          </Link>
-          <Link href={`/${locale}/dashboard/search-history`} className="text-sm text-muted-foreground hover:text-foreground">
-            Storico ricerche
-          </Link>
-          <Link href={`/${locale}/profile`} className="text-sm text-muted-foreground hover:text-foreground">
-            Profilo
-          </Link>
-          {user.email?.toLowerCase() === OWNER_EMAIL && (
-            <Link href={`/${locale}/dashboard/kpi`} className="text-sm text-muted-foreground hover:text-foreground">
-              KPI
-            </Link>
-          )}
-          <LogoutButton locale={locale} label="Esci" />
-        </div>
-      </nav>
+      <DashboardNav locale={locale} links={navLinks} />
 
       <div className="max-w-3xl mx-auto px-6 py-10">
         <div className="mb-8">

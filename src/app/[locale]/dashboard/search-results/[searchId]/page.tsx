@@ -2,8 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import Logo from "@/components/logo";
-import LogoutButton from "@/components/auth/logout-button";
+import DashboardNav from "@/components/dashboard/dashboard-nav";
 import SearchResultsList from "@/components/dashboard/search-results-list";
 
 export default async function SearchResultsPage({
@@ -38,26 +37,16 @@ export default async function SearchResultsPage({
     minute: "2-digit",
   });
 
+  const navLinks = [
+    { href: `/${locale}/dashboard`, label: "Dashboard" },
+    { href: `/${locale}/dashboard/applications`, label: "Candidature" },
+    { href: `/${locale}/dashboard/search-history`, label: "Storico ricerche" },
+    { href: `/${locale}/profile`, label: "Profilo" },
+  ];
+
   return (
     <main className="min-h-screen">
-      <nav className="flex items-center justify-between px-6 py-4 border-b">
-        <Logo />
-        <div className="flex items-center gap-4">
-          <Link href={`/${locale}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground">
-            Dashboard
-          </Link>
-          <Link href={`/${locale}/dashboard/applications`} className="text-sm text-muted-foreground hover:text-foreground">
-            Candidature
-          </Link>
-          <Link href={`/${locale}/dashboard/search-history`} className="text-sm text-muted-foreground hover:text-foreground">
-            Storico ricerche
-          </Link>
-          <Link href={`/${locale}/profile`} className="text-sm text-muted-foreground hover:text-foreground">
-            Profilo
-          </Link>
-          <LogoutButton locale={locale} label="Esci" />
-        </div>
-      </nav>
+      <DashboardNav locale={locale} links={navLinks} />
 
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-6">
         <div>

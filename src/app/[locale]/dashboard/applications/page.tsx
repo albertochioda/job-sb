@@ -2,9 +2,7 @@ import { redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { fetchLatestFlags } from "@/lib/latest-flags";
-import Link from "next/link";
-import Logo from "@/components/logo";
-import LogoutButton from "@/components/auth/logout-button";
+import DashboardNav from "@/components/dashboard/dashboard-nav";
 import ApplicationsPanel from "@/components/dashboard/applications-panel";
 
 export default async function ApplicationsPage({
@@ -48,29 +46,17 @@ export default async function ApplicationsPage({
     flag: flagByOffer[app.offer_id] ?? null,
   }));
 
+  const navLinks = [
+    { href: `/${locale}/dashboard`, label: "Dashboard" },
+    { href: `/${locale}/dashboard/adapted-cvs`, label: "CV Adattati" },
+    { href: `/${locale}/dashboard/generated-letters`, label: "Lettere Generate" },
+    { href: `/${locale}/dashboard/search-history`, label: "Storico ricerche" },
+    { href: `/${locale}/profile`, label: "Profilo" },
+  ];
+
   return (
     <main className="min-h-screen">
-      <nav className="flex items-center justify-between px-6 py-4 border-b">
-        <Logo />
-        <div className="flex items-center gap-4">
-          <Link href={`/${locale}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground">
-            Dashboard
-          </Link>
-          <Link href={`/${locale}/dashboard/adapted-cvs`} className="text-sm text-muted-foreground hover:text-foreground">
-            CV Adattati
-          </Link>
-          <Link href={`/${locale}/dashboard/generated-letters`} className="text-sm text-muted-foreground hover:text-foreground">
-            Lettere Generate
-          </Link>
-          <Link href={`/${locale}/dashboard/search-history`} className="text-sm text-muted-foreground hover:text-foreground">
-            Storico ricerche
-          </Link>
-          <Link href={`/${locale}/profile`} className="text-sm text-muted-foreground hover:text-foreground">
-            Profilo
-          </Link>
-          <LogoutButton locale={locale} label="Esci" />
-        </div>
-      </nav>
+      <DashboardNav locale={locale} links={navLinks} />
 
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-6">
         <div>
