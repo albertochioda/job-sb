@@ -27,6 +27,17 @@ export default async function ResetPasswordPage({
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     sessionValid = !error;
+    // Prima scartato in silenzio (data → sessionValid, error ignorato):
+    // mostrava "link scaduto" senza lasciare traccia del perché. Loggato
+    // qui (finisce nei log Vercel della function) per distinguere al
+    // prossimo tentativo un codice davvero scaduto/consumato da
+    // un'altra causa (es. già scambiato da una scansione automatica
+    // dell'email prima del click reale).
+    if (error) {
+      console.error(
+        `[reset-password] exchangeCodeForSession fallito — status=${error.status} code=${error.code} message=${error.message}`
+      );
+    }
   }
 
   const strings = {
