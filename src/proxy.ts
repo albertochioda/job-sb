@@ -45,23 +45,21 @@ export async function proxy(request: NextRequest) {
   // corretta, diagnosi 2026-08-27/28): un "code" di recovery che
   // altrimenti atterrerebbe inutilizzato sulla home nuda del locale (o
   // sulla radice pre-prefisso, stesso identico caso) viene dirottato
-  // qui su reset-password, dove exchangeCodeForSession() può ancora
-  // consumarlo. Verificato: nessun altro flusso in app usa "code" sulla
-  // home oggi (solo reset-password e /api/auth/callback, path diverso
-  // ed esente dalla logica locale sotto). Se in futuro un altro flusso
-  // (OAuth, magic link) atterrasse anch'esso con "code" sulla home,
-  // servirebbe distinguerlo esplicitamente qui (es. un parametro
-  // aggiuntivo nel redirect_to) prima di aggiungerlo — questo redirect
-  // assume oggi che "code sulla home" significhi sempre recovery.
+  // qui su /api/auth/reset-password — il Route Handler dedicato che
+  // scambia il code E scrive davvero il cookie di sessione (un Server
+  // Component come reset-password/page.tsx non può, vedi commenti lì).
+  // Verificato: nessun altro flusso in app usa "code" sulla home oggi
+  // (solo reset-password e /api/auth/callback, path diverso ed esente
+  // dalla logica locale sotto). Se in futuro un altro flusso (OAuth,
+  // magic link) atterrasse anch'esso con "code" sulla home, servirebbe
+  // distinguerlo esplicitamente qui (es. un parametro aggiuntivo nel
+  // redirect_to) prima di aggiungerlo — questo redirect assume oggi che
+  // "code sulla home" significhi sempre recovery.
   const isLocaleRoot =
     pathname === "/" || locales.some((l) => pathname === `/${l}`);
   if (isLocaleRoot && request.nextUrl.searchParams.has("code")) {
-    const locale =
-      pathname === "/"
-        ? getLocaleFromRequest(request)
-        : (pathname.slice(1) as Locale);
     const url = request.nextUrl.clone();
-    url.pathname = `/${locale}/reset-password`;
+    url.pathname = "/api/auth/reset-password";
     return NextResponse.redirect(url);
   }
 

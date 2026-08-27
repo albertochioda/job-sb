@@ -3,42 +3,27 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import ResetPasswordForm from "@/components/auth/reset-password-form";
 
-// Destinazione di redirectTo in forgot-password-form.tsx — Supabase
-// aggiunge automaticamente ?code=... al link dell'email. Lo scambio va
-// fatto qui (server, una sola volta per richiesta reale) invece che nel
-// bridge generico /api/auth/callback: un fallimento (link scaduto/già
-// usato) deve mostrare un messaggio chiaro con un modo per rimediare,
-// non un redirect anonimo al login — la pagina condivisa non sa quale
-// flusso l'ha portata lì per personalizzare l'errore.
+// Lo scambio del "code" avviene PRIMA di arrivare qui, in
+// /api/auth/reset-password (Route Handler dedicato) — non in questo
+// Server Component: i Server Component non possono scrivere cookie
+// (next/headers lo impedisce a runtime), quindi exchangeCodeForSession()
+// chiamato qui risultava "riuscito" nei log ma il cookie di sessione non
+// arrivava mai al browser (diagnosi 2026-08-27: updateUser() falliva
+// poi con "Auth session missing!"). Questa pagina si limita a leggere
+// la sessione già stabilita dal Route Handler — sola lettura, sempre
+// consentita in un Server Component.
 export default async function ResetPasswordPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ code?: string }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const { code } = await searchParams;
   const t = await getTranslations({ locale, namespace: "auth" });
 
-  let sessionValid = false;
-  if (code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    sessionValid = !error;
-    // Prima scartato in silenzio (data → sessionValid, error ignorato):
-    // mostrava "link scaduto" senza lasciare traccia del perché. Loggato
-    // qui (finisce nei log Vercel della function) per distinguere al
-    // prossimo tentativo un codice davvero scaduto/consumato da
-    // un'altra causa (es. già scambiato da una scansione automatica
-    // dell'email prima del click reale).
-    if (error) {
-      console.error(
-        `[reset-password] exchangeCodeForSession fallito — status=${error.status} code=${error.code} message=${error.message}`
-      );
-    }
-  }
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const sessionValid = !!user;
 
   const strings = {
     newPassword: t("newPassword"),
