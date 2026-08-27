@@ -145,7 +145,13 @@
     "loginLink": "Log in",
     "registerLink": "Sign up",
     "emailSent": "Email sent. Check your inbox.",
-    "invalidCredentials": "Invalid email or password. Please try again."
+    "invalidCredentials": "Invalid email or password. Please try again.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "passwordMismatch": "Passwords don't match.",
+    "resetLinkExpired": "This password reset link is invalid or has expired.",
+    "requestNewReset": "Request a new link",
+    "resetSuccessMessage": "Password updated. Log in with your new password."
   },
   "onboarding": {
     "step1": "Welcome",

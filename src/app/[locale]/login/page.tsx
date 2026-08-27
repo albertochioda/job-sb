@@ -4,10 +4,13 @@ import Logo from "@/components/logo";
 
 export default async function LoginPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ reset?: string }>;
 }) {
   const { locale } = await params;
+  const { reset } = await searchParams;
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "auth" });
 
@@ -29,6 +32,11 @@ export default async function LoginPage({
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-bold">{t("loginTitle")}</h1>
         </div>
+        {reset === "success" && (
+          <p className="text-sm text-green-700 text-center bg-green-50 border border-green-200 rounded-md px-3 py-2">
+            {t("resetSuccessMessage")}
+          </p>
+        )}
         <LoginForm locale={locale} t={strings} />
       </div>
     </main>

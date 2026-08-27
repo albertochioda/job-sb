@@ -145,7 +145,13 @@
     "loginLink": "Accedi",
     "registerLink": "Registrati",
     "emailSent": "Email inviata. Controlla la tua casella.",
-    "invalidCredentials": "Email o password errati. Riprova."
+    "invalidCredentials": "Email o password errati. Riprova.",
+    "newPassword": "Nuova password",
+    "confirmPassword": "Conferma password",
+    "passwordMismatch": "Le password non coincidono.",
+    "resetLinkExpired": "Questo link per reimpostare la password non è più valido o è scaduto.",
+    "requestNewReset": "Richiedi un nuovo link",
+    "resetSuccessMessage": "Password aggiornata. Accedi con la nuova password."
   },
   "onboarding": {
     "step1": "Benvenuto",
