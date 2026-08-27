@@ -39,6 +39,32 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Fallback pragmatico per il troncamento di redirect_to lato Supabase
+  // (bug noto e inconsistente della loro allowlist Redirect URLs — non
+  // risolto in modo affidabile nemmeno con la configurazione confermata
+  // corretta, diagnosi 2026-08-27/28): un "code" di recovery che
+  // altrimenti atterrerebbe inutilizzato sulla home nuda del locale (o
+  // sulla radice pre-prefisso, stesso identico caso) viene dirottato
+  // qui su reset-password, dove exchangeCodeForSession() può ancora
+  // consumarlo. Verificato: nessun altro flusso in app usa "code" sulla
+  // home oggi (solo reset-password e /api/auth/callback, path diverso
+  // ed esente dalla logica locale sotto). Se in futuro un altro flusso
+  // (OAuth, magic link) atterrasse anch'esso con "code" sulla home,
+  // servirebbe distinguerlo esplicitamente qui (es. un parametro
+  // aggiuntivo nel redirect_to) prima di aggiungerlo — questo redirect
+  // assume oggi che "code sulla home" significhi sempre recovery.
+  const isLocaleRoot =
+    pathname === "/" || locales.some((l) => pathname === `/${l}`);
+  if (isLocaleRoot && request.nextUrl.searchParams.has("code")) {
+    const locale =
+      pathname === "/"
+        ? getLocaleFromRequest(request)
+        : (pathname.slice(1) as Locale);
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}/reset-password`;
+    return NextResponse.redirect(url);
+  }
+
   // Redirect root to locale
   if (pathname === "/") {
     const locale = getLocaleFromRequest(request);
