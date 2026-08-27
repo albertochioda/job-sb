@@ -2,6 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+// Bonus di ranking per offerte valutate di recente — sostituisce is_new,
+// che resta true finché l'utente non apre l'offerta (vedi
+// /api/offers/[id]/read), non finché non ricompare in una nuova ricerca:
+// un'offerta scorata settimane fa e mai cliccata restava "nuova" nel
+// ranking per sempre, anche dopo essere stata ri-mostrata in decine di
+// ricerche successive (diagnosi 2026-08-27). scored_at riflette invece
+// la valutazione Claude più recente — non si aggiorna sui cache-hit
+// (touch_last_matched_search in worker.py tocca solo
+// last_matched_search_id, mai scored_at), quindi isola davvero "trovata
+// di recente" indipendentemente da quante volte sia stata ri-matchata.
+// is_new resta comunque nella select/risposta: serve ancora al badge
+// "non ancora aperta" in search-panel.tsx, uso separato da questo.
+const RECENT_SCORE_BOOST_DAYS = 3;
+function isRecentlyScored(scoredAt: string | null | undefined): boolean {
+  if (!scoredAt) return false;
+  const ageMs = Date.now() - new Date(scoredAt).getTime();
+  return ageMs <= RECENT_SCORE_BOOST_DAYS * 24 * 60 * 60 * 1000;
+}
+
 export async function GET(request: NextRequest) {
   const params = new URL(request.url).searchParams;
   const showHidden = params.get("hidden") === "true";
@@ -55,7 +74,7 @@ export async function GET(request: NextRequest) {
   // della vista "nascoste" (?hidden=true).
   let scoredQuery = supabase
     .from("scored_offers")
-    .select("id, score_a, score_b, score_final, flag, motivo, offer_id, is_new, cv_id, hidden_by_user")
+    .select("id, score_a, score_b, score_final, flag, motivo, offer_id, is_new, scored_at, cv_id, hidden_by_user")
     .eq("user_id", user.id)
     .eq("hidden_by_user", showHidden)
     .neq("flag", "geo_skip")
@@ -136,7 +155,7 @@ export async function GET(request: NextRequest) {
 
   const withComposite = scored.map((o: any) => ({
     ...o,
-    composite_score: (o.score_final ?? 0) + (o.is_new ? 1.0 : 0),
+    composite_score: (o.score_final ?? 0) + (isRecentlyScored(o.scored_at) ? 1.0 : 0),
   }));
   withComposite.sort((a, b) => {
     const rankDiff = (FLAG_RANK[a.flag] ?? 99) - (FLAG_RANK[b.flag] ?? 99);
