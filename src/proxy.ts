@@ -42,7 +42,15 @@ export async function proxy(request: NextRequest) {
   // Redirect root to locale
   if (pathname === "/") {
     const locale = getLocaleFromRequest(request);
-    return NextResponse.redirect(new URL(`/${locale}`, request.url));
+    // .clone() invece di new URL(`/${locale}`, request.url): preserva
+    // automaticamente query string (ed eventuale hash) dell'URL
+    // originale — new URL() da un pathname letterale li scartava,
+    // perdendo silenziosamente parametri come ?code=... (es. link di
+    // reset password Supabase, troncati all'origine nuda dalla loro
+    // allowlist Redirect URLs e quindi atterrati qui su "/").
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}`;
+    return NextResponse.redirect(url);
   }
 
   // If no locale prefix, add one
@@ -51,9 +59,10 @@ export async function proxy(request: NextRequest) {
   );
   if (!hasLocale) {
     const locale = getLocaleFromRequest(request);
-    return NextResponse.redirect(
-      new URL(`/${locale}${pathname}`, request.url)
-    );
+    // Stesso fix del redirect "/" sopra — stesso bug, stessa causa.
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}${pathname}`;
+    return NextResponse.redirect(url);
   }
 
   // Auth check for protected routes
