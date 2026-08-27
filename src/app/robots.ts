@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site-url";
 
 // Deve riflettere lo stato ATTUALE, non anticiparlo: la landing ha ancora
 // noindex esplicito (src/app/[locale]/page.tsx) e nessun'altra pagina
@@ -11,6 +12,6 @@ import type { MetadataRoute } from "next";
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: { userAgent: "*", disallow: "/" },
-    sitemap: "https://job-sb.vercel.app/sitemap.xml",
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

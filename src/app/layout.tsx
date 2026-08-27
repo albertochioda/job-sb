@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
 
 // <html>/<body> vivono in src/app/[locale]/layout.tsx, non qui — è l'unico
@@ -9,7 +10,7 @@ import "./globals.css";
 // quella "/" bare (src/app/page.tsx, solo un redirect a /it) che non
 // passa mai da [locale]/layout.tsx.
 export const metadata: Metadata = {
-  metadataBase: new URL("https://job-sb.vercel.app"),
+  metadataBase: new URL(SITE_URL),
   title: "Job Search Bridge — Più colloqui, meno tempo perso",
   description:
     "Job Search Bridge cerca, filtra e adatta il CV per te. Tu resti concentrato su quello che conta davvero: il colloquio.",

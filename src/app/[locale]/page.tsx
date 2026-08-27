@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import Link from "next/link";
 import Logo from "@/components/logo";
+import { SITE_URL } from "@/lib/site-url";
 import {
   Target,
   FilePenLine,
@@ -28,7 +29,7 @@ export async function generateMetadata({
   const tagline = `${t("heroA.headlineLine1")} ${t("heroA.headlineLine2")}`.replace(/\.$/, "");
   const title = `Job Search Bridge — ${tagline}`;
   const description = `${t("subheadlineLine1")} ${t("subheadlineLine2")} ${t("subheadlineLine3")}`;
-  const url = `https://job-sb.vercel.app/${locale}`;
+  const url = `${SITE_URL}/${locale}`;
 
   return {
     title,
@@ -42,8 +43,8 @@ export async function generateMetadata({
     robots: { index: false, follow: false },
     alternates: {
       languages: {
-        it: "https://job-sb.vercel.app/it",
-        en: "https://job-sb.vercel.app/en",
+        it: `${SITE_URL}/it`,
+        en: `${SITE_URL}/en`,
       },
     },
     openGraph: {
@@ -157,7 +158,7 @@ export default async function HomePage({
     description: `${t("subheadlineLine1")} ${t("subheadlineLine2")} ${t("subheadlineLine3")}`,
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
-    url: `https://job-sb.vercel.app/${locale}`,
+    url: `${SITE_URL}/${locale}`,
     offers: {
       "@type": "Offer",
       price: "19",
