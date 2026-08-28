@@ -61,7 +61,7 @@ async function main() {
   } else {
     const created = await stripe.billingPortal.configurations.create({
       ...CONFIG_PARAMS,
-      default_return_url: "https://job-sb.vercel.app/it/profile",
+      default_return_url: "https://jobsearchbridge.com/it/profile",
     });
     console.log(`[portal] configurazione creata: ${created.id}`);
     console.log(`  is_default: ${created.is_default}`);

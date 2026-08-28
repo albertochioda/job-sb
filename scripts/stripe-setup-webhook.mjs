@@ -33,7 +33,7 @@ if (!apiKey) {
 
 const stripe = new Stripe(apiKey);
 
-const ENDPOINT_URL = "https://job-sb.vercel.app/api/webhooks/stripe";
+const ENDPOINT_URL = "https://jobsearchbridge.com/api/webhooks/stripe";
 const EVENTS = [
   "checkout.session.completed",
   "invoice.paid",
