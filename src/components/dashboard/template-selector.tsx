@@ -2,16 +2,12 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { CV_TEMPLATES, BASIC_TEMPLATE_ID } from "@/lib/cv-templates";
 
-export const CV_TEMPLATES = [
-  { id: "professional", label: "Professional",     preview: "/templates/preview_professional.png" },
-  { id: "two_column",   label: "Due colonne",      preview: "/templates/preview_two_column.png" },
-  { id: "bold_header",  label: "Header grassetto", preview: "/templates/preview_bold_header.png" },
-  { id: "minimal_smart",label: "Minimal Smart",    preview: "/templates/preview_minimal_smart.png" },
-];
+export { CV_TEMPLATES };
 
 function getTemplateBadge(tplId: string, userTier: string): { label: string; className: string } {
-  if (tplId === "minimal_smart" || userTier === "professional") {
+  if (tplId === BASIC_TEMPLATE_ID || userTier === "professional") {
     return { label: "Incluso nel tuo piano", className: "bg-emerald-100 text-emerald-700" };
   }
   if (userTier === "trial") {
@@ -46,7 +42,7 @@ export default function TemplateSelector({ userTier, selectedTemplate, onSelect,
     setPopupStyle({ left, top, width: POPUP_W });
   };
 
-  const templates = CV_TEMPLATES.filter(tpl => userTier !== "individual" || tpl.id === "minimal_smart");
+  const templates = CV_TEMPLATES.filter(tpl => userTier !== "individual" || tpl.id === BASIC_TEMPLATE_ID);
 
   return (
     <>
@@ -54,7 +50,7 @@ export default function TemplateSelector({ userTier, selectedTemplate, onSelect,
         {templates.map((tpl) => {
           const selected = selectedTemplate === tpl.id;
           const badge = getTemplateBadge(tpl.id, userTier);
-          const showTrialContinuityNote = userTier === "trial" && tpl.id !== "minimal_smart";
+          const showTrialContinuityNote = userTier === "trial" && tpl.id !== BASIC_TEMPLATE_ID;
           return (
             <div key={tpl.id} className="flex flex-col">
               <button

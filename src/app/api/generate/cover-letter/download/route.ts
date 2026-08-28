@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { buildFileName } from "@/lib/file-naming";
+import { getTierLimits } from "@/lib/usage-limits";
+import { isTemplateAllowed } from "@/lib/cv-templates";
 
 const adminSupabase = createAdminClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,6 +26,28 @@ export async function POST(request: NextRequest) {
 
   const { offer_id, template_id, letter_text, language } = await request.json();
   if (!offer_id || !letter_text) return NextResponse.json({ error: "missing fields" }, { status: 400 });
+
+  // Questa route genera davvero il .docx col template richiesto (a
+  // differenza di /api/generate/cover-letter, che lo persiste solo) —
+  // stesso gap e stesso fix di /api/adapt/cv/route.ts: template_id arriva
+  // dal body senza controllo, un utente poteva chiamarla direttamente
+  // chiedendo un template premium non incluso nel proprio piano.
+  if (template_id) {
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("tier")
+      .eq("user_id", user.id)
+      .single();
+    if (sub) {
+      const limits = await getTierLimits(supabase, sub.tier);
+      if (!isTemplateAllowed(template_id, limits?.templates_access)) {
+        return NextResponse.json({
+          error: `Il template richiesto non è incluso nel piano ${sub.tier}. Aggiorna il piano per sbloccarlo.`,
+          code: "template_not_allowed",
+        }, { status: 403 });
+      }
+    }
+  }
 
   const [{ data: offer }, { data: profile }] = await Promise.all([
     supabase.from("job_offers").select("title, company, description").eq("id", offer_id).single(),

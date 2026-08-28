@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { getTierLimits } from "@/lib/usage-limits";
+import { isTemplateAllowed } from "@/lib/cv-templates";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
@@ -141,11 +143,7 @@ export async function POST(request: NextRequest) {
         code: "trial_expired",
       }, { status: 403 });
     }
-    const { data: limits } = await supabase
-      .from("usage_limits")
-      .select("cover_letters_per_month")
-      .eq("tier", sub.tier)
-      .single();
+    const limits = await getTierLimits(supabase, sub.tier);
     if (limits && (sub.cover_letters_used ?? 0) >= limits.cover_letters_per_month) {
       return NextResponse.json({
         error: `Hai raggiunto il limite di ${limits.cover_letters_per_month} lettere di motivazione mensili per il piano ${sub.tier}. Aggiorna il piano per continuare.`,
@@ -154,6 +152,19 @@ export async function POST(request: NextRequest) {
         limit: limits.cover_letters_per_month,
         tier: sub.tier,
       }, { status: 429 });
+    }
+
+    // Stesso gap e stesso fix di /api/adapt/cv/route.ts: template_id qui
+    // viene solo persistito (usato per la generazione .docx più avanti in
+    // /api/generate/cover-letter/[id]/download), ma senza questo controllo
+    // un utente poteva comunque far salvare un template_id premium non
+    // consentito dal suo piano, che quella route avrebbe poi onorato senza
+    // ricontrollare.
+    if (template_id && !isTemplateAllowed(template_id, limits?.templates_access)) {
+      return NextResponse.json({
+        error: `Il template richiesto non è incluso nel piano ${sub.tier}. Aggiorna il piano per sbloccarlo.`,
+        code: "template_not_allowed",
+      }, { status: 403 });
     }
   }
 

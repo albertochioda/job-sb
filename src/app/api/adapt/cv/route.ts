@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { getTierLimits } from "@/lib/usage-limits";
+import { isTemplateAllowed } from "@/lib/cv-templates";
 
 const adminSupabase = createAdminClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -142,11 +144,7 @@ export async function POST(request: NextRequest) {
         code: "trial_expired",
       }, { status: 403 });
     }
-    const { data: limits } = await supabase
-      .from("usage_limits")
-      .select("cvs_per_month")
-      .eq("tier", sub.tier)
-      .single();
+    const limits = await getTierLimits(supabase, sub.tier);
     if (limits && (sub.cvs_adapted_used ?? 0) >= limits.cvs_per_month) {
       return NextResponse.json({
         error: `Hai raggiunto il limite di ${limits.cvs_per_month} CV adattati mensili per il piano ${sub.tier}. Aggiorna il piano per continuare.`,
@@ -155,6 +153,20 @@ export async function POST(request: NextRequest) {
         limit: limits.cvs_per_month,
         tier: sub.tier,
       }, { status: 429 });
+    }
+
+    // Gap chiuso qui: template_id arriva dal body della richiesta e prima
+    // non veniva mai confrontato col piano reale dell'utente — un utente su
+    // un piano che esclude i template premium poteva chiamare questa API
+    // direttamente (devtools/curl, non solo dalla UI) chiedendo un
+    // template_id premium e ottenerlo comunque. Stessa fonte di verità già
+    // usata sopra per il contatore mensile (usage_limits via
+    // getTierLimits), nessuna lista di template duplicata qui.
+    if (template_id && !isTemplateAllowed(template_id, limits?.templates_access)) {
+      return NextResponse.json({
+        error: `Il template richiesto non è incluso nel piano ${sub.tier}. Aggiorna il piano per sbloccarlo.`,
+        code: "template_not_allowed",
+      }, { status: 403 });
     }
   }
 

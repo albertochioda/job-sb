@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { buildFileName } from "@/lib/file-naming";
+import { getTierLimits } from "@/lib/usage-limits";
+import { isTemplateAllowed } from "@/lib/cv-templates";
 
 const adminSupabase = createAdminClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -49,8 +51,29 @@ export async function GET(
 
   let filePath = letter.file_url;
   if (!filePath) {
-    // Mai scaricato come .docx finora — lo genera adesso, stessa chiamata
-    // worker usata da /api/generate/cover-letter/download.
+    // Mai scaricato come .docx finora — genera adesso, stessa chiamata
+    // worker usata da /api/generate/cover-letter/download. letter.template_id
+    // qui viene da una riga già scritta da /api/generate/cover-letter (già
+    // controllata lì al momento del salvataggio) — ricontrollato comunque
+    // qui in profondità, nel caso il piano sia stato declassato fra la
+    // generazione del testo e questo primo download.
+    if (letter.template_id) {
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("tier")
+        .eq("user_id", user.id)
+        .single();
+      if (sub) {
+        const limits = await getTierLimits(supabase, sub.tier);
+        if (!isTemplateAllowed(letter.template_id, limits?.templates_access)) {
+          return NextResponse.json({
+            error: `Il template richiesto non è incluso nel piano ${sub.tier}. Aggiorna il piano per sbloccarlo.`,
+            code: "template_not_allowed",
+          }, { status: 403 });
+        }
+      }
+    }
+
     try {
       const res = await fetch(`${WORKER_URL}/generate-cover-letter`, {
         method: "POST",
