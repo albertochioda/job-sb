@@ -42,19 +42,26 @@ export async function proxy(request: NextRequest) {
   // Fallback pragmatico per il troncamento di redirect_to lato Supabase
   // (bug noto e inconsistente della loro allowlist Redirect URLs — non
   // risolto in modo affidabile nemmeno con la configurazione confermata
-  // corretta, diagnosi 2026-08-27/28): un "code" di recovery che
-  // altrimenti atterrerebbe inutilizzato sulla home nuda del locale (o
-  // sulla radice pre-prefisso, stesso identico caso) viene dirottato
-  // qui su /api/auth/reset-password — il Route Handler dedicato che
-  // scambia il code E scrive davvero il cookie di sessione (un Server
-  // Component come reset-password/page.tsx non può, vedi commenti lì).
-  // Verificato: nessun altro flusso in app usa "code" sulla home oggi
-  // (solo reset-password e /api/auth/callback, path diverso ed esente
-  // dalla logica locale sotto). Se in futuro un altro flusso (OAuth,
-  // magic link) atterrasse anch'esso con "code" sulla home, servirebbe
-  // distinguerlo esplicitamente qui (es. un parametro aggiuntivo nel
-  // redirect_to) prima di aggiungerlo — questo redirect assume oggi che
-  // "code sulla home" significhi sempre recovery.
+  // corretta, diagnosi 2026-08-27/28): un "code" che altrimenti
+  // atterrerebbe inutilizzato sulla home nuda del locale (o sulla radice
+  // pre-prefisso, stesso identico caso) viene dirottato qui su
+  // /api/auth/reset-password — il Route Handler dedicato che scambia il
+  // code E scrive davvero il cookie di sessione (un Server Component
+  // come reset-password/page.tsx non può, vedi commenti lì).
+  //
+  // Da quando anche signUp() (registrazione) usa emailRedirectTo verso
+  // /api/auth/callback, un "code" può atterrare qui non solo da un
+  // reset password ma anche da una CONFERMA REGISTRAZIONE troncata allo
+  // stesso modo — proxy.ts non ha modo di distinguere i due flussi
+  // PRIMA dello scambio (il code è opaco, il Referer cross-origin è
+  // ridotto alla sola origin Supabase in entrambi i casi): per questo
+  // NON proviamo a distinguerli qui. La distinzione avviene DENTRO
+  // /api/auth/reset-password/route.ts, subito dopo l'exchange (unico
+  // punto dove il segnale — email_confirmed_at appena valorizzato —
+  // è disponibile), vedi i commenti lì per il dettaglio. Se in futuro
+  // un altro flusso ancora (OAuth, magic link) atterrasse anch'esso con
+  // "code" sulla home, andrebbe esteso lo stesso meccanismo di
+  // disambiguazione post-exchange in quella route, non duplicata qui.
   const isLocaleRoot =
     pathname === "/" || locales.some((l) => pathname === `/${l}`);
   if (isLocaleRoot && request.nextUrl.searchParams.has("code")) {

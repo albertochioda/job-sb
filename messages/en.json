@@ -151,7 +151,8 @@
     "passwordMismatch": "Passwords don't match.",
     "resetLinkExpired": "This password reset link is invalid or has expired.",
     "requestNewReset": "Request a new link",
-    "resetSuccessMessage": "Password updated. Log in with your new password."
+    "resetSuccessMessage": "Password updated. Log in with your new password.",
+    "authLinkError": "This link is invalid or has expired. If you just confirmed your registration, try logging in; otherwise request a new link."
   },
   "onboarding": {
     "step1": "Welcome",

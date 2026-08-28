@@ -21,6 +21,7 @@ export default function RegisterForm({ locale, t }: Props) {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,7 +38,7 @@ export default function RegisterForm({ locale, t }: Props) {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -49,25 +50,53 @@ export default function RegisterForm({ locale, t }: Props) {
     setLoading(false);
     if (error) {
       setError(error.message && error.message !== "{}" ? error.message : "Registrazione fallita. Riprova.");
-    } else {
-      // Il consenso marketing di default è già false lato DB — scriviamo
-      // esplicitamente solo se l'utente lo ha attivato. Nessuna sincronizzazione
-      // da metadata auth a profiles è confermata esistere nel codice, quindi
-      // scriviamo direttamente qui (stesso pattern fail-safe già usato per
-      // terms_version). Un fallimento non deve bloccare la registrazione.
-      if (marketingConsent) {
-        try {
-          await fetch("/api/profile/marketing-consent", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ marketing_consent: true }),
-          });
-        } catch (err) {
-          console.error("Marketing consent save failed:", err);
-        }
-      }
-      router.push(`/${locale}/onboarding`);
+      return;
     }
+
+    // Il consenso marketing di default è già false lato DB — scriviamo
+    // esplicitamente solo se l'utente lo ha attivato. Nessuna sincronizzazione
+    // da metadata auth a profiles è confermata esistere nel codice, quindi
+    // scriviamo direttamente qui (stesso pattern fail-safe già usato per
+    // terms_version). Un fallimento non deve bloccare la registrazione — e
+    // non deve bloccarla nemmeno se non c'è ancora una sessione (sotto):
+    // fetch non lancia eccezioni per uno status non-ok, quindi un 401 qui
+    // (nessuna sessione, conferma email in sospeso) viene già ignorato in
+    // silenzio dal catch esistente, nessuna gestione ulteriore necessaria.
+    if (marketingConsent) {
+      try {
+        await fetch("/api/profile/marketing-consent", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ marketing_consent: true }),
+        });
+      } catch (err) {
+        console.error("Marketing consent save failed:", err);
+      }
+    }
+
+    // data.session è null quando "Confirm email" è attivo su Supabase Auth:
+    // signUp() non restituisce errore (l'account esiste già) ma nemmeno una
+    // sessione utilizzabile. Senza questo controllo il redirect sotto
+    // porterebbe dritti a /onboarding, che però è un Server Component e,
+    // non trovando sessione, rimbalzerebbe silenziosamente a /login — senza
+    // che l'utente abbia mai saputo di dover controllare la propria email.
+    // Stesso pattern (stato locale + messaggio al posto del form, non una
+    // pagina dedicata) già usato in forgot-password-form.tsx.
+    if (!data.session) {
+      setNeedsConfirmation(true);
+      return;
+    }
+
+    router.push(`/${locale}/onboarding`);
+  }
+
+  if (needsConfirmation) {
+    return (
+      <div className="text-center space-y-2">
+        <p className="text-green-700 font-medium">{t.emailSent}</p>
+        <p className="text-sm text-muted-foreground">{email}</p>
+      </div>
+    );
   }
 
   return (
