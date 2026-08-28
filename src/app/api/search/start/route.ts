@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { Redis } from "@upstash/redis";
+import { getTierLimits } from "@/lib/usage-limits";
+import { reserveUsage, releaseUsage } from "@/lib/usage-counter";
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_URL!,
@@ -43,19 +45,24 @@ export async function POST() {
       }, { status: 403 });
     }
 
-    // Controlla limite run
-    const { data: limits } = await supabase
-      .from("usage_limits")
-      .select("runs_per_month")
-      .eq("tier", sub.tier)
-      .single();
-
-    if (limits && (sub.runs_used ?? 0) >= limits.runs_per_month) {
+    // Riserva atomicamente lo slot PRIMA di creare la ricerca — un semplice
+    // SELECT-poi-UPDATE qui era soggetto a race condition: richieste
+    // concorrenti potevano leggere lo stesso runs_used prima che
+    // l'incremento si applicasse, bypassando il limite mensile.
+    // adjust_usage_counter (vedi scripts/sql-adjust-usage-counter.sql)
+    // incrementa e verifica il limite in un'unica query atomica.
+    const reserved = await reserveUsage(supabase, user.id, "runs_used");
+    if (reserved.error) {
+      console.error("[search/start] errore riserva contatore:", reserved.error);
+      return NextResponse.json({ error: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
+    }
+    if (!reserved.ok) {
+      const limits = await getTierLimits(supabase, sub.tier);
       return NextResponse.json({
-        error: `Hai raggiunto il limite di ${limits.runs_per_month} ricerche mensili per il piano ${sub.tier}. Aggiorna il piano per continuare.`,
+        error: `Hai raggiunto il limite di ${limits?.runs_per_month ?? "?"} ricerche mensili per il piano ${sub.tier}. Aggiorna il piano per continuare.`,
         code: "limit_reached",
         resource: "ricerche",
-        limit: limits.runs_per_month,
+        limit: limits?.runs_per_month,
         tier: sub.tier,
       }, { status: 429 });
     }
@@ -68,13 +75,12 @@ export async function POST() {
     .select()
     .single();
 
-  if (searchErr || !search) return NextResponse.json({ error: "Errore creazione ricerca" }, { status: 500 });
-
-  // Incrementa runs_used
-  await supabase
-    .from("subscriptions")
-    .update({ runs_used: (sub?.runs_used ?? 0) + 1 })
-    .eq("user_id", user.id);
+  if (searchErr || !search) {
+    // Restituisce la riserva: la ricerca non è mai stata creata, non deve
+    // consumare una quota reale dell'utente.
+    if (sub) await releaseUsage(supabase, user.id, "runs_used");
+    return NextResponse.json({ error: "Errore creazione ricerca" }, { status: 500 });
+  }
 
   // Pubblica su Redis
   const task = {
@@ -95,7 +101,17 @@ export async function POST() {
     cv_text: cv.extracted_text ?? "",
   };
 
-  await redis.rpush("job_sb:queue", JSON.stringify(task));
+  try {
+    await redis.rpush("job_sb:queue", JSON.stringify(task));
+  } catch (e) {
+    // La ricerca non è mai stata presa in carico dal worker — restituisce
+    // la riserva e ripulisce la riga "searches" orfana, altrimenti resta
+    // bloccata su status='queued' per sempre senza che nulla la processi.
+    console.error("[search/start] pubblicazione su Redis fallita:", e instanceof Error ? e.message : e);
+    if (sub) await releaseUsage(supabase, user.id, "runs_used");
+    await supabase.from("searches").delete().eq("id", search.id);
+    return NextResponse.json({ error: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
+  }
 
   return NextResponse.json({ search_id: search.id, status: "queued" });
 }

@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { getTierLimits } from "@/lib/usage-limits";
 import { isTemplateAllowed } from "@/lib/cv-templates";
+import { reserveUsage, releaseUsage } from "@/lib/usage-counter";
 
 const adminSupabase = createAdminClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -144,29 +145,20 @@ export async function POST(request: NextRequest) {
         code: "trial_expired",
       }, { status: 403 });
     }
-    const limits = await getTierLimits(supabase, sub.tier);
-    if (limits && (sub.cvs_adapted_used ?? 0) >= limits.cvs_per_month) {
-      return NextResponse.json({
-        error: `Hai raggiunto il limite di ${limits.cvs_per_month} CV adattati mensili per il piano ${sub.tier}. Aggiorna il piano per continuare.`,
-        code: "limit_reached",
-        resource: "CV adattati",
-        limit: limits.cvs_per_month,
-        tier: sub.tier,
-      }, { status: 429 });
-    }
-
-    // Gap chiuso qui: template_id arriva dal body della richiesta e prima
-    // non veniva mai confrontato col piano reale dell'utente — un utente su
-    // un piano che esclude i template premium poteva chiamare questa API
-    // direttamente (devtools/curl, non solo dalla UI) chiedendo un
-    // template_id premium e ottenerlo comunque. Stessa fonte di verità già
-    // usata sopra per il contatore mensile (usage_limits via
-    // getTierLimits), nessuna lista di template duplicata qui.
-    if (template_id && !isTemplateAllowed(template_id, limits?.templates_access)) {
-      return NextResponse.json({
-        error: `Il template richiesto non è incluso nel piano ${sub.tier}. Aggiorna il piano per sbloccarlo.`,
-        code: "template_not_allowed",
-      }, { status: 403 });
+    // Gap chiuso in precedenza: template_id arriva dal body della richiesta
+    // e prima non veniva mai confrontato col piano reale dell'utente — un
+    // utente su un piano che esclude i template premium poteva chiamare
+    // questa API direttamente (devtools/curl, non solo dalla UI) chiedendo
+    // un template_id premium e ottenerlo comunque. Nessuna lista di
+    // template duplicata qui: templates_access resta l'unica fonte.
+    if (template_id) {
+      const limits = await getTierLimits(supabase, sub.tier);
+      if (!isTemplateAllowed(template_id, limits?.templates_access)) {
+        return NextResponse.json({
+          error: `Il template richiesto non è incluso nel piano ${sub.tier}. Aggiorna il piano per sbloccarlo.`,
+          code: "template_not_allowed",
+        }, { status: 403 });
+      }
     }
   }
 
@@ -204,15 +196,49 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Riserva atomicamente lo slot PRIMA di qualunque lavoro costoso — dopo
+  // il check cache sopra (una risposta cached non deve consumare una nuova
+  // quota), ma prima della chiamata a Claude. Sostituisce il vecchio
+  // incremento post-hoc (a fine funzione, ora rimosso): un SELECT-poi-UPDATE
+  // lì era soggetto a race condition su richieste concorrenti, che potevano
+  // leggere lo stesso cvs_adapted_used prima che l'incremento si
+  // applicasse, bypassando il limite mensile. Se il lavoro costoso fallisce
+  // più avanti, ogni punto di uscita rilascia la riserva (releaseUsage) —
+  // un tentativo fallito non deve consumare comunque una quota reale.
+  if (sub) {
+    const reserved = await reserveUsage(supabase, user.id, "cvs_adapted_used");
+    if (reserved.error) {
+      console.error("[adapt/cv] errore riserva contatore:", reserved.error);
+      return NextResponse.json({ error: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
+    }
+    if (!reserved.ok) {
+      const limits = await getTierLimits(supabase, sub.tier);
+      return NextResponse.json({
+        error: `Hai raggiunto il limite di ${limits?.cvs_per_month ?? "?"} CV adattati mensili per il piano ${sub.tier}. Aggiorna il piano per continuare.`,
+        code: "limit_reached",
+        resource: "CV adattati",
+        limit: limits?.cvs_per_month,
+        tier: sub.tier,
+      }, { status: 429 });
+    }
+  }
+
   const lang = await detectLanguage(offer.description || "");
 
   // Chiama Claude Sonnet
-  const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 2048,
-    system: ADAPT_SYSTEM,
-    messages: [{ role: "user", content: buildPrompt(cv.extracted_text || "", offer.description || "", lang) }],
-  });
+  let message: Awaited<ReturnType<typeof anthropic.messages.create>>;
+  try {
+    message = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 2048,
+      system: ADAPT_SYSTEM,
+      messages: [{ role: "user", content: buildPrompt(cv.extracted_text || "", offer.description || "", lang) }],
+    });
+  } catch (e) {
+    if (sub) await releaseUsage(supabase, user.id, "cvs_adapted_used");
+    console.error("[adapt/cv] chiamata Claude fallita:", e instanceof Error ? e.message : e);
+    return NextResponse.json({ error: "Generazione non riuscita, riprova più tardi" }, { status: 500 });
+  }
 
   const raw = (message.content[0] as { text: string }).text.trim();
   let parsed: {
@@ -231,6 +257,7 @@ export async function POST(request: NextRequest) {
   try {
     parsed = JSON.parse(extractJsonObject(raw));
   } catch {
+    if (sub) await releaseUsage(supabase, user.id, "cvs_adapted_used");
     return NextResponse.json({ error: "Errore parsing risposta Claude" }, { status: 500 });
   }
 
@@ -238,6 +265,7 @@ export async function POST(request: NextRequest) {
   // sia per estrarre la foto profilo quando si usa un template hardcoded)
   const { data: cvSigned, error: signError } = await adminSupabase.storage.from("cvs").createSignedUrl(cvFilePath, 3600);
   if (signError || !cvSigned?.signedUrl) {
+    if (sub) await releaseUsage(supabase, user.id, "cvs_adapted_used");
     return NextResponse.json({ error: `CV originale non accessibile — path: ${cvFilePath} — ${signError?.message ?? "signed URL vuoto"}` }, { status: 500 });
   }
   const cvSignedUrl: string = cvSigned.signedUrl;
@@ -275,6 +303,7 @@ export async function POST(request: NextRequest) {
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[adapt/cv] generazione .docx fallita:", msg);
+    if (sub) await releaseUsage(supabase, user.id, "cvs_adapted_used");
     return NextResponse.json({ error: "Generazione del documento non riuscita, riprova più tardi" }, { status: 500 });
   }
 
@@ -299,16 +328,12 @@ export async function POST(request: NextRequest) {
 
   if (dbError) {
     console.error("[adapt/cv] errore DB:", dbError.message);
+    if (sub) await releaseUsage(supabase, user.id, "cvs_adapted_used");
     return NextResponse.json({ error: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
   }
 
-  // Incrementa cvs_adapted_used (solo per CV nuovi, non cached)
-  if (sub) {
-    await supabase
-      .from("subscriptions")
-      .update({ cvs_adapted_used: (sub.cvs_adapted_used ?? 0) + 1 })
-      .eq("user_id", user.id);
-  }
+  // Nessun incremento qui: la quota è già stata riservata atomicamente
+  // sopra, prima della chiamata a Claude — non un incremento post-hoc.
 
   // Genera URL firmato valido 1 ora per il download immediato
   const { data: signed } = await adminSupabase.storage.from("cvs").createSignedUrl(fileName, 3600);

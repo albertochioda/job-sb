@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getTierLimits } from "@/lib/usage-limits";
 import { isTemplateAllowed } from "@/lib/cv-templates";
+import { reserveUsage, releaseUsage } from "@/lib/usage-counter";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { offer_id, template_id } = await request.json();
+  const { offer_id, template_id, force_regenerate } = await request.json();
   if (!offer_id) return NextResponse.json({ error: "missing fields" }, { status: 400 });
 
   // Verifica limiti piano — contatore separato da cvs_adapted_used
@@ -143,16 +144,6 @@ export async function POST(request: NextRequest) {
         code: "trial_expired",
       }, { status: 403 });
     }
-    const limits = await getTierLimits(supabase, sub.tier);
-    if (limits && (sub.cover_letters_used ?? 0) >= limits.cover_letters_per_month) {
-      return NextResponse.json({
-        error: `Hai raggiunto il limite di ${limits.cover_letters_per_month} lettere di motivazione mensili per il piano ${sub.tier}. Aggiorna il piano per continuare.`,
-        code: "limit_reached",
-        resource: "lettere di motivazione",
-        limit: limits.cover_letters_per_month,
-        tier: sub.tier,
-      }, { status: 429 });
-    }
 
     // Stesso gap e stesso fix di /api/adapt/cv/route.ts: template_id qui
     // viene solo persistito (usato per la generazione .docx più avanti in
@@ -160,11 +151,14 @@ export async function POST(request: NextRequest) {
     // un utente poteva comunque far salvare un template_id premium non
     // consentito dal suo piano, che quella route avrebbe poi onorato senza
     // ricontrollare.
-    if (template_id && !isTemplateAllowed(template_id, limits?.templates_access)) {
-      return NextResponse.json({
-        error: `Il template richiesto non è incluso nel piano ${sub.tier}. Aggiorna il piano per sbloccarlo.`,
-        code: "template_not_allowed",
-      }, { status: 403 });
+    if (template_id) {
+      const limits = await getTierLimits(supabase, sub.tier);
+      if (!isTemplateAllowed(template_id, limits?.templates_access)) {
+        return NextResponse.json({
+          error: `Il template richiesto non è incluso nel piano ${sub.tier}. Aggiorna il piano per sbloccarlo.`,
+          code: "template_not_allowed",
+        }, { status: 403 });
+      }
     }
   }
 
@@ -178,8 +172,59 @@ export async function POST(request: NextRequest) {
 
   if (!offer || !cv) return NextResponse.json({ error: "Offerta o CV non trovati" }, { status: 404 });
 
-  const lang = await detectLanguage(offer.description || "");
   const isAgency = isAgencyPosting(offer.company || "", offer.description || "");
+
+  // Controlla se già generata (riusa) — bypassato se force_regenerate,
+  // stesso pattern già usato in /api/adapt/cv/route.ts. Prima mancava del
+  // tutto qui: ogni chiamata ripetuta sullo stesso offer_id rifaceva
+  // tutto da capo (2 chiamate Claude, una con ricerca web), anche per
+  // l'offerta identica — costo ripetuto senza motivo, e ogni rigenerazione
+  // consumava comunque una nuova quota mensile.
+  if (!force_regenerate) {
+    const { data: existing } = await supabase
+      .from("generated_letters")
+      .select("id, letter_text, language, template_id")
+      .eq("user_id", user.id)
+      .eq("offer_id", offer_id)
+      .single();
+
+    if (existing?.letter_text) {
+      return NextResponse.json({
+        letter_text: existing.letter_text,
+        letter_id: existing.id,
+        offer_id,
+        template_id: existing.template_id ?? template_id ?? "professional",
+        language: existing.language,
+        is_agency: isAgency,
+        cached: true,
+      });
+    }
+  }
+
+  // Riserva atomicamente lo slot PRIMA di qualunque chiamata Claude — dopo
+  // il check cache sopra (una risposta cached non deve consumare una nuova
+  // quota), prima della ricerca web e della scrittura. Sostituisce il
+  // vecchio incremento post-hoc (rimosso più sotto): un SELECT-poi-UPDATE
+  // lì era soggetto a race condition su richieste concorrenti.
+  if (sub) {
+    const reserved = await reserveUsage(supabase, user.id, "cover_letters_used");
+    if (reserved.error) {
+      console.error("[generate-cover-letter] errore riserva contatore:", reserved.error);
+      return NextResponse.json({ error: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
+    }
+    if (!reserved.ok) {
+      const limits = await getTierLimits(supabase, sub.tier);
+      return NextResponse.json({
+        error: `Hai raggiunto il limite di ${limits?.cover_letters_per_month ?? "?"} lettere di motivazione mensili per il piano ${sub.tier}. Aggiorna il piano per continuare.`,
+        code: "limit_reached",
+        resource: "lettere di motivazione",
+        limit: limits?.cover_letters_per_month,
+        tier: sub.tier,
+      }, { status: 429 });
+    }
+  }
+
+  const lang = await detectLanguage(offer.description || "");
 
   // Chiamata 1 (solo annunci diretti): ricerca web isolata in una chiamata
   // separata SENZA scrittura della lettera — evita che il ragionamento sulla
@@ -202,12 +247,19 @@ export async function POST(request: NextRequest) {
     lang,
   );
 
-  const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 1024,
-    system,
-    messages: [{ role: "user", content: prompt }],
-  });
+  let message: Awaited<ReturnType<typeof anthropic.messages.create>>;
+  try {
+    message = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system,
+      messages: [{ role: "user", content: prompt }],
+    });
+  } catch (e) {
+    if (sub) await releaseUsage(supabase, user.id, "cover_letters_used");
+    console.error("[generate-cover-letter] chiamata Claude fallita:", e instanceof Error ? e.message : e);
+    return NextResponse.json({ error: "Generazione non riuscita, riprova più tardi" }, { status: 500 });
+  }
 
   const textBlocks = message.content.filter(
     (block): block is Anthropic.Messages.TextBlock => block.type === "text"
@@ -215,17 +267,12 @@ export async function POST(request: NextRequest) {
   const letterText = (textBlocks[textBlocks.length - 1]?.text ?? "").trim();
 
   if (!letterText) {
+    if (sub) await releaseUsage(supabase, user.id, "cover_letters_used");
     return NextResponse.json({ error: "Errore generazione lettera: nessun testo restituito" }, { status: 500 });
   }
 
-  // Incrementa cover_letters_used solo su generazione riuscita — invariato,
-  // la persistenza sotto non cambia questa logica dei limiti.
-  if (sub) {
-    await supabase
-      .from("subscriptions")
-      .update({ cover_letters_used: (sub.cover_letters_used ?? 0) + 1 })
-      .eq("user_id", user.id);
-  }
+  // Nessun incremento qui: la quota è già stata riservata atomicamente
+  // sopra, prima della chiamata a Claude.
 
   // Persiste subito il testo generato — prima viveva solo nello stato React
   // del frontend e spariva al reload. Upsert su (user_id, offer_id): una
@@ -261,5 +308,6 @@ export async function POST(request: NextRequest) {
     template_id: template_id ?? "professional",
     language: lang,
     is_agency: isAgency,
+    cached: false,
   });
 }
