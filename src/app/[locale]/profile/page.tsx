@@ -9,6 +9,7 @@ import PhotoUploadSection from "@/components/profile/photo-upload-section";
 import CoverLetterSettingsForm from "@/components/profile/cover-letter-settings-form";
 import MarketingConsentToggle from "@/components/profile/marketing-consent-toggle";
 import SubscriptionBillingSection from "@/components/profile/subscription-billing-section";
+import AccountDangerZone from "@/components/profile/account-danger-zone";
 import { getTierLimits } from "@/lib/usage-limits";
 import Link from "next/link";
 import SupportChatIcon from "@/components/support-chat-icon";
@@ -145,6 +146,7 @@ export default async function ProfilePage({
         initialBio={profile?.cover_letter_bio}
       />
       <MarketingConsentToggle initialConsent={profile?.marketing_consent ?? false} />
+      <AccountDangerZone userEmail={profile?.email ?? user.email ?? ""} locale={locale} />
     </main>
   );
 }
