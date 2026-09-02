@@ -14,9 +14,16 @@ const REFUND_WINDOW_MS = 14 * 24 * 60 * 60 * 1000; // Art. 7.2 ToS
 // contesto): il CASCADE di deleteUser() non le tocca, vanno svuotate qui
 // esplicitamente. Includerne una che in realtà avesse già CASCADE non fa
 // danno: diventa solo un DELETE ridondante di 0 righe.
+//
+// Ordine significativo: scored_offers.last_matched_search_id referenzia
+// searches.id (FK confermata da un test end-to-end reale — cancellare
+// searches PRIMA di scored_offers fallisce con violazione di foreign key,
+// finché scored_offers non viene svuotata a sua volta). scored_offers deve
+// quindi precedere searches in questa lista.
 const TABLES_WITHOUT_CASCADE = [
   "cancellation_feedback",
   "generated_letters",
+  "scored_offers",
   "searches",
   "support_reports",
   "support_chat_log",
@@ -81,6 +88,15 @@ export async function POST(request: NextRequest) {
     try {
       const stripeSub = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
       await releaseScheduleIfPresent(stripe, stripeSub);
+      // Periodo di fatturazione corrente, catturato PRIMA della cancellazione
+      // — serve per il calcolo del rimborso pro-rata sotto. Va preso dalla
+      // subscription (item.current_period_start/end), non dall'invoice: per
+      // la prima fattura di un abbonamento appena creato, invoice.period_start
+      // e invoice.period_end possono coincidere (nessuna durata), cosa
+      // verificata con un test end-to-end reale — usare quei campi avrebbe
+      // sempre azzerato il rimborso.
+      const currentPeriodStart = stripeSub.items.data[0]?.current_period_start;
+      const currentPeriodEnd = stripeSub.items.data[0]?.current_period_end;
 
       // Cancellazione immediata, non a fine periodo: chi elimina l'account
       // vuole sparire subito, non restare abbonato fino a fine mese — a
@@ -110,9 +126,9 @@ export async function POST(request: NextRequest) {
             const pi = payment?.type === "payment_intent" ? payment.payment_intent : undefined;
             paymentIntentId = typeof pi === "string" ? pi : pi?.id;
           }
-          if (invoice && paymentIntentId && invoice.period_start && invoice.period_end) {
-            const periodStartMs = invoice.period_start * 1000;
-            const periodEndMs = invoice.period_end * 1000;
+          if (invoice && paymentIntentId && currentPeriodStart && currentPeriodEnd) {
+            const periodStartMs = currentPeriodStart * 1000;
+            const periodEndMs = currentPeriodEnd * 1000;
             const totalMs = periodEndMs - periodStartMs;
             const unusedMs = Math.max(0, periodEndMs - Date.now());
             const fraction = totalMs > 0 ? Math.min(1, unusedMs / totalMs) : 0;
