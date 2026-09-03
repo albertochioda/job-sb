@@ -1,50 +1,71 @@
 /**
  * BOZZA — NON PUBBLICATA — richiede revisione di un legale prima di
- * qualunque pubblicazione.
+ * qualunque pubblicazione (Art. 7 escluso, vedi punto 4 sotto — decisione
+ * già presa da Alberto, non in attesa di legale).
  *
  * Costruita a partire da docs/drafts/termini-di-servizio-draft-abbonamento.tsx
  * (salvata il 2026-07-27 prima del revert dei commit 5907aa7/658d5ba,
  * aggiornata l'2026-08-05 in 8f95049) — quel testo resta corretto ed è
  * preservato invariato per la maggior parte. Questa versione la aggiorna su
- * 3 punti, tutti verificati contro il comportamento REALE del codice in
- * produzione al 2026-09-02, non contro ipotesi:
+ * 4 punti:
  *
- * 1. ART. 7.2 (finestra di rimborso) — CAMBIATA rispetto alla bozza
- *    precedente. La bozza precedente calcolava i 14gg dalla REGISTRAZIONE
- *    (inizio trial). Il codice realmente shippato (webhooks/stripe/route.ts,
- *    account/delete/request+confirm/route.ts) calcola i 14gg dal
- *    PRIMO PAGAMENTO (subscriptions.first_payment_at), e la finestra si
- *    rinnova ad ogni nuovo abbonamento (anche una riattivazione dopo una
- *    cancellazione precedente) — vedi commento in
- *    webhooks/stripe/route.ts:82-87. Ho aggiornato il testo per riflettere
- *    QUESTO comportamento, non quello della bozza precedente. Effetto
- *    positivo collaterale: risolve da solo il caso limite "conversione
- *    tardiva" che la bozza precedente segnalava come rischio legale (con
- *    "dal pagamento" nessun utente pagante si trova mai senza una finestra
- *    di recesso, indipendentemente da quando converte).
+ * 1. ART. 7 — riscritto integralmente il 2026-09-02 su testo esatto fornito
+ *    da Alberto, dopo aver valutato esplicitamente di non voler promettere
+ *    più del necessario. Sostituisce la versione precedente a due
+ *    sottosezioni (7.1 diritto di recesso di legge + 7.2 politica di
+ *    rimborso volontaria estesa, con calcolo dei 14gg dal pagamento e
+ *    rinnovo della finestra ad ogni riattivazione) con un unico articolo
+ *    più snello: diritto di recesso nei 14gg dal pagamento con rimborso
+ *    del periodo non goduto, gestito caso per caso via email, più garanzia
+ *    fissa sugli addebiti errati/duplicati. RIMOSSE le 3 note "DA
+ *    VERIFICARE CON LEGALE" collegate alla vecchia versione (checkbox di
+ *    consenso a esecuzione immediata mai implementata nel checkout,
+ *    incertezza sulla base del calcolo dei 14gg, conferma dovuta sul nuovo
+ *    Art. 8) — non si applicano più al nuovo testo, che non fa affermazioni
+ *    che le richiedano.
+ *
+ *    ATTENZIONE per quando questo testo verrà pubblicato: i commenti nel
+ *    codice reale (webhooks/stripe/route.ts, account/delete/request/
+ *    route.ts, account/delete/confirm/route.ts) citano ancora
+ *    letteralmente "Art. 7.2 ToS" — quella sottosezione non esiste più in
+ *    questa versione. Non ho toccato quei commenti (non era nello scope di
+ *    oggi, e restano comunque corretti nella sostanza — il calcolo dei
+ *    14gg dal pagamento è invariato), ma andranno aggiornati a "Art. 7"
+ *    quando questa bozza verrà pubblicata, altrimenti puntano a un numero
+ *    di sottosezione inesistente.
  *
  * 2. ART. 7.1 (checkbox di consenso a esecuzione immediata) — la bozza
- *    precedente descrive una casella di consenso esplicito da spuntare al
- *    checkout. VERIFICATO navigando la vera pagina di Checkout Stripe in
- *    produzione (modalità test, stessi parametri dell'app reale): quella
- *    casella NON esiste nel checkout attuale — la pagina mostra solo
- *    email, metodo di pagamento e il testo standard di Stripe sul rinnovo
- *    automatico. Il testo sotto descrive ancora il meccanismo (è una scelta
- *    legale, non mia, se serva davvero) ma è marcato esplicitamente come
- *    NON ANCORA IMPLEMENTATO — va deciso con il legale se è necessario, e
- *    se sì va costruito prima di pubblicare questo articolo così com'è.
+ *    precedente descriveva una casella di consenso esplicito da spuntare
+ *    al checkout. VERIFICATO navigando la vera pagina di Checkout Stripe
+ *    in produzione (modalità test, stessi parametri dell'app reale):
+ *    quella casella non esiste nel checkout attuale. Con la riscrittura
+ *    del punto 1 questo problema non si pone più: il nuovo Art. 7 non
+ *    descrive alcun meccanismo di checkbox, quindi non c'è più nulla da
+ *    verificare con il legale su questo punto specifico.
  *
  * 3. NUOVO ART. 8 (cancellazione dell'account) — non esisteva nella bozza
  *    precedente perché la funzione non era stata ancora costruita. Descrive
  *    la cancellazione account reale (self-service, doppia conferma via
  *    email, cancellazione Stripe immediata, dati eliminati subito).
- *    Inserito DOPO l'Art. 7 (non dentro il 6) apposta: così i riferimenti
- *    "Art. 6 ToS" e "Art. 7.2 ToS" già hardcoded nei commenti del codice
- *    restano corretti senza dover toccare quel codice.
+ *    Inserito DOPO l'Art. 7 (non dentro il 6) apposta: così il riferimento
+ *    "Art. 6 ToS" già hardcoded nei commenti del codice resta corretto
+ *    senza dover toccare quel codice (vedi però l'attenzione al punto 1
+ *    per "Art. 7.2 ToS", che invece andrà aggiornato).
+ *
+ * 4. ART. 4 (limiti trial) — invariato in questa bozza: riportava già i
+ *    numeri corretti (3 ricerche/5 CV adattati/5 lettere) fin dalla
+ *    versione dell'8f95049 del 2026-08-05. Il testo LIVE invece, verificato
+ *    lo stesso giorno di questa modifica, riportava ancora "20 ricerche/30
+ *    CV" (numeri del piano Professional, non del trial reale) — corretto
+ *    direttamente in src/app/[locale]/termini-di-servizio/page.tsx lo
+ *    stesso 2026-09-02, senza aspettare la pubblicazione di questa bozza:
+ *    è la correzione di un fatto oggettivamente sbagliato (i limiti trial
+ *    reali sono nel database, non un'interpretazione), non l'introduzione
+ *    di un nuovo obbligo legale — non richiedeva revisione legale.
  *
  * Tutto il resto (Art. 1-6, 9-16) è la bozza precedente, INVARIATA nella
  * sostanza — solo rinumerata da 8 in poi per fare spazio al nuovo Art. 8, e
- * con l'email di contatto in 7.2 corretta da albertochioda@gmail.com
+ * con l'email di contatto corretta da albertochioda@gmail.com
  * (personale, bozza pre-2026-08-05) a SUPPORT_EMAIL, coerente con la pulizia
  * già fatta sul resto del sito il 2026-08-07 (commit cedbda6) che questa
  * bozza, vivendo fuori da src/app, non aveva ricevuto.
@@ -52,7 +73,10 @@
  * Il testo precedente (versione "1.0-beta", 24 giugno 2026, quella
  * realmente accettata da ogni utente esistente) resta archiviato e
  * invariato in docs/archivio-legale/termini-di-servizio-v1.0-beta-2026-06-24.md
- * — non toccarlo mai.
+ * — non toccarlo mai. Nota: quell'archivio conserva deliberatamente i
+ * numeri trial SBAGLIATI (20/30) perché è quello che gli utenti esistenti
+ * hanno davvero accettato, per quanto impreciso — il fix del punto 4 sopra
+ * riguarda solo il testo LIVE corrente, non l'archivio.
  */
 import { SUPPORT_EMAIL } from "@/lib/support-contact";
 
@@ -108,25 +132,9 @@ export default function TerminiDiServizio() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">7. Diritto di recesso e rimborsi</h2>
-          <h3 className="text-base font-semibold">7.1 Diritto di recesso (primi 14 giorni)</h3>
-          <p className="text-sm leading-relaxed">Ai sensi della normativa a tutela dei consumatori, l&apos;Utente che sottoscrive per la prima volta un Abbonamento a pagamento ha diritto di recedere dal contratto entro 14 (quattordici) giorni dalla data del pagamento, senza fornire alcuna motivazione, ottenendo il rimborso integrale di quanto versato.</p>
-          <p className="text-sm leading-relaxed bg-yellow-50 border border-yellow-300 rounded px-3 py-2">
-            ⚠️ DA VERIFICARE CON LEGALE — Il paragrafo seguente (checkbox di consenso a esecuzione immediata) descrive un meccanismo standard per i servizi digitali ad esecuzione immediata, ma <strong>non è oggi implementato</strong> nel checkout reale (verificato navigando la pagina Stripe Checkout in produzione il 2026-09-02: mostra solo email, metodo di pagamento e il testo standard di Stripe sul rinnovo — nessuna casella separata di consenso). Va deciso con il legale se, data la politica di rimborso volontaria dell&apos;Art. 7.2 (che di fatto garantisce comunque un rimborso pieno nella stessa finestra, indipendentemente dall&apos;uso), questa casella sia effettivamente necessaria — se sì, va costruita prima di pubblicare questo paragrafo così com&apos;è; se il legale conferma che non serve, il paragrafo va rimosso o riformulato.
-          </p>
-          <p className="text-sm leading-relaxed">Al momento del checkout, l&apos;Utente è tenuto a esprimere consenso esplicito (tramite apposita casella da selezionare attivamente, non pre-selezionata) con la seguente dichiarazione:</p>
-          <p className="text-sm leading-relaxed italic">&quot;Richiedo che l&apos;esecuzione del Servizio abbia inizio immediatamente, anche prima della scadenza del termine di 14 giorni per l&apos;esercizio del diritto di recesso, e sono consapevole che, qualora inizi a utilizzare il Servizio durante tale periodo, perderò il diritto di recesso e al connesso rimborso.&quot;</p>
-          <p className="text-sm leading-relaxed">In pratica: se l&apos;Utente utilizza il Servizio (es. avvia una ricerca, genera un CV o una lettera) entro i 14 giorni dal pagamento, il diritto di recesso di legge si considera esercitato tramite consenso a esecuzione immediata e non è previsto rimborso automatico per legge in quel caso specifico. Tuttavia, Job Search Bridge adotta — per ora, come politica commerciale volontaria e non come obbligo di legge — un rimborso integrale su richiesta, per qualunque motivo, entro la stessa finestra di 14 giorni, indipendentemente dall&apos;uso effettivo del Servizio. Vedi Art. 7.2.</p>
-
-          <h3 className="text-base font-semibold">7.2 Politica di rimborso di Job Search Bridge (fase attuale)</h3>
-          <p className="text-sm leading-relaxed">Indipendentemente da quanto previsto per legge all&apos;Art. 7.1, Job Search Bridge si impegna volontariamente a:</p>
-          <ul className="text-sm leading-relaxed list-disc pl-5 space-y-1">
-            <li>Rimborso integrale su richiesta, per qualunque motivo, se richiesto entro 14 (quattordici) giorni dalla data dell&apos;ultimo pagamento (non dalla registrazione né dall&apos;inizio del periodo di prova) — indipendentemente dall&apos;uso effettivo del Servizio in quel periodo.</li>
-            <li>Questa finestra di 14 giorni riparte ad ogni nuovo pagamento che dà inizio a un nuovo ciclo di abbonamento (ad esempio una riattivazione dopo una precedente cancellazione): non è legata a un unico evento &quot;primo pagamento in assoluto&quot;, ma al pagamento più recente che ha attivato l&apos;abbonamento attualmente in corso.</li>
-            <li>Rinnovi automatici successivi all&apos;interno dello stesso ciclo di abbonamento: nessun rimborso automatico per periodi parziali o non utilizzati. La cancellazione evita futuri addebiti ma non dà diritto al rimborso del periodo già in corso, salvo quanto sopra per un pagamento avvenuto negli ultimi 14 giorni.</li>
-            <li>Addebiti errati o doppi addebiti: rimborso integrale sempre garantito, indipendentemente dalla finestra di 14 giorni sopra descritta, verificato caso per caso contattando <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>.</li>
-            <li>La richiesta di eliminazione completa dell&apos;account (Art. 8) applica automaticamente questa stessa politica di rimborso alla cancellazione immediata dell&apos;abbonamento eventualmente attivo.</li>
-          </ul>
-          <p className="text-sm leading-relaxed">Questa politica potrà essere rivista in futuro; eventuali modifiche verranno comunicate con adeguato preavviso e non si applicheranno retroattivamente ad abbonamenti già in corso al momento della modifica.</p>
+          <p className="text-sm leading-relaxed">L&apos;Utente che sottoscrive per la prima volta un Abbonamento a pagamento ha diritto di recedere dal contratto entro 14 (quattordici) giorni dalla data del pagamento, ottenendo il rimborso di quanto versato per il periodo non ancora goduto, salvo quanto previsto dalla normativa applicabile in materia di contenuti e servizi digitali a esecuzione immediata.</p>
+          <p className="text-sm leading-relaxed">Per richiedere il recesso o un rimborso, l&apos;Utente può contattare <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>. Le richieste vengono valutate caso per caso nel rispetto della normativa vigente.</p>
+          <p className="text-sm leading-relaxed">In caso di addebiti errati o duplicati, il rimborso integrale è sempre garantito, a prescindere da quanto sopra.</p>
         </section>
 
         <section className="space-y-3">
@@ -135,7 +143,7 @@ export default function TerminiDiServizio() {
           <p className="text-sm leading-relaxed">La richiesta richiede una doppia conferma: dopo aver digitato la propria email a conferma dell&apos;intenzione, l&apos;Utente riceve un&apos;email con un link di conferma valido per un&apos;ora — l&apos;eliminazione avviene solo dopo il click su tale link, e non prima.</p>
           <p className="text-sm leading-relaxed">Al momento della conferma:</p>
           <ul className="text-sm leading-relaxed list-disc pl-5 space-y-1">
-            <li>un eventuale abbonamento attivo viene cancellato immediatamente (non a fine periodo, a differenza dell&apos;Art. 6), con applicazione della politica di rimborso dell&apos;Art. 7.2 se il pagamento più recente rientra nella finestra dei 14 giorni;</li>
+            <li>un eventuale abbonamento attivo viene cancellato immediatamente (non a fine periodo, a differenza dell&apos;Art. 6), con applicazione del diritto di recesso e rimborso dell&apos;Art. 7 se il pagamento più recente rientra nella finestra dei 14 giorni;</li>
             <li>tutti i dati dell&apos;account (CV, lettere generate, cronologia ricerche e candidature, e ogni altro dato personale collegato) vengono eliminati in modo permanente e irreversibile;</li>
             <li>l&apos;account stesso e le credenziali di accesso cessano di esistere: non è possibile effettuare nuovamente l&apos;accesso con le stesse credenziali, né recuperare i dati eliminati.</li>
           </ul>
