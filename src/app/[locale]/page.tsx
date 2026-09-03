@@ -42,6 +42,7 @@ export async function generateMetadata({
     // index: true) è l'azione deliberata per pubblicare.
     robots: { index: false, follow: false },
     alternates: {
+      canonical: url,
       languages: {
         it: `${SITE_URL}/it`,
         en: `${SITE_URL}/en`,
