@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import DashboardNav from "@/components/dashboard/dashboard-nav";
 import SearchPanel from "@/components/dashboard/search-panel";
+import DashboardGreeting from "@/components/dashboard/greeting";
 import { OWNER_EMAIL } from "@/lib/owner";
 
 export default async function DashboardPage({
@@ -48,9 +49,7 @@ export default async function DashboardPage({
 
       <div className="max-w-3xl mx-auto px-6 py-10">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold">
-            Ciao{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}!
-          </h1>
+          <DashboardGreeting firstName={profile?.full_name ? profile.full_name.split(" ")[0] : undefined} />
           <p className="text-muted-foreground text-sm mt-1">
             Queste sono le offerte trovate in base al tuo profilo.
           </p>
