@@ -31,6 +31,23 @@ const FLAG_LABELS = {
   red: "Bassa",
 };
 
+type DateBucket = "all" | "24h" | "7d" | "30d";
+const DATE_BUCKET_DAYS: Record<Exclude<DateBucket, "all">, number> = { "24h": 1, "7d": 7, "30d": 30 };
+
+// Finestra scorrevole dal momento attuale (non un bucket calendario fisso:
+// "ultima settimana" selezionata martedì include comunque tutto ciò che è
+// stato pubblicato nei 7 giorni precedenti, non solo dal lunedì). Un'offerta
+// senza published_at viene esclusa dai bucket specifici — coerente con "non
+// sappiamo quando è stata pubblicata", non promettiamo una freschezza che
+// non possiamo verificare (nella pratica riguarda <1% delle offerte).
+function isWithinDateBucket(publishedAt: string | null | undefined, bucket: DateBucket): boolean {
+  if (bucket === "all") return true;
+  if (!publishedAt) return false;
+  const ageMs = Date.now() - new Date(publishedAt).getTime();
+  if (Number.isNaN(ageMs) || ageMs < 0) return false;
+  return ageMs <= DATE_BUCKET_DAYS[bucket] * 24 * 60 * 60 * 1000;
+}
+
 /**
  * Vista scoped su una singola ricerca (scored_offers.last_matched_search_id)
  * — deliberatamente più semplice della vista aggregata di search-panel.tsx
@@ -47,6 +64,7 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "green" | "yellow" | "red">("all");
+  const [dateFilter, setDateFilter] = useState<DateBucket>("all");
 
   useEffect(() => {
     fetch(`/api/offers?search_id=${searchId}`)
@@ -107,12 +125,13 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
   }
 
   const flagFiltered = filter === "all" ? offers : offers.filter((o) => o.flag === filter);
+  const dateFiltered = dateFilter === "all" ? flagFiltered : flagFiltered.filter((o) => isWithinDateBucket(o.published_at, dateFilter));
   const q = searchQuery.trim().toLowerCase();
   const filteredOffers = q
-    ? flagFiltered.filter(
+    ? dateFiltered.filter(
         (o) => o.title?.toLowerCase().includes(q) || o.company?.toLowerCase().includes(q)
       )
-    : flagFiltered;
+    : dateFiltered;
 
   const counts = {
     all: offers.length,
@@ -136,6 +155,14 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
           { value: "green", label: "Alta", count: counts.green },
           { value: "yellow", label: "Media", count: counts.yellow },
           { value: "red", label: "Bassa", count: counts.red },
+        ]}
+        dateFilter={dateFilter}
+        onDateFilterChange={(f) => setDateFilter(f as DateBucket)}
+        dateOptions={[
+          { value: "all", label: "Tutte le date" },
+          { value: "24h", label: "Ultime 24 ore" },
+          { value: "7d", label: "Ultima settimana" },
+          { value: "30d", label: "Ultimo mese" },
         ]}
       />
 
