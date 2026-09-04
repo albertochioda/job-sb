@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { track } from "@vercel/analytics";
 import CityAutocomplete, { type CityAutocompleteChange } from "@/components/city-autocomplete";
 import Logo from "@/components/logo";
 
@@ -112,7 +113,10 @@ export default function OnboardingWizard({ locale }: Props) {
       }),
     });
     setSaving(false);
-    if (res.ok) router.push(`/${locale}/dashboard`);
+    if (res.ok) {
+      track("onboarding_completato");
+      router.push(`/${locale}/dashboard`);
+    }
   }
 
   // --- Stepper UI ---

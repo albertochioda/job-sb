@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { track } from "@vercel/analytics";
 import SearchFilterBar from "@/components/dashboard/search-filter-bar";
 
 interface ScoredOffer {
@@ -51,8 +52,10 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
     fetch(`/api/offers?search_id=${searchId}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        setOffers(data?.offers ?? []);
+        const offersList = data?.offers ?? [];
+        setOffers(offersList);
         setReconfirmedCount(data?.reconfirmed_count ?? 0);
+        track("risultati_visualizzati", { offers_count: offersList.length });
       })
       .finally(() => setLoading(false));
   }, [searchId]);

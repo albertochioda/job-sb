@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
+import { track } from "@vercel/analytics";
 import { createClient } from "@/lib/supabase/client";
 
 interface Props {
@@ -58,6 +59,8 @@ export default function RegisterForm({ locale, t }: Props) {
       setError(msg.includes("already registered") ? t.emailAlreadyRegistered : t.genericError);
       return;
     }
+
+    track("signup_completato");
 
     // Il consenso marketing di default è già false lato DB — scriviamo
     // esplicitamente solo se l'utente lo ha attivato. Nessuna sincronizzazione

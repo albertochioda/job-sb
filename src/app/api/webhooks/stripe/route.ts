@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { track } from "@vercel/analytics/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -105,6 +106,8 @@ export async function POST(request: NextRequest) {
           // errore riprovabile — ritentare non crea la riga mancante.
           console.error("[stripe-webhook] nessuna riga subscriptions per user_id:", userId);
         }
+
+        await track("pagamento_completato", { tier });
         break;
       }
 

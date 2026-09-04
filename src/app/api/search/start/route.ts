@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { Redis } from "@upstash/redis";
+import { track } from "@vercel/analytics/server";
 import { getTierLimits } from "@/lib/usage-limits";
 import { reserveUsage, releaseUsage } from "@/lib/usage-counter";
 
@@ -27,11 +28,15 @@ export async function POST() {
   if (!user) return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
 
   // Verifica limiti piano
-  const [{ data: sub }, { data: config }, { data: cv }] = await Promise.all([
+  const [{ data: sub }, { data: config }, { data: cv }, { count: priorSearchesCount }] = await Promise.all([
     supabase.from("subscriptions").select("tier, runs_used, period_end").eq("user_id", user.id).single(),
     supabase.from("search_configs").select("*").eq("user_id", user.id).eq("is_active", true).single(),
     supabase.from("cvs").select("id, extracted_text").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).single(),
+    // Conteggio PRIMA dell'insert della ricerca corrente: usato solo per
+    // distinguere prima_ricerca_avviata (Vercel Analytics) da una successiva.
+    supabase.from("searches").select("id", { count: "exact", head: true }).eq("user_id", user.id),
   ]);
+  const isFirstSearch = (priorSearchesCount ?? 0) === 0;
 
   if (!config) return NextResponse.json({ error: "Nessuna configurazione di ricerca attiva" }, { status: 400 });
   if (!cv) return NextResponse.json({ error: "Nessun CV caricato" }, { status: 400 });
@@ -111,6 +116,10 @@ export async function POST() {
     if (sub) await releaseUsage(supabase, user.id, "runs_used");
     await supabase.from("searches").delete().eq("id", search.id);
     return NextResponse.json({ error: "Si è verificato un errore, riprova più tardi" }, { status: 500 });
+  }
+
+  if (isFirstSearch) {
+    await track("prima_ricerca_avviata", { tier: sub?.tier ?? "trial" });
   }
 
   return NextResponse.json({ search_id: search.id, status: "queued" });

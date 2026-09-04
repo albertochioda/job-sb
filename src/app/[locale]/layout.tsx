@@ -2,6 +2,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { GeistSans } from "geist/font/sans";
+import { Analytics } from "@vercel/analytics/next";
 import { routing } from "@/i18n/routing";
 import SearchStatusBanner from "@/components/search-status-banner";
 import { SearchPollingProvider } from "@/contexts/search-polling-context";
@@ -52,6 +53,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           {user ? <SupportChatProvider>{body}</SupportChatProvider> : body}
         </NextIntlClientProvider>
+        <Analytics />
       </body>
     </html>
   );

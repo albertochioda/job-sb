@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { track } from "@vercel/analytics";
 import { useBlockingModal } from "@/contexts/blocking-modal-context";
 import { CANCELLATION_REASONS } from "@/lib/cancellation-reasons";
 import { PLAN_PRICES, CADENCE_LABELS, type Tier, type Cadence } from "@/lib/billing/plans";
@@ -59,6 +60,16 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [reason, dismissBlockingModal]);
+
+  // paywall_visualizzato copre i due casi che mostrano davvero un upsell
+  // (sottoscrivi / aggiorna piano) — payment_failed è un avviso di
+  // fatturazione, non un paywall, quindi resta escluso.
+  useEffect(() => {
+    if (reason === "trial_expired" || reason === "limit_reached") {
+      track("paywall_visualizzato", { reason });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reason]);
 
   // Reset dello state locale del flow trial ogni volta che `reason` cambia
   // (chiusura → null, o riapertura → nuovo valore): il componente non si
@@ -140,6 +151,7 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
     if (!checkoutTier || !checkoutConsent || checkoutLoading) return;
     setCheckoutLoading(true);
     setCheckoutError("");
+    track("checkout_iniziato", { tier: checkoutTier, cadence: cadenceByTier[checkoutTier] });
     try {
       const res = await fetch("/api/checkout/create-session", {
         method: "POST",
