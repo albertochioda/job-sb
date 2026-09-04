@@ -146,6 +146,8 @@
     "registerLink": "Registrati",
     "emailSent": "Email inviata. Controlla la tua casella.",
     "invalidCredentials": "Email o password errati. Riprova.",
+    "genericError": "Si è verificato un problema, riprova tra qualche istante.",
+    "emailAlreadyRegistered": "Esiste già un account con questa email. Prova ad accedere.",
     "newPassword": "Nuova password",
     "confirmPassword": "Conferma password",
     "passwordMismatch": "Le password non coincidono.",

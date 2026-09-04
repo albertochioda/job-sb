@@ -21,6 +21,8 @@ export default async function RegisterPage({
     alreadyAccount: t("alreadyAccount"),
     loginLink: t("loginLink"),
     emailSent: t("emailSent"),
+    genericError: t("genericError"),
+    emailAlreadyRegistered: t("emailAlreadyRegistered"),
   };
 
   return (

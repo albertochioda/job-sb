@@ -146,6 +146,8 @@
     "registerLink": "Sign up",
     "emailSent": "Email sent. Check your inbox.",
     "invalidCredentials": "Invalid email or password. Please try again.",
+    "genericError": "Something went wrong. Please try again in a moment.",
+    "emailAlreadyRegistered": "An account with this email already exists. Try logging in instead.",
     "newPassword": "New password",
     "confirmPassword": "Confirm password",
     "passwordMismatch": "Passwords don't match.",

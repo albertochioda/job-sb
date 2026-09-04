@@ -49,7 +49,13 @@ export default function RegisterForm({ locale, t }: Props) {
 
     setLoading(false);
     if (error) {
-      setError(error.message && error.message !== "{}" ? error.message : "Registrazione fallita. Riprova.");
+      // Mai mostrare error.message grezzo all'utente (es. "Failed to fetch",
+      // un 503 transitorio di Supabase Auth osservato in produzione) — solo
+      // il caso "email già registrata" ha un messaggio azionabile specifico,
+      // tutto il resto (rete, errori tecnici non riconosciuti) ricade su un
+      // messaggio tradotto generico invece del testo tecnico originale.
+      const msg = (error.message ?? "").toLowerCase();
+      setError(msg.includes("already registered") ? t.emailAlreadyRegistered : t.genericError);
       return;
     }
 
@@ -94,7 +100,7 @@ export default function RegisterForm({ locale, t }: Props) {
     return (
       <div className="text-center space-y-2">
         <p className="text-green-700 font-medium">{t.emailSent}</p>
-        <p className="text-sm text-muted-foreground">{email}</p>
+        <p className="text-sm text-muted-foreground break-words">{email}</p>
       </div>
     );
   }
