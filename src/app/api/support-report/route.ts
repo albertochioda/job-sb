@@ -17,6 +17,9 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const description = typeof body?.description === "string" ? body.description.trim() : "";
   if (!description) return NextResponse.json({ error: "Descrizione mancante" }, { status: 400 });
+  // Fallback 'bug' per client vecchi/non aggiornati che non mandano ancora
+  // il campo — coerente col default della colonna a livello DB.
+  const type: "bug" | "idea" = body?.type === "idea" ? "idea" : "bug";
   // page_context è opzionale, passato dal frontend (window.location.pathname
   // al momento dell'invio) — utile per capire da quale sezione arriva la
   // segnalazione senza dover dedurlo lato server.
@@ -47,6 +50,7 @@ export async function POST(request: NextRequest) {
     description,
     page_context: pageContext,
     tier,
+    type,
   });
 
   if (insertError) {
@@ -55,19 +59,21 @@ export async function POST(request: NextRequest) {
   }
 
   const userEmail = user.email ?? "email sconosciuta";
+  const emoji = type === "idea" ? "💡" : "🐛";
+  const label = type === "idea" ? "Idea" : "Segnalazione";
   // Ogni valore passa da escapeHtml: description in particolare è testo
   // libero scritto dall'utente. L'escape va PRIMA della conversione dei
   // newline in <br>, altrimenti quei <br> verrebbero escapati a loro volta.
   const html = `
     <p><strong>Da:</strong> ${escapeHtml(userEmail)} (tier: ${escapeHtml(tier)})</p>
     ${pageContext ? `<p><strong>Pagina:</strong> ${escapeHtml(pageContext)}</p>` : ""}
-    <p><strong>Segnalazione:</strong></p>
+    <p><strong>${label}:</strong></p>
     <p>${escapeHtml(description).replace(/\n/g, "<br>")}</p>
   `;
 
   const emailResult = await sendEmail({
     to: SUPPORT_EMAIL,
-    subject: `🐛 Job Search Bridge — Segnalazione da ${userEmail}`,
+    subject: `${emoji} Job Search Bridge — ${label} da ${userEmail}`,
     html,
   });
   // sendEmail() non lancia mai eccezioni per design (fail-safe per il

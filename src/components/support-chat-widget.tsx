@@ -18,7 +18,7 @@ interface Props {
   requestKey?: number;
 }
 
-type Mode = "chat" | "report";
+type Mode = "chat" | "report" | "idea";
 
 export default function SupportChatWidget({ isOpen, onOpenChange, initialMessage, requestKey }: Props) {
   const [mode, setMode] = useState<Mode>("chat");
@@ -77,7 +77,7 @@ export default function SupportChatWidget({ isOpen, onOpenChange, initialMessage
     }
   };
 
-  const sendReport = async () => {
+  const sendReport = async (type: "bug" | "idea") => {
     const text = reportText.trim();
     if (!text || reportLoading) return;
     setReportLoading(true);
@@ -88,6 +88,7 @@ export default function SupportChatWidget({ isOpen, onOpenChange, initialMessage
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           description: text,
+          type,
           page_context: typeof window !== "undefined" ? window.location.pathname : null,
         }),
       });
@@ -107,7 +108,7 @@ export default function SupportChatWidget({ isOpen, onOpenChange, initialMessage
 
   const switchMode = (next: Mode) => {
     setMode(next);
-    if (next === "report") {
+    if (next === "report" || next === "idea") {
       setReportSent(false);
       setReportError("");
     }
@@ -128,8 +129,8 @@ export default function SupportChatWidget({ isOpen, onOpenChange, initialMessage
 
   return (
     <div className="fixed bottom-5 right-5 z-40 w-[calc(100vw-2.5rem)] max-w-sm h-[28rem] max-h-[70vh] bg-background border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
-        <div className="flex items-center gap-1">
+      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b shrink-0">
+        <div className="flex items-center gap-1 flex-wrap">
           <button
             type="button"
             onClick={() => switchMode("chat")}
@@ -147,6 +148,15 @@ export default function SupportChatWidget({ isOpen, onOpenChange, initialMessage
             }`}
           >
             Segnala un problema
+          </button>
+          <button
+            type="button"
+            onClick={() => switchMode("idea")}
+            className={`text-sm px-2 py-1 rounded-md font-medium transition-colors ${
+              mode === "idea" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Suggerisci un&apos;idea
           </button>
         </div>
         <button
@@ -216,28 +226,32 @@ export default function SupportChatWidget({ isOpen, onOpenChange, initialMessage
         <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
           {reportSent ? (
             <p className="text-sm text-muted-foreground text-center mt-6">
-              Grazie, la tua segnalazione è stata registrata. Ti risponderemo il prima possibile.
+              {mode === "idea"
+                ? "Grazie, la tua idea è stata registrata. La terremo in considerazione."
+                : "Grazie, la tua segnalazione è stata registrata. Ti risponderemo il prima possibile."}
             </p>
           ) : (
             <>
               <p className="text-xs text-muted-foreground">
-                Descrivi il problema che hai incontrato — non è una conversazione, solo una segnalazione diretta.
+                {mode === "idea"
+                  ? "Proponi un miglioramento o una funzionalità che ti piacerebbe vedere — non è una conversazione, solo un suggerimento diretto."
+                  : "Descrivi il problema che hai incontrato — non è una conversazione, solo una segnalazione diretta."}
               </p>
               <textarea
                 value={reportText}
                 onChange={(e) => setReportText(e.target.value)}
-                placeholder="Cosa è successo?"
+                placeholder={mode === "idea" ? "Che idea vorresti proporre?" : "Cosa è successo?"}
                 rows={6}
                 className="flex-1 resize-none text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary"
               />
               {reportError && <p className="text-xs text-destructive">{reportError}</p>}
               <button
                 type="button"
-                onClick={sendReport}
+                onClick={() => sendReport(mode === "idea" ? "idea" : "bug")}
                 disabled={!reportText.trim() || reportLoading}
                 className="w-full bg-primary text-primary-foreground text-sm py-2 rounded-lg font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
               >
-                {reportLoading ? "Invio..." : "Invia segnalazione"}
+                {reportLoading ? "Invio..." : mode === "idea" ? "Invia idea" : "Invia segnalazione"}
               </button>
             </>
           )}
