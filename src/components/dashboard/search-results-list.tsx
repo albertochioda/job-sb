@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Share2 } from "lucide-react";
 import { track } from "@vercel/analytics";
 import SearchFilterBar from "@/components/dashboard/search-filter-bar";
+import { shareOffer } from "@/lib/share-offer";
 
 interface ScoredOffer {
   id: string;
@@ -99,35 +100,11 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
     }
   };
 
-  // Nessun tracciamento/referral nel link condiviso in questo giro
-  // (deliberatamente rimandato) — solo condivisione semplice del link
-  // originale dell'annuncio.
-  const shareOffer = async (offer: ScoredOffer) => {
-    const offerId = offer.offer_id ?? offer.id;
-    const shareText = `${offer.title} presso ${offer.company} — trovato con Job Search Bridge`;
-
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({ title: offer.title, text: shareText, url: offer.url });
-      } catch {
-        // AbortError (l'utente ha chiuso il pannello di condivisione senza
-        // scegliere nulla) è un annullamento legittimo, non un errore da
-        // segnalare — nessuna azione di fallback necessaria qui.
-      }
-      return;
-    }
-
-    // Fallback universale (desktop senza Web Share API): copia negli
-    // appunti un messaggio completo, dato che qui non c'è un pannello di
-    // sistema che aggiunga da sé titolo/link come farebbe navigator.share.
-    const fullMessage = `${offer.title} presso ${offer.company}\n${offer.url}\n\nTrovato con Job Search Bridge`;
-    try {
-      await navigator.clipboard.writeText(fullMessage);
-      setCopiedId(offerId);
-      setTimeout(() => setCopiedId((prev) => (prev === offerId ? null : prev)), 2000);
-    } catch {
-      // Clipboard non disponibile (permessi negati, contesto non sicuro) —
-      // fail silenzioso, nessuna azione critica dell'utente viene bloccata.
+  const handleShare = async (offer: ScoredOffer) => {
+    const result = await shareOffer(offer);
+    if (result === "copied") {
+      setCopiedId(offer.id);
+      setTimeout(() => setCopiedId((prev) => (prev === offer.id ? null : prev)), 2000);
     }
   };
 
@@ -215,9 +192,27 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
                       {offer.company} · {offer.location}
                     </p>
                   </div>
-                  <span className={`shrink-0 text-xs px-2 py-1 rounded-full border font-medium ${FLAG_COLORS[offer.flag]}`}>
-                    {FLAG_LABELS[offer.flag]} · {offer.score_final?.toFixed(1)}
-                  </span>
+                  <div className="flex items-start gap-2 shrink-0">
+                    <div className="relative inline-flex">
+                      <button
+                        type="button"
+                        onClick={() => handleShare(offer)}
+                        aria-label="Condividi offerta"
+                        title="Condividi"
+                        className="text-muted-foreground/70 hover:text-foreground transition-colors p-0.5"
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </button>
+                      {copiedId === offer.id && (
+                        <span className="absolute right-full top-1/2 -translate-y-1/2 mr-2 whitespace-nowrap text-[10px] font-medium bg-foreground text-background px-2 py-1 rounded-md shadow-md">
+                          Link copiato!
+                        </span>
+                      )}
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full border font-medium whitespace-nowrap ${FLAG_COLORS[offer.flag]}`}>
+                      {FLAG_LABELS[offer.flag]} · {offer.score_final?.toFixed(1)}
+                    </span>
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">{offer.motivo}</p>
                 <div className="flex items-center gap-3 pt-1 flex-wrap">
@@ -237,14 +232,6 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
                     className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 disabled:opacity-50 font-medium"
                   >
                     {savedIds.has(offerId) ? "✓ Salvata" : savingIds.has(offerId) ? "Salvataggio..." : "Salva candidatura"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => shareOffer(offer)}
-                    className="text-xs text-muted-foreground hover:text-foreground underline inline-flex items-center gap-1"
-                  >
-                    <Share2 className="w-3 h-3" />
-                    {copiedId === offerId ? "Link copiato!" : "Condividi"}
                   </button>
                   <a
                     href={`/${locale}/dashboard`}

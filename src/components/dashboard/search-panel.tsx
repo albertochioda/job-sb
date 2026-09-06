@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { AlertTriangle, Trash2 } from "lucide-react";
+import { AlertTriangle, Trash2, Share2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSearchPolling } from "@/contexts/search-polling-context";
 import { useBlockingModal } from "@/contexts/blocking-modal-context";
 import TemplateSelector from "@/components/dashboard/template-selector";
 import CoverLetterSettingsForm from "@/components/profile/cover-letter-settings-form";
 import SupportChatIcon from "@/components/support-chat-icon";
+import { shareOffer } from "@/lib/share-offer";
 
 interface ScoredOffer {
   id: string;
@@ -85,6 +86,7 @@ export default function SearchPanel({ locale }: { locale: string }) {
   const [viewingHidden, setViewingHidden] = useState(false);
   const [hiddenCount, setHiddenCount] = useState(0);
   const [hidingIds, setHidingIds] = useState<Set<string>>(new Set());
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const fetchOffers = useCallback(async (hidden = false) => {
     const res = await fetch(`/api/offers${hidden ? "?hidden=true" : ""}`);
@@ -325,6 +327,14 @@ export default function SearchPanel({ locale }: { locale: string }) {
       }
     } finally {
       setSavingAppIds(prev => { const s = new Set(prev); s.delete(offerId); return s; });
+    }
+  };
+
+  const handleShare = async (offer: ScoredOffer) => {
+    const result = await shareOffer(offer);
+    if (result === "copied") {
+      setCopiedId(offer.id);
+      setTimeout(() => setCopiedId((prev) => (prev === offer.id ? null : prev)), 2000);
     }
   };
 
@@ -611,6 +621,25 @@ export default function SearchPanel({ locale }: { locale: string }) {
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
+                {/* Sempre visibile (a differenza di Elimina, che resta hover-only:
+                    condividere non è distruttivo e deve restare scopribile anche
+                    su touch, dove l'hover non esiste). */}
+                <div className="absolute top-2 right-8 z-10">
+                  <button
+                    type="button"
+                    onClick={() => handleShare(offer)}
+                    aria-label="Condividi offerta"
+                    title="Condividi"
+                    className="text-muted-foreground/60 hover:text-foreground transition-colors"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </button>
+                  {copiedId === offer.id && (
+                    <span className="absolute right-full top-1/2 -translate-y-1/2 mr-2 whitespace-nowrap text-[10px] font-medium bg-foreground text-background px-2 py-1 rounded-md shadow-md">
+                      Link copiato!
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-0.5 min-w-0 flex items-start gap-2">
                     <input
@@ -637,7 +666,7 @@ export default function SearchPanel({ locale }: { locale: string }) {
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-0.5 shrink-0 pr-6">
+                  <div className="flex flex-col items-end gap-0.5 shrink-0 pr-14">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-bold tabular-nums">
                         {offer.score_final?.toFixed(1)}
