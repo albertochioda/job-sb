@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Share2 } from "lucide-react";
 import { track } from "@vercel/analytics";
 import SearchFilterBar from "@/components/dashboard/search-filter-bar";
 
@@ -62,6 +63,7 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
   const [loading, setLoading] = useState(true);
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "green" | "yellow" | "red">("all");
   const [dateFilter, setDateFilter] = useState<DateBucket>("all");
@@ -94,6 +96,38 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
         s.delete(offerId);
         return s;
       });
+    }
+  };
+
+  // Nessun tracciamento/referral nel link condiviso in questo giro
+  // (deliberatamente rimandato) — solo condivisione semplice del link
+  // originale dell'annuncio.
+  const shareOffer = async (offer: ScoredOffer) => {
+    const offerId = offer.offer_id ?? offer.id;
+    const shareText = `${offer.title} presso ${offer.company} — trovato con Job Search Bridge`;
+
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: offer.title, text: shareText, url: offer.url });
+      } catch {
+        // AbortError (l'utente ha chiuso il pannello di condivisione senza
+        // scegliere nulla) è un annullamento legittimo, non un errore da
+        // segnalare — nessuna azione di fallback necessaria qui.
+      }
+      return;
+    }
+
+    // Fallback universale (desktop senza Web Share API): copia negli
+    // appunti un messaggio completo, dato che qui non c'è un pannello di
+    // sistema che aggiunga da sé titolo/link come farebbe navigator.share.
+    const fullMessage = `${offer.title} presso ${offer.company}\n${offer.url}\n\nTrovato con Job Search Bridge`;
+    try {
+      await navigator.clipboard.writeText(fullMessage);
+      setCopiedId(offerId);
+      setTimeout(() => setCopiedId((prev) => (prev === offerId ? null : prev)), 2000);
+    } catch {
+      // Clipboard non disponibile (permessi negati, contesto non sicuro) —
+      // fail silenzioso, nessuna azione critica dell'utente viene bloccata.
     }
   };
 
@@ -186,7 +220,7 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">{offer.motivo}</p>
-                <div className="flex items-center gap-3 pt-1">
+                <div className="flex items-center gap-3 pt-1 flex-wrap">
                   {offer.url && (
                     <a
                       href={offer.url}
@@ -203,6 +237,14 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
                     className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 disabled:opacity-50 font-medium"
                   >
                     {savedIds.has(offerId) ? "✓ Salvata" : savingIds.has(offerId) ? "Salvataggio..." : "Salva candidatura"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => shareOffer(offer)}
+                    className="text-xs text-muted-foreground hover:text-foreground underline inline-flex items-center gap-1"
+                  >
+                    <Share2 className="w-3 h-3" />
+                    {copiedId === offerId ? "Link copiato!" : "Condividi"}
                   </button>
                   <a
                     href={`/${locale}/dashboard`}
