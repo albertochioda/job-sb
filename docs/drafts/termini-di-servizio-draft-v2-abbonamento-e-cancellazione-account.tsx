@@ -63,8 +63,26 @@
  *    reali sono nel database, non un'interpretazione), non l'introduzione
  *    di un nuovo obbligo legale — non richiedeva revisione legale.
  *
- * Tutto il resto (Art. 1-6, 9-16) è la bozza precedente, INVARIATA nella
- * sostanza — solo rinumerata da 8 in poi per fare spazio al nuovo Art. 8, e
+ * 5. ART. 11 (Proprietà Intellettuale — feedback/idee) — riscritta la
+ *    seconda frase il 2026-09-06, su richiesta di Alberto. Prima diceva "I
+ *    feedback, suggerimenti e segnalazioni di bug forniti durante il beta
+ *    test diventano di proprietà del Titolare" — legata esplicitamente alla
+ *    sola fase beta. Generalizzata per coprire feedback/idee/suggerimenti
+ *    forniti in QUALUNQUE momento, anche dopo il lancio pubblico: il nuovo
+ *    tab "Suggerisci un'idea" nel widget di supporto (introdotto lo stesso
+ *    giorno) resta attivo oltre la fase beta, quindi la clausola non poteva
+ *    restarne dipendente. Aggiunta esplicitamente "le idee" nell'elenco
+ *    (la formulazione originale nominava solo feedback/suggerimenti/bug,
+ *    non idee) e una frase esplicita che esclude qualunque compenso,
+ *    royalty o beneficio per idee/suggerimenti eventualmente implementati.
+ *    NOTA: il resto del documento (Art. 2, 4, 12) continua a descrivere il
+ *    Servizio come "in fase beta" — non toccato in questo giro, non era
+ *    nello scope della richiesta. La generalizzazione riguarda solo la
+ *    proprietà dei feedback, non lo stato beta del prodotto nel suo insieme.
+ *
+ * Tutto il resto (Art. 1-6, 9-10, 12-16) è la bozza precedente, INVARIATA
+ * nella sostanza (Art. 11 modificato, vedi punto 5 sopra) — solo rinumerata
+ * da 8 in poi per fare spazio al nuovo Art. 8, e
  * con l'email di contatto corretta da albertochioda@gmail.com
  * (personale, bozza pre-2026-08-05) a SUPPORT_EMAIL, coerente con la pulizia
  * già fatta sul resto del sito il 2026-08-07 (commit cedbda6) che questa
@@ -183,7 +201,7 @@ export default function TerminiDiServizio() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">11. Proprietà Intellettuale</h2>
-          <p className="text-sm leading-relaxed">Tutti i diritti di proprietà intellettuale relativi al Servizio, inclusi ma non limitati a codice sorgente, algoritmi, interfaccia grafica, loghi e metodologie, sono di esclusiva proprietà del Titolare o dei suoi licenziatari. I feedback, suggerimenti e segnalazioni di bug forniti durante il beta test diventano di proprietà del Titolare.</p>
+          <p className="text-sm leading-relaxed">Tutti i diritti di proprietà intellettuale relativi al Servizio, inclusi ma non limitati a codice sorgente, algoritmi, interfaccia grafica, loghi e metodologie, sono di esclusiva proprietà del Titolare o dei suoi licenziatari. I feedback, le idee, i suggerimenti e le segnalazioni di bug forniti dall&apos;utente in qualsiasi momento — durante la fase beta o successivamente al lancio pubblico del Servizio — diventano di proprietà del Titolare, che potrà utilizzarli, modificarli e implementarli liberamente. L&apos;utente non riceve alcun compenso, royalty o altro beneficio per feedback, idee o suggerimenti forniti, anche qualora vengano effettivamente implementati nel Servizio.</p>
         </section>
 
         <section className="space-y-3">
