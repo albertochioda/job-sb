@@ -154,7 +154,13 @@
     "resetLinkExpired": "This password reset link is invalid or has expired.",
     "requestNewReset": "Request a new link",
     "resetSuccessMessage": "Password updated. Log in with your new password.",
-    "authLinkError": "This link is invalid or has expired. If you just confirmed your registration, try logging in; otherwise request a new link."
+    "authLinkError": "This link is invalid or has expired. If you just confirmed your registration, try logging in; otherwise request a new link.",
+    "sessionExpiredInactivity": "Session expired due to inactivity, please log in again."
+  },
+  "inactivity": {
+    "warningTitle": "Still there?",
+    "warningMessage": "You'll be logged out in {seconds} seconds due to inactivity.",
+    "staySignedIn": "Stay signed in"
   },
   "onboarding": {
     "step1": "Welcome",

@@ -31,6 +31,10 @@ export default async function LoginPage({
   // silenzioso). Stesso trattamento visivo già usato sotto per
   // reset === "success", solo con toni "errore" invece di "successo".
   const authError = error === "auth";
+  // error=inactivity: InactivityLogoutWatcher (montato in [locale]/layout.tsx
+  // per ogni utente autenticato) ha fatto scattare il logout automatico
+  // dopo 15 minuti senza interazione — stesso trattamento visivo di authError.
+  const inactivityError = error === "inactivity";
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
@@ -49,6 +53,11 @@ export default async function LoginPage({
         {authError && (
           <p className="text-sm text-destructive text-center bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
             {t("authLinkError")}
+          </p>
+        )}
+        {inactivityError && (
+          <p className="text-sm text-destructive text-center bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
+            {t("sessionExpiredInactivity")}
           </p>
         )}
         <LoginForm locale={locale} t={strings} />

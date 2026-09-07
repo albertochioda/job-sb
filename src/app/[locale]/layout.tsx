@@ -5,6 +5,7 @@ import { GeistSans } from "geist/font/sans";
 import { Analytics } from "@vercel/analytics/next";
 import { routing } from "@/i18n/routing";
 import SearchStatusBanner from "@/components/search-status-banner";
+import InactivityLogoutWatcher from "@/components/inactivity-logout-watcher";
 import { SearchPollingProvider } from "@/contexts/search-polling-context";
 import { SupportChatProvider } from "@/contexts/support-chat-context";
 import { createClient } from "@/lib/supabase/server";
@@ -40,9 +41,16 @@ export default async function LocaleLayout({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  // InactivityLogoutWatcher va DENTRO SearchPollingProvider (non allo
+  // stesso livello di SupportChatProvider sotto) perché deve leggere
+  // useSearchPolling() — riusa lo stesso segnale di "ricerca in coda/in
+  // elaborazione" già usato da SearchStatusBanner, invece di interrogare
+  // /api/search/active per conto proprio. Montato solo per utenti
+  // autenticati, stesso gating di SupportChatProvider sotto.
   const body = (
     <SearchPollingProvider>
       <SearchStatusBanner />
+      {user && <InactivityLogoutWatcher locale={locale} />}
       {children}
     </SearchPollingProvider>
   );
