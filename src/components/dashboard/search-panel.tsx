@@ -9,6 +9,7 @@ import { useBlockingModal } from "@/contexts/blocking-modal-context";
 import TemplateSelector from "@/components/dashboard/template-selector";
 import CoverLetterSettingsForm from "@/components/profile/cover-letter-settings-form";
 import SupportChatIcon from "@/components/support-chat-icon";
+import SearchFilterBar from "@/components/dashboard/search-filter-bar";
 import { shareOffer } from "@/lib/share-offer";
 
 interface ScoredOffer {
@@ -52,6 +53,20 @@ const FLAG_LABELS = {
   red: "Bassa",
 };
 
+type DateBucket = "all" | "24h" | "7d" | "30d";
+const DATE_BUCKET_DAYS: Record<Exclude<DateBucket, "all">, number> = { "24h": 1, "7d": 7, "30d": 30 };
+
+// Stessa identica logica di search-results-list.tsx: finestra scorrevole
+// dal momento attuale, un'offerta senza published_at è esclusa dai bucket
+// specifici (non promettiamo una freschezza che non possiamo verificare).
+function isWithinDateBucket(publishedAt: string | null | undefined, bucket: DateBucket): boolean {
+  if (bucket === "all") return true;
+  if (!publishedAt) return false;
+  const ageMs = Date.now() - new Date(publishedAt).getTime();
+  if (Number.isNaN(ageMs) || ageMs < 0) return false;
+  return ageMs <= DATE_BUCKET_DAYS[bucket] * 24 * 60 * 60 * 1000;
+}
+
 export default function SearchPanel({ locale }: { locale: string }) {
   const t = useTranslations("dashboard");
   const { initialized, isSearching, progress, completedData, startPolling, cancelSearch } = useSearchPolling();
@@ -61,6 +76,7 @@ export default function SearchPanel({ locale }: { locale: string }) {
   const [offers, setOffers] = useState<ScoredOffer[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<"all" | "green" | "yellow" | "red">("all");
+  const [dateFilter, setDateFilter] = useState<DateBucket>("all");
   const [searchRolesCount, setSearchRolesCount] = useState<number | null>(null);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [adaptingIds, setAdaptingIds] = useState<Set<string>>(new Set());
@@ -348,12 +364,13 @@ export default function SearchPanel({ locale }: { locale: string }) {
     offer.is_new === true && !readIds.has(offer.id);
 
   const flagFilteredOffers = filter === "all" ? offers : offers.filter(o => o.flag === filter);
+  const dateFilteredOffers = dateFilter === "all" ? flagFilteredOffers : flagFilteredOffers.filter(o => isWithinDateBucket(o.published_at, dateFilter));
   const q = searchQuery.trim().toLowerCase();
   const filteredOffers = q
-    ? flagFilteredOffers.filter(o =>
+    ? dateFilteredOffers.filter(o =>
         o.title?.toLowerCase().includes(q) || o.company?.toLowerCase().includes(q)
       )
-    : flagFilteredOffers;
+    : dateFilteredOffers;
 
   const toggleSelected = (id: string) => {
     setSelectedIds(prev => {
@@ -551,34 +568,29 @@ export default function SearchPanel({ locale }: { locale: string }) {
         </div>
       )}
 
-      {/* Ricerca testuale */}
+      {/* Ricerca testuale + filtri fascia/data */}
       {offers.length > 0 && (
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Cerca per titolo o azienda..."
-          className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        <SearchFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Cerca per titolo o azienda..."
+          filter={filter}
+          onFilterChange={(f) => setFilter(f as typeof filter)}
+          options={[
+            { value: "all", label: "Tutti", count: offers.length },
+            { value: "green", label: "Alta", count: counts.green },
+            { value: "yellow", label: "Media", count: counts.yellow },
+            { value: "red", label: "Bassa", count: counts.red },
+          ]}
+          dateFilter={dateFilter}
+          onDateFilterChange={(f) => setDateFilter(f as DateBucket)}
+          dateOptions={[
+            { value: "all", label: "Tutte le date" },
+            { value: "24h", label: "Ultime 24 ore" },
+            { value: "7d", label: "Ultima settimana" },
+            { value: "30d", label: "Ultimo mese" },
+          ]}
         />
-      )}
-
-      {/* Filtri */}
-      {offers.length > 0 && (
-        <div className="flex gap-2">
-          {(["all", "green", "yellow", "red"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                filter === f
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-background text-muted-foreground border-border hover:border-foreground"
-              }`}
-            >
-              {f === "all" ? `Tutti (${offers.length})` : `${FLAG_LABELS[f]} (${counts[f]})`}
-            </button>
-          ))}
-        </div>
       )}
 
       {/* Barra azione selezione multipla */}
