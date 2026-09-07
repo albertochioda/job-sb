@@ -1,0 +1,22 @@
+-- Aggiunge a job_offers un campo esplicito che distingue un'offerta MAI
+-- verificata da un'offerta verificata e CONFERMATA scaduta ma protetta
+-- (candidatura/CV adattato/lettera generata collegati da un utente reale —
+-- vedi _offers_with_user_history() in worker.py). Oggi questa distinzione
+-- non esiste: check_expired_offers() si limitava a loggare il caso e non
+-- scriveva nulla sulla riga, rendendola indistinguibile da un'offerta
+-- ancora da controllare.
+--
+-- Gap concreto chiuso da questo campo: check_existing_pool_sufficient()
+-- (Track V, riuso pool) filtra solo su scraped_at recente, senza alcuna
+-- consapevolezza dello stato di scadenza — un'offerta rescrapata di
+-- frequente (scraped_at sempre fresco) ma già confermata scaduta e
+-- protetta poteva quindi essere riproposta a un secondo utente.
+--
+-- Nullable, mai valorizzato in automatico dall'upsert di scraping
+-- (upsert_job_offer in worker.py esegue un update parziale: le chiavi non
+-- incluse nel payload non vengono toccate) — l'unico scrittore è
+-- check_expired_offers() quando conferma la scadenza di un'offerta
+-- protetta. Non va mai azzerato altrove: una volta confermata scaduta,
+-- resta tale.
+alter table job_offers
+  add column if not exists expired_confirmed_at timestamptz;
