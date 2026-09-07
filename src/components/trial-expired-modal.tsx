@@ -5,8 +5,9 @@ import { X } from "lucide-react";
 import { track } from "@vercel/analytics";
 import { useBlockingModal } from "@/contexts/blocking-modal-context";
 import { CANCELLATION_REASONS } from "@/lib/cancellation-reasons";
-import { PLAN_PRICES, CADENCE_LABELS, type Tier, type Cadence } from "@/lib/billing/plans";
+import { PLAN_PRICES, CADENCE_LABELS, PAID_PLANS_COMING_SOON, type Tier, type Cadence } from "@/lib/billing/plans";
 import { SUPPORT_EMAIL } from "@/lib/support-contact";
+import ComingSoonRibbon from "@/components/coming-soon-ribbon";
 
 type TrialStep = "info" | "feedback" | "thanks";
 
@@ -26,6 +27,7 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
   const [checkoutError, setCheckoutError] = useState("");
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState("");
+  const [comingSoonNotice, setComingSoonNotice] = useState(false);
 
   // Check iniziale al mount — stesso comportamento di prima per trial_expired,
   // ma ora passa lo stato attraverso il context invece che come stato locale
@@ -87,6 +89,7 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
     setCheckoutError("");
     setPortalLoading(false);
     setPortalError("");
+    setComingSoonNotice(false);
   }, [reason]);
 
   if (!reason) return null;
@@ -206,9 +209,18 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
 
                 {!checkoutTier ? (
                   <div className="space-y-3 text-left">
+                    {comingSoonNotice && (
+                      <div className="text-sm bg-blue-50 border border-blue-200 text-blue-800 rounded-md px-4 py-3">
+                        I piani a pagamento saranno disponibili a breve — nel frattempo, goditi il trial gratuito!
+                      </div>
+                    )}
                     {(["individual", "professional"] as const).map((tier) => (
-                      <div key={tier} className="border rounded-lg p-3 space-y-2">
-                        <div className="flex items-center justify-between">
+                      <div key={tier} className="relative overflow-hidden border rounded-lg p-3 space-y-2">
+                        {PAID_PLANS_COMING_SOON && <ComingSoonRibbon label="Presto disponibile" />}
+                        {/* pr-14 riserva lo spazio della striscia in alto a destra
+                            (vedi ComingSoonRibbon) — altrimenti il prezzo, incollato
+                            al bordo da justify-between, ci finirebbe sotto. */}
+                        <div className={`flex items-center justify-between ${PAID_PLANS_COMING_SOON ? "pr-14" : ""}`}>
                           <span className="text-sm font-medium capitalize">{tier}</span>
                           <span className="text-sm text-muted-foreground">
                             €{PLAN_PRICES[tier][cadenceByTier[tier]]}
@@ -232,7 +244,13 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
                         </div>
                         <button
                           type="button"
-                          onClick={() => setCheckoutTier(tier)}
+                          onClick={() => {
+                            if (PAID_PLANS_COMING_SOON) {
+                              setComingSoonNotice(true);
+                              return;
+                            }
+                            setCheckoutTier(tier);
+                          }}
                           className="w-full bg-foreground text-background text-sm py-2 rounded-md font-medium hover:opacity-90 transition-opacity"
                         >
                           Sottoscrivi

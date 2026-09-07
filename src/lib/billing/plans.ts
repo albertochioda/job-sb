@@ -5,6 +5,13 @@
  * validazioni non possono divergere. I prezzi reali restano sempre quelli
  * di Stripe (recuperati via lookup_key), questi servono solo per la UI.
  */
+// Blocco temporaneo dei piani a pagamento: Stripe non è ancora in modalità
+// live, solo il trial è attivo. Un solo cambiamento (a false) rimuove la
+// striscia "Presto disponibile" e riattiva il checkout reale — vedi
+// ComingSoonRibbon, TrialExpiredModal e la sezione prezzi della home
+// (src/app/[locale]/page.tsx).
+export const PAID_PLANS_COMING_SOON = true;
+
 export const VALID_TIERS = ["individual", "professional"] as const;
 export const VALID_CADENCES = ["monthly", "quarterly", "annual"] as const;
 

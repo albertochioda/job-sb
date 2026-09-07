@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import Link from "next/link";
 import Logo from "@/components/logo";
+import ComingSoonRibbon from "@/components/coming-soon-ribbon";
+import { PAID_PLANS_COMING_SOON } from "@/lib/billing/plans";
 import { SITE_URL } from "@/lib/site-url";
 import {
   Target,
@@ -369,10 +371,14 @@ export default async function HomePage({
             {pricingPlans.map((plan, planIdx) => (
               <div
                 key={plan.name}
-                className={`bg-card rounded-xl p-5 flex flex-col gap-4 ${
+                className={`relative overflow-hidden bg-card rounded-xl p-5 flex flex-col gap-4 ${
                   plan.badge ? "border-2 border-primary" : "border"
                 }`}
               >
+                {/* Trial (planIdx 0) resta l'unico piano davvero attivo oggi */}
+                {PAID_PLANS_COMING_SOON && planIdx > 0 && (
+                  <ComingSoonRibbon label={t("comingSoonBadge")} />
+                )}
                 {plan.badge && (
                   <span className="self-start bg-accent text-accent-foreground text-[11px] font-medium px-2.5 py-1 rounded-md">
                     {plan.badge}
