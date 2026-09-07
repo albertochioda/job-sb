@@ -371,7 +371,7 @@ export default async function HomePage({
             {pricingPlans.map((plan, planIdx) => (
               <div
                 key={plan.name}
-                className={`relative overflow-hidden bg-card rounded-xl p-5 flex flex-col gap-4 ${
+                className={`relative bg-card rounded-xl p-5 flex flex-col gap-4 ${
                   plan.badge ? "border-2 border-primary" : "border"
                 }`}
               >

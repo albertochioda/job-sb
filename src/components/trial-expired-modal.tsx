@@ -215,12 +215,13 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
                       </div>
                     )}
                     {(["individual", "professional"] as const).map((tier) => (
-                      <div key={tier} className="relative overflow-hidden border rounded-lg p-3 space-y-2">
+                      <div key={tier} className="relative border rounded-lg p-3 space-y-2">
                         {PAID_PLANS_COMING_SOON && <ComingSoonRibbon label="Presto disponibile" />}
-                        {/* pr-14 riserva lo spazio della striscia in alto a destra
-                            (vedi ComingSoonRibbon) — altrimenti il prezzo, incollato
-                            al bordo da justify-between, ci finirebbe sotto. */}
-                        <div className={`flex items-center justify-between ${PAID_PLANS_COMING_SOON ? "pr-14" : ""}`}>
+                        {/* pr-24 riserva lo spazio del riquadro 96px della striscia
+                            in alto a destra (vedi ComingSoonRibbon) — altrimenti il
+                            prezzo, incollato al bordo da justify-between, ci finirebbe
+                            sotto, specie sulle card più strette (mobile). */}
+                        <div className={`flex items-center justify-between ${PAID_PLANS_COMING_SOON ? "pr-24" : ""}`}>
                           <span className="text-sm font-medium capitalize">{tier}</span>
                           <span className="text-sm text-muted-foreground">
                             €{PLAN_PRICES[tier][cadenceByTier[tier]]}
