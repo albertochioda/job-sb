@@ -80,9 +80,43 @@
  *    nello scope della richiesta. La generalizzazione riguarda solo la
  *    proprietà dei feedback, non lo stato beta del prodotto nel suo insieme.
  *
- * Tutto il resto (Art. 1-6, 9-10, 12-16) è la bozza precedente, INVARIATA
- * nella sostanza (Art. 11 modificato, vedi punto 5 sopra) — solo rinumerata
- * da 8 in poi per fare spazio al nuovo Art. 8, e
+ * 6. ART. 2, 4, 12 (riferimenti "beta") — riformulati il 2026-09-06, su
+ *    richiesta di Alberto: il framing "in fase di beta testing"/"Essendo in
+ *    fase beta" sostituito con un tono umile ma non sperimentale ("in
+ *    evoluzione continua"), senza usare la parola "beta". In Art. 4, anche
+ *    la frase "Il Titolare si riserva il diritto di modificare i limiti del
+ *    piano trial in qualsiasi momento durante la fase beta" è stata
+ *    generalizzata rimuovendo "durante la fase beta" — stesso tipo di fix
+ *    già fatto per l'Art. 11 sui feedback (punto 5): una clausola non deve
+ *    scadere insieme al framing beta. NOTA: resta un riferimento a "beta"
+ *    fuori da questi tre articoli — l'Accordo di Riservatezza Beta separato
+ *    (src/app/[locale]/accordo-riservatezza-beta/page.tsx) e il testo
+ *    archiviato v1.0-beta non sono stati toccati, non erano nello scope.
+ *
+ * 7. ART. 6 (Cancellazione dell'abbonamento) — riscritta la frase sugli
+ *    effetti post-cancellazione il 2026-09-06, dopo verifica esplicita nel
+ *    codice reale su richiesta di Alberto. Il testo precedente diceva
+ *    "l'account passa automaticamente al piano Trial gratuito (con i
+ *    relativi limiti d'uso, vedi Art. 4)" — impreciso: il campo `tier`
+ *    torna sì alla stringa 'trial' (customer.subscription.deleted in
+ *    webhooks/stripe/route.ts), ma `period_end` non viene mai resettato da
+ *    quell'handler, quindi resta fissato alla fine dell'ultimo periodo
+ *    pagato — già trascorsa per definizione. I tre endpoint che erogano le
+ *    funzionalità core (search/start, adapt/cv, generate/cover-letter)
+ *    controllano tutti `period_end < now` e bloccano con "trial_expired":
+ *    l'utente NON riottiene un trial funzionante, l'accesso resta sospeso
+ *    finché non si riabbona. Comportamento verificato identico sui tre
+ *    endpoint, testo verbatim uguale in ciascuno. Nessun controllo dedicato
+ *    "ha già avuto un abbonamento" — l'effetto corretto emerge comunque dal
+ *    fatto che period_end viene sempre riscritto a ogni rinnovo pagato
+ *    (mai al valore originale del trial), quindi alla cancellazione
+ *    riflette sempre una data già scaduta. Il comportamento del prodotto
+ *    corrisponde all'aspettativa di Alberto (bloccato, non ri-trialato) —
+ *    era il testo della bozza a descriverlo in modo sbagliato.
+ *
+ * Tutto il resto (Art. 1, 3, 5, 9-10, 13-16) è la bozza precedente,
+ * INVARIATA nella sostanza (Art. 2, 4, 6, 11, 12 modificati, vedi punti
+ * 5-7 sopra) — solo rinumerata da 8 in poi per fare spazio al nuovo Art. 8, e
  * con l'email di contatto corretta da albertochioda@gmail.com
  * (personale, bozza pre-2026-08-05) a SUPPORT_EMAIL, coerente con la pulizia
  * già fatta sul resto del sito il 2026-08-07 (commit cedbda6) che questa
@@ -115,7 +149,7 @@ export default function TerminiDiServizio() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">2. Oggetto e Natura del Servizio</h2>
-          <p className="text-sm leading-relaxed">Job Search Bridge è una piattaforma software in fase di beta testing che assiste i candidati nella ricerca di offerte di lavoro, nell&apos;analisi di compatibilità con il proprio profilo professionale e nell&apos;adattamento del curriculum vitae alle offerte identificate. Il Servizio utilizza tecnologie di intelligenza artificiale di terze parti (Anthropic PBC) per elaborare i dati.</p>
+          <p className="text-sm leading-relaxed">Job Search Bridge è una piattaforma software in evoluzione continua che assiste i candidati nella ricerca di offerte di lavoro, nell&apos;analisi di compatibilità con il proprio profilo professionale e nell&apos;adattamento del curriculum vitae alle offerte identificate. Il Servizio utilizza tecnologie di intelligenza artificiale di terze parti (Anthropic PBC) per elaborare i dati.</p>
           <p className="text-sm leading-relaxed">Il Servizio è offerto nella versione e con le funzionalità disponibili al momento dell&apos;accesso. Il Titolare si riserva il diritto di introdurre nuove funzionalità, modificare o sospendere temporaneamente il Servizio per finalità di manutenzione, test o miglioramento, con adeguato preavviso quando ragionevolmente possibile.</p>
         </section>
 
@@ -126,8 +160,8 @@ export default function TerminiDiServizio() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">4. Periodo di Prova Gratuita (Trial)</h2>
-          <p className="text-sm leading-relaxed">L&apos;accesso nella fase beta è gratuito per un periodo di prova di 14 (quattordici) giorni dalla data di registrazione. Durante il periodo di prova, l&apos;utente ha accesso a: 3 ricerche di offerte di lavoro, 5 adattamenti del curriculum vitae, 5 lettere di motivazione generate dall&apos;intelligenza artificiale, e a tutti i template CV disponibili.</p>
-          <p className="text-sm leading-relaxed">Al termine del periodo di prova, l&apos;Utente può sottoscrivere uno dei piani di abbonamento a pagamento disponibili per continuare ad accedere al Servizio, secondo le modalità descritte all&apos;Art. 5 e seguenti. In assenza di sottoscrizione, l&apos;accesso alle funzionalità a pagamento viene sospeso alla scadenza del periodo di prova. Il Titolare si riserva il diritto di modificare i limiti del piano trial in qualsiasi momento durante la fase beta.</p>
+          <p className="text-sm leading-relaxed">L&apos;accesso al Servizio è gratuito per un periodo di prova di 14 (quattordici) giorni dalla data di registrazione. Durante il periodo di prova, l&apos;utente ha accesso a: 3 ricerche di offerte di lavoro, 5 adattamenti del curriculum vitae, 5 lettere di motivazione generate dall&apos;intelligenza artificiale, e a tutti i template CV disponibili.</p>
+          <p className="text-sm leading-relaxed">Al termine del periodo di prova, l&apos;Utente può sottoscrivere uno dei piani di abbonamento a pagamento disponibili per continuare ad accedere al Servizio, secondo le modalità descritte all&apos;Art. 5 e seguenti. In assenza di sottoscrizione, l&apos;accesso alle funzionalità a pagamento viene sospeso alla scadenza del periodo di prova. Il Titolare si riserva il diritto di modificare i limiti del piano trial in qualsiasi momento.</p>
         </section>
 
         <section className="space-y-3">
@@ -144,7 +178,7 @@ export default function TerminiDiServizio() {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">6. Cancellazione dell&apos;abbonamento</h2>
           <p className="text-sm leading-relaxed">L&apos;Utente può disdire l&apos;Abbonamento in qualsiasi momento, in autonomia, dalla sezione Account/Fatturazione della piattaforma.</p>
-          <p className="text-sm leading-relaxed">La disdetta ha effetto dal termine del periodo di fatturazione in corso: l&apos;Utente mantiene l&apos;accesso alle funzionalità del piano fino a tale data. Dopo tale data l&apos;account passa automaticamente al piano Trial gratuito (con i relativi limiti d&apos;uso, vedi Art. 4) — l&apos;account e i dati non vengono eliminati né disattivati dalla sola cancellazione dell&apos;abbonamento; per l&apos;eliminazione completa dell&apos;account vedi Art. 8.</p>
+          <p className="text-sm leading-relaxed">La disdetta ha effetto dal termine del periodo di fatturazione in corso: l&apos;Utente mantiene l&apos;accesso alle funzionalità del piano fino a tale data. Dopo tale data, l&apos;accesso alle funzionalità del Servizio (ricerche, adattamento del curriculum, generazione di lettere di motivazione) viene sospeso: il periodo di prova gratuita di cui all&apos;Art. 4 è già stato utilizzato in precedenza e non viene concesso nuovamente. L&apos;Utente può ripristinare l&apos;accesso in qualsiasi momento sottoscrivendo un nuovo Abbonamento. L&apos;account e i dati non vengono eliminati né disattivati dalla sola cancellazione dell&apos;abbonamento; per l&apos;eliminazione completa dell&apos;account vedi Art. 8.</p>
           <p className="text-sm leading-relaxed">Non sono previsti rimborsi per la parte di periodo già trascorsa al momento della disdetta, salvo quanto previsto all&apos;Art. 7 (&quot;Diritto di recesso e rimborsi&quot;).</p>
         </section>
 
@@ -206,7 +240,7 @@ export default function TerminiDiServizio() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">12. Esclusione di Garanzie</h2>
-          <p className="text-sm leading-relaxed">Il Servizio è fornito &quot;così com&apos;è&quot; e &quot;come disponibile&quot;, senza garanzie di alcun tipo. Essendo in fase beta, il Servizio potrebbe contenere bug, errori o interruzioni. Il Titolare non garantisce il raggiungimento di risultati specifici nella ricerca di lavoro.</p>
+          <p className="text-sm leading-relaxed">Il Servizio è fornito &quot;così com&apos;è&quot; e &quot;come disponibile&quot;, senza garanzie di alcun tipo. Come ogni servizio in evoluzione continua, potrebbe contenere bug, errori o interruzioni. Il Titolare non garantisce il raggiungimento di risultati specifici nella ricerca di lavoro.</p>
         </section>
 
         <section className="space-y-3">
