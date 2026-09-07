@@ -1,6 +1,18 @@
 /**
- * BOZZA — NON PUBBLICATA — stesso principio già seguito per la bozza ToS
- * v2: richiede revisione di un legale prima di qualunque pubblicazione.
+ * PUBBLICATO il 7 settembre 2026 (versione "2.0-2026-09-07", vedi
+ * src/lib/terms-version.ts, stesso numero di versione del ToS — un'unica
+ * versione copre entrambi i documenti nel flusso di ri-accettazione) in
+ * src/app/[locale]/privacy-policy/page.tsx SENZA revisione legale
+ * formale — stessa scelta consapevole del Titolare già presa per il ToS
+ * v2 (decisione del 2026-09-04, riconfermata il 2026-09-07): la revisione
+ * professionale è rimandata a dopo i primi incassi.
+ *
+ * I due placeholder "DA CONFERMARE MANUALMENTE" dell'Art. 5 sono stati
+ * risolti alla pubblicazione: regione Supabase confermata manualmente da
+ * Alberto nelle impostazioni del progetto (eu-west-1, Irlanda) e riportata
+ * nel testo pubblicato; per Vercel nessun valore è stato confermato — la
+ * frase è stata generalizzata nel testo pubblicato invece di affermare una
+ * regione non verificata.
  *
  * Salvata prima del revert del commit 658d5ba (Privacy Policy). Base
  * originale: aggiunta Stripe come sub-responsabile pagamenti (dati carta,

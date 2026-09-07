@@ -5,7 +5,7 @@ import { sendEmail, escapeHtml } from "@/lib/email";
 import { generateDeletionToken, hashDeletionToken, ACCOUNT_DELETION_TOKEN_TTL_MS } from "@/lib/account-deletion-token";
 import { SITE_URL } from "@/lib/site-url";
 
-const REFUND_WINDOW_MS = 14 * 24 * 60 * 60 * 1000; // Art. 7.2 ToS
+const REFUND_WINDOW_MS = 14 * 24 * 60 * 60 * 1000; // Art. 7 ToS
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();

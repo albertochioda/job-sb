@@ -7,7 +7,7 @@ import { hashDeletionToken } from "@/lib/account-deletion-token";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const ALERT_EMAIL_TO = process.env.ALERT_EMAIL_TO || "alberto.chioda@orvendecision.com";
-const REFUND_WINDOW_MS = 14 * 24 * 60 * 60 * 1000; // Art. 7.2 ToS
+const REFUND_WINDOW_MS = 14 * 24 * 60 * 60 * 1000; // Art. 7 ToS
 
 // Tabelle con user_id ma SENZA foreign key verso auth.users (verificato via
 // information_schema — vedi scripts/sql-account-deletion.sql per il
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
       if (withinRefundWindow) {
         // Rimborso automatico pro-rata SOLO entro i 14gg dal primo
-        // pagamento (Art. 7.2 ToS) — best-effort: un fallimento qui NON
+        // pagamento (Art. 7 ToS) — best-effort: un fallimento qui NON
         // deve bloccare la cancellazione dell'account (obbligo GDPR), va
         // solo segnalato per gestione manuale.
         try {

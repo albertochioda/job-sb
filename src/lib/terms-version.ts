@@ -1,13 +1,16 @@
 /**
  * Versione corrente dei Termini di Servizio e dell'Informativa Privacy.
  *
- * Alzare questo valore (passo separato e deliberato, NON in questo commit)
- * attiva il banner di ri-accettazione per ogni utente il cui
- * profiles.terms_version è diverso da questo valore.
+ * Alzare questo valore attiva il banner di ri-accettazione bloccante per
+ * ogni utente il cui profiles.terms_version è diverso da questo valore.
  *
- * Valore corrente allineato al default trovato in
- * src/components/auth/register-form.tsx (unico riferimento esistente nel
- * codice) — NON è stato alzato, il meccanismo resta dormiente.
+ * "2.0-2026-09-07" pubblicata il 2026-09-07 (ToS: docs/drafts/
+ * termini-di-servizio-draft-v2-abbonamento-e-cancellazione-account.tsx;
+ * Privacy Policy: docs/drafts/privacy-policy-draft-stripe.tsx) — SENZA
+ * revisione legale formale, scelta consapevole del Titolare (vedi nota in
+ * testa a entrambi i file di bozza). I 6 utenti esistenti a quella data
+ * avevano tutti terms_version="1.0-beta" e vedranno quindi il banner al
+ * primo accesso successivo.
  *
  * PROCEDURA COMPLETA per pubblicare una nuova versione dei documenti legali:
  * 1. Pubblicare il nuovo testo in src/app/[locale]/termini-di-servizio/page.tsx
@@ -27,6 +30,8 @@
  *    va mai chiamato dal worker Python. Invia un'unica email a ogni utente
  *    registrato, in batch con un piccolo ritardo tra un invio e l'altro per
  *    rispettare i rate limit di Resend. Mai automatico: va lanciato a mano,
- *    solo quando si decide davvero di pubblicare.
+ *    solo quando si decide davvero di pubblicare. Per la versione
+ *    2.0-2026-09-07: NON ancora lanciato, in attesa di conferma esplicita
+ *    di Alberto dopo aver verificato che il resto funzioni correttamente.
  */
-export const CURRENT_TERMS_VERSION = "1.0-beta";
+export const CURRENT_TERMS_VERSION = "2.0-2026-09-07";

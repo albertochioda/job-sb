@@ -1,7 +1,13 @@
 /**
- * BOZZA — NON PUBBLICATA — richiede revisione di un legale prima di
- * qualunque pubblicazione (Art. 7 escluso, vedi punto 4 sotto — decisione
- * già presa da Alberto, non in attesa di legale).
+ * PUBBLICATO il 7 settembre 2026 (versione "2.0-2026-09-07", vedi
+ * src/lib/terms-version.ts) in src/app/[locale]/termini-di-servizio/page.tsx
+ * SENZA revisione legale formale — scelta consapevole del Titolare (decisione
+ * presa il 2026-09-04, riconfermata il 2026-09-07): la revisione
+ * professionale è rimandata a dopo i primi incassi. Non è mai stato
+ * "revisionato da un legale" in senso proprio — questo file resta comunque
+ * come riferimento storico di come è stato costruito il testo, articolo per
+ * articolo, e del ragionamento dietro ogni modifica rispetto alla bozza
+ * precedente (vedi sotto).
  *
  * Costruita a partire da docs/drafts/termini-di-servizio-draft-abbonamento.tsx
  * (salvata il 2026-07-27 prima del revert dei commit 5907aa7/658d5ba,
@@ -24,15 +30,13 @@
  *    Art. 8) — non si applicano più al nuovo testo, che non fa affermazioni
  *    che le richiedano.
  *
- *    ATTENZIONE per quando questo testo verrà pubblicato: i commenti nel
- *    codice reale (webhooks/stripe/route.ts, account/delete/request/
- *    route.ts, account/delete/confirm/route.ts) citano ancora
- *    letteralmente "Art. 7.2 ToS" — quella sottosezione non esiste più in
- *    questa versione. Non ho toccato quei commenti (non era nello scope di
- *    oggi, e restano comunque corretti nella sostanza — il calcolo dei
- *    14gg dal pagamento è invariato), ma andranno aggiornati a "Art. 7"
- *    quando questa bozza verrà pubblicata, altrimenti puntano a un numero
- *    di sottosezione inesistente.
+ *    FATTO alla pubblicazione del 2026-09-07: i commenti nel codice reale
+ *    (webhooks/stripe/route.ts, account/delete/request/route.ts,
+ *    account/delete/confirm/route.ts) citavano ancora letteralmente
+ *    "Art. 7.2 ToS" — quella sottosezione non esiste più in questa
+ *    versione. Aggiornati tutti a "Art. 7" contestualmente alla
+ *    pubblicazione (il calcolo dei 14gg dal pagamento resta invariato,
+ *    solo il riferimento numerico è cambiato).
  *
  * 2. ART. 7.1 (checkbox di consenso a esecuzione immediata) — la bozza
  *    precedente descriveva una casella di consenso esplicito da spuntare
