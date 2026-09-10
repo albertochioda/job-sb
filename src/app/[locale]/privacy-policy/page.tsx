@@ -1,5 +1,60 @@
+import type { Metadata } from "next";
 import { SUPPORT_EMAIL } from "@/lib/support-contact";
+import { SITE_URL } from "@/lib/site-url";
 import Logo from "@/components/logo";
+
+const CONTENT: Record<"it" | "en", { title: string; description: string }> = {
+  it: {
+    title: "Privacy Policy — Job Search Bridge",
+    description: "Come Job Search Bridge raccoglie, utilizza e protegge i tuoi dati personali, in conformità al GDPR (Regolamento UE 2016/679).",
+  },
+  en: {
+    title: "Privacy Policy — Job Search Bridge",
+    description: "How Job Search Bridge collects, uses and protects your personal data, in compliance with the EU GDPR (Regulation 2016/679).",
+  },
+};
+
+// Metadata dedicati (prima ereditava titolo/descrizione generici dalla
+// home — problema emerso solo ora che la pagina è indicizzabile, vedi
+// src/app/robots.ts). Il contenuto della pagina resta in italiano per
+// entrambe le lingue (nessuna traduzione EN del testo legale, invariato
+// da prima di questo fix) — qui si localizzano solo title/description,
+// non tramite next-intl: questa pagina non usa quel sistema per il corpo.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const { title, description } = CONTENT[locale as "it" | "en"] ?? CONTENT.it;
+  const url = `${SITE_URL}/${locale}/privacy-policy`;
+
+  return {
+    title,
+    description,
+    robots: { index: true, follow: true },
+    alternates: {
+      canonical: url,
+      languages: {
+        it: `${SITE_URL}/it/privacy-policy`,
+        en: `${SITE_URL}/en/privacy-policy`,
+      },
+    },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      locale: locale === "it" ? "it_IT" : "en_US",
+      url,
+      siteName: "Job Search Bridge",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
+}
 
 export default function PrivacyPolicy() {
   return (

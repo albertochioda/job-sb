@@ -36,13 +36,11 @@ export async function generateMetadata({
   return {
     title,
     description,
-    // La pagina resta volutamente fuori dall'indicizzazione finché non
-    // viene approvata per la pubblicazione — src/app/robots.ts blocca già
-    // tutto il sito, ma il noindex per-pagina resta comunque dichiarato
-    // esplicitamente qui: è lui il controllo reale, il robots.txt è solo
-    // un secondo segnale coerente. Rimuovere questo blocco (o impostare
-    // index: true) è l'azione deliberata per pubblicare.
-    robots: { index: false, follow: false },
+    // Pagina indicizzabile (decisione di Alberto, 2026-09-10): il sito è
+    // pronto per la pubblicazione attiva. Vedi commento gemello in
+    // src/app/robots.ts per le altre pagine pubbliche coinvolte
+    // (Privacy Policy, Termini di Servizio) e quelle che restano bloccate.
+    robots: { index: true, follow: true },
     alternates: {
       canonical: url,
       languages: {

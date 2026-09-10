@@ -1,5 +1,56 @@
+import type { Metadata } from "next";
 import { SUPPORT_EMAIL } from "@/lib/support-contact";
+import { SITE_URL } from "@/lib/site-url";
 import Logo from "@/components/logo";
+
+const CONTENT: Record<"it" | "en", { title: string; description: string }> = {
+  it: {
+    title: "Termini di Servizio — Job Search Bridge",
+    description: "Termini e condizioni per l'utilizzo della piattaforma Job Search Bridge: accesso al servizio, abbonamenti, cancellazione dell'account.",
+  },
+  en: {
+    title: "Terms of Service — Job Search Bridge",
+    description: "Terms and conditions for using the Job Search Bridge platform: service access, subscriptions, account cancellation.",
+  },
+};
+
+// Metadata dedicati — stesso fix gemello di privacy-policy/page.tsx,
+// stesso motivo (vedi commento lì per il dettaglio).
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const { title, description } = CONTENT[locale as "it" | "en"] ?? CONTENT.it;
+  const url = `${SITE_URL}/${locale}/termini-di-servizio`;
+
+  return {
+    title,
+    description,
+    robots: { index: true, follow: true },
+    alternates: {
+      canonical: url,
+      languages: {
+        it: `${SITE_URL}/it/termini-di-servizio`,
+        en: `${SITE_URL}/en/termini-di-servizio`,
+      },
+    },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      locale: locale === "it" ? "it_IT" : "en_US",
+      url,
+      siteName: "Job Search Bridge",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
+}
 
 export default function TerminiDiServizio() {
   return (
