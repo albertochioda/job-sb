@@ -73,29 +73,54 @@ export async function POST(request: NextRequest) {
           break;
         }
 
+        // first_subscription_started_at va scritto una volta sola nella vita
+        // del cliente — richiede leggere il valore attuale PRIMA di decidere
+        // se includerlo nell'update sotto (Supabase non espone un
+        // equivalente di "SET x = COALESCE(x, valore)" dal client JS).
+        const { data: existingSub } = await supabase
+          .from("subscriptions")
+          .select("first_subscription_started_at")
+          .eq("user_id", userId)
+          .single();
+
+        const updatePayload: Record<string, unknown> = {
+          tier,
+          stripe_customer_id: customerId ?? null,
+          stripe_subscription_id: subscriptionId ?? null,
+          status: "active",
+          // Sempre sovrascritto, senza check "solo se null": se l'utente
+          // cancella e si riabbona in futuro, è un nuovo contratto a tutti
+          // gli effetti — questo campo riflette la data dell'ultimo
+          // pagamento/riabbono (riconciliazione, visualizzazione), MAI più
+          // usato per il controllo dei 14gg del diritto di recesso (vedi
+          // first_subscription_started_at sotto — quello sì write-once,
+          // quello è l'unico campo che conta per Art. 7/8 ToS in
+          // account/delete/confirm/route.ts). checkout.session.completed si
+          // attiva solo alla creazione di un nuovo abbonamento, mai ai
+          // rinnovi (quelli passano da invoice.paid, che non tocca questo
+          // campo).
+          first_payment_at: new Date().toISOString(),
+          // Il passaggio da trial a piano a pagamento azzera qualunque
+          // consumo del trial — resta un blocco a sé, indipendente dal
+          // nuovo abbonamento appena iniziato (non va confuso col reset
+          // condizionato a billing_reason='subscription_cycle' di
+          // invoice.paid, che riguarda solo i rinnovi successivi).
+          runs_used: 0,
+          cvs_adapted_used: 0,
+          cover_letters_used: 0,
+        };
+        // Scritto SOLO se non già valorizzato — a differenza di
+        // first_payment_at sopra. Un riabbono dopo una cancellazione non
+        // deve mai spostare questa data: è quello che chiude il varco
+        // "cancella -> riabbona -> cancella account -> rimborso di nuovo"
+        // (vedi scripts/sql-subscriptions-first-subscription-started-at.sql).
+        if (!existingSub?.first_subscription_started_at) {
+          updatePayload.first_subscription_started_at = new Date().toISOString();
+        }
+
         const { data, error } = await supabase
           .from("subscriptions")
-          .update({
-            tier,
-            stripe_customer_id: customerId ?? null,
-            stripe_subscription_id: subscriptionId ?? null,
-            status: "active",
-            // Sempre sovrascritto, senza check "solo se null": se l'utente
-            // cancella e si riabbona in futuro, è un nuovo contratto a
-            // tutti gli effetti — merita una nuova finestra di rimborso di
-            // 14 giorni (Art. 7 ToS). checkout.session.completed si attiva
-            // solo alla creazione di un nuovo abbonamento, mai ai rinnovi
-            // (quelli passano da invoice.paid, che non tocca questo campo).
-            first_payment_at: new Date().toISOString(),
-            // Il passaggio da trial a piano a pagamento azzera qualunque
-            // consumo del trial — resta un blocco a sé, indipendente dal
-            // nuovo abbonamento appena iniziato (non va confuso col reset
-            // condizionato a billing_reason='subscription_cycle' di
-            // invoice.paid, che riguarda solo i rinnovi successivi).
-            runs_used: 0,
-            cvs_adapted_used: 0,
-            cover_letters_used: 0,
-          })
+          .update(updatePayload)
           .eq("user_id", userId)
           .select("user_id");
 

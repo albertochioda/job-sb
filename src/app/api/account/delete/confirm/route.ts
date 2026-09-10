@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
 
   const { data: sub } = await admin
     .from("subscriptions")
-    .select("stripe_subscription_id, stripe_customer_id, first_payment_at")
+    .select("stripe_subscription_id, stripe_customer_id, first_subscription_started_at")
     .eq("user_id", userId)
     .single();
 
@@ -103,12 +103,21 @@ export async function POST(request: NextRequest) {
       // differenza di /api/billing/cancel-subscription (cancel_at_period_end).
       await stripe.subscriptions.cancel(sub.stripe_subscription_id);
 
+      // first_subscription_started_at, non first_payment_at: quest'ultimo
+      // si sovrascrive ad ogni riabbono (vedi webhooks/stripe/route.ts),
+      // quindi userlo qui riaprirebbe la finestra di rimborso ad ogni ciclo
+      // cancella -> riabbona -> cancella account, indefinitamente. Il
+      // diritto di recesso dell'Art. 7 ToS è "per la prima volta" —
+      // first_subscription_started_at è l'unico campo scritto una sola
+      // volta nella vita del cliente, mai più toccato dopo il primissimo
+      // checkout.session.completed.
       const withinRefundWindow =
-        !!sub.first_payment_at && Date.now() - new Date(sub.first_payment_at).getTime() <= REFUND_WINDOW_MS;
+        !!sub.first_subscription_started_at &&
+        Date.now() - new Date(sub.first_subscription_started_at).getTime() <= REFUND_WINDOW_MS;
 
       if (withinRefundWindow) {
         // Rimborso automatico pro-rata SOLO entro i 14gg dal primo
-        // pagamento (Art. 7 ToS) — best-effort: un fallimento qui NON
+        // pagamento in assoluto (Art. 7 ToS) — best-effort: un fallimento qui NON
         // deve bloccare la cancellazione dell'account (obbligo GDPR), va
         // solo segnalato per gestione manuale.
         try {

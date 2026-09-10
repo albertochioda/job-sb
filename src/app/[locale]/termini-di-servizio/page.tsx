@@ -31,17 +31,17 @@ export default function TerminiDiServizio() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">4. Periodo di Prova Gratuita (Trial)</h2>
-          <p className="text-sm leading-relaxed">L&apos;accesso al Servizio è gratuito per un periodo di prova di 14 (quattordici) giorni dalla data di registrazione. Durante il periodo di prova, l&apos;utente ha accesso a: 3 ricerche di offerte di lavoro, 5 adattamenti del curriculum vitae, 5 lettere di motivazione generate dall&apos;intelligenza artificiale, e a tutti i template CV disponibili.</p>
+          <p className="text-sm leading-relaxed">L&apos;accesso al Servizio è gratuito per un periodo di prova di 14 (quattordici) giorni dalla data di registrazione. Durante il periodo di prova, l&apos;utente ha accesso a un numero limitato di ricerche di offerte di lavoro, adattamenti del curriculum vitae e lettere di motivazione generate dall&apos;intelligenza artificiale, oltre a tutti i template CV disponibili — i limiti esatti in vigore sono indicati nella pagina Prezzi del sito.</p>
           <p className="text-sm leading-relaxed">Al termine del periodo di prova, l&apos;Utente può sottoscrivere uno dei piani di abbonamento a pagamento disponibili per continuare ad accedere al Servizio, secondo le modalità descritte all&apos;Art. 5 e seguenti. In assenza di sottoscrizione, l&apos;accesso alle funzionalità a pagamento viene sospeso alla scadenza del periodo di prova. Il Titolare si riserva il diritto di modificare i limiti del piano trial in qualsiasi momento.</p>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">5. Durata e rinnovo automatico dell&apos;abbonamento</h2>
-          <p className="text-sm leading-relaxed">L&apos;Abbonamento a pagamento (piano Individual o Professional) ha durata mensile e si rinnova automaticamente alla scadenza di ciascun periodo, salvo disdetta da parte dell&apos;Utente secondo le modalità descritte all&apos;Art. 6 (&quot;Cancellazione dell&apos;abbonamento&quot;).</p>
+          <p className="text-sm leading-relaxed">L&apos;Abbonamento a pagamento (piano Individual o Professional) è disponibile con cadenza di fatturazione mensile, trimestrale o annuale, a scelta dell&apos;Utente al momento della sottoscrizione, e si rinnova automaticamente alla scadenza di ciascun periodo, salvo disdetta da parte dell&apos;Utente secondo le modalità descritte all&apos;Art. 6 (&quot;Cancellazione dell&apos;abbonamento&quot;).</p>
           <p className="text-sm leading-relaxed">Al momento della sottoscrizione, l&apos;Utente viene informato in modo chiaro che:</p>
           <ul className="text-sm leading-relaxed list-disc pl-5 space-y-1">
-            <li>l&apos;abbonamento si rinnova automaticamente ogni mese;</li>
-            <li>l&apos;importo addebitato a ogni rinnovo è quello del piano scelto, salvo eventuali modifiche comunicate secondo l&apos;Art. 9 (&quot;Modifiche al prezzo&quot;);</li>
+            <li>l&apos;abbonamento si rinnova automaticamente alla scadenza di ogni periodo di fatturazione scelto (mensile, trimestrale o annuale);</li>
+            <li>l&apos;importo addebitato a ogni rinnovo è quello del piano e della cadenza scelti, salvo eventuali modifiche comunicate secondo l&apos;Art. 9 (&quot;Modifiche al prezzo&quot;);</li>
             <li>l&apos;Utente può disdire in qualsiasi momento, con effetto dal termine del periodo di fatturazione in corso.</li>
           </ul>
         </section>
@@ -66,7 +66,7 @@ export default function TerminiDiServizio() {
           <p className="text-sm leading-relaxed">La richiesta richiede una doppia conferma: dopo aver digitato la propria email a conferma dell&apos;intenzione, l&apos;Utente riceve un&apos;email con un link di conferma valido per un&apos;ora — l&apos;eliminazione avviene solo dopo il click su tale link, e non prima.</p>
           <p className="text-sm leading-relaxed">Al momento della conferma:</p>
           <ul className="text-sm leading-relaxed list-disc pl-5 space-y-1">
-            <li>un eventuale abbonamento attivo viene cancellato immediatamente (non a fine periodo, a differenza dell&apos;Art. 6), con applicazione del diritto di recesso e rimborso dell&apos;Art. 7 se il pagamento più recente rientra nella finestra dei 14 giorni;</li>
+            <li>un eventuale abbonamento attivo viene cancellato immediatamente (non a fine periodo, a differenza dell&apos;Art. 6), con applicazione del diritto di recesso e rimborso dell&apos;Art. 7 se il primo pagamento in assoluto effettuato dall&apos;Utente per l&apos;Abbonamento rientra nella finestra dei 14 giorni — non un rinnovo o un riabbono successivo;</li>
             <li>tutti i dati dell&apos;account (CV, lettere generate, cronologia ricerche e candidature, e ogni altro dato personale collegato) vengono eliminati in modo permanente e irreversibile;</li>
             <li>l&apos;account stesso e le credenziali di accesso cessano di esistere: non è possibile effettuare nuovamente l&apos;accesso con le stesse credenziali, né recuperare i dati eliminati.</li>
           </ul>

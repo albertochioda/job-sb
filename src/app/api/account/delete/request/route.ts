@@ -45,23 +45,29 @@ export async function POST(request: NextRequest) {
   // Anteprima rimborso nell'email — solo informativa, il calcolo reale
   // (fonte di verità) avviene al momento della conferma, non qui: lo stato
   // potrebbe cambiare nella finestra di validità del link.
+  //
+  // first_subscription_started_at, non first_payment_at: stesso motivo di
+  // account/delete/confirm/route.ts — first_payment_at si sovrascrive ad
+  // ogni riabbono, usarlo qui mostrerebbe "rimborso disponibile" anche
+  // dopo un ciclo cancella -> riabbona, quando il vero controllo alla
+  // conferma (già corretto) lo negherebbe.
   const { data: sub } = await admin
     .from("subscriptions")
-    .select("stripe_subscription_id, first_payment_at")
+    .select("stripe_subscription_id, first_subscription_started_at")
     .eq("user_id", user.id)
     .single();
 
   const withinRefundWindow =
     !!sub?.stripe_subscription_id &&
-    !!sub?.first_payment_at &&
-    Date.now() - new Date(sub.first_payment_at).getTime() <= REFUND_WINDOW_MS;
+    !!sub?.first_subscription_started_at &&
+    Date.now() - new Date(sub.first_subscription_started_at).getTime() <= REFUND_WINDOW_MS;
 
   const confirmUrl = `${SITE_URL}/${safeLocale}/account/delete/confirm?token=${rawToken}`;
 
   const html = `
     <p>Hai richiesto la cancellazione definitiva del tuo account Job Search Bridge (${escapeHtml(user.email)}).</p>
     <p><strong>Questa azione è irreversibile</strong>: verranno eliminati CV, lettere generate, cronologia ricerche e candidature, e ogni altro dato collegato al tuo account.</p>
-    ${sub?.stripe_subscription_id ? `<p>Il tuo abbonamento attivo verrà cancellato immediatamente${withinRefundWindow ? ", con rimborso automatico della quota non goduta (sei ancora entro i 14 giorni dal primo pagamento)" : " (senza rimborso: sono trascorsi più di 14 giorni dal primo pagamento)"}.</p>` : ""}
+    ${sub?.stripe_subscription_id ? `<p>Il tuo abbonamento attivo verrà cancellato immediatamente${withinRefundWindow ? ", con rimborso automatico della quota non goduta (sei ancora entro i 14 giorni dal tuo primo pagamento in assoluto)" : " (senza rimborso: sono trascorsi più di 14 giorni dal tuo primo pagamento in assoluto)"}.</p>` : ""}
     <p>Per confermare, clicca sul link qui sotto entro <strong>1 ora</strong> — dopo quel termine il link scade e dovrai ripetere la richiesta dal tuo profilo:</p>
     <p><a href="${confirmUrl}">${confirmUrl}</a></p>
     <p>Se non sei stato tu a richiederlo, ignora semplicemente questa email: nessuna azione verrà eseguita senza il click di conferma.</p>

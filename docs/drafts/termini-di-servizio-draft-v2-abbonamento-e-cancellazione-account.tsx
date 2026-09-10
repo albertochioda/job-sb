@@ -9,6 +9,60 @@
  * articolo, e del ragionamento dietro ogni modifica rispetto alla bozza
  * precedente (vedi sotto).
  *
+ * CORREZIONI del 2026-09-10 al testo pubblicato il 2026-09-07 (stessa
+ * versione "2.0-2026-09-07" — correzioni di accuratezza fattuale su un
+ * testo già pubblicato, non nuovi obblighi: nessun nuovo giro di
+ * ri-accettazione, CURRENT_TERMS_VERSION non alzata). Il file bozza qui
+ * sotto NON è stato aggiornato con questi 3 punti (resta lo snapshot
+ * storico del 7 settembre) — solo il testo LIVE in
+ * src/app/[locale]/termini-di-servizio/page.tsx riflette le correzioni:
+ *
+ * A. ART. 7 vs ART. 8 — incoerenza sulla finestra di rimborso, verificata
+ *    nel codice reale su richiesta di Alberto. Il bug: subscriptions.
+ *    first_payment_at (usato dal controllo dei 14gg in
+ *    account/delete/confirm/route.ts) viene sovrascritto ad OGNI nuovo
+ *    checkout.session.completed, incluso un riabbono dopo una
+ *    cancellazione — permettendo di riaprire la finestra di rimborso
+ *    indefinitamente con un ciclo abbonati -> aspetta 13gg -> cancella ->
+ *    riabbonati -> cancella l'account entro 14gg dal riabbono -> rimborso
+ *    di nuovo. Mai sfruttato finora (verificato: un solo utente ha mai
+ *    completato un vero checkout Stripe). Fix: nuovo campo
+ *    subscriptions.first_subscription_started_at (vedi scripts/
+ *    sql-subscriptions-first-subscription-started-at.sql), scritto UNA
+ *    SOLA VOLTA nella vita del cliente (mai più toccato dopo il primissimo
+ *    checkout.session.completed) — è questo il campo ora usato dal
+ *    controllo dei 14gg, in entrambi i punti che lo calcolano
+ *    (account/delete/request/route.ts per l'anteprima nell'email,
+ *    account/delete/confirm/route.ts per il calcolo reale del rimborso).
+ *    first_payment_at NON è stato rimosso: resta per i suoi usi legittimi
+ *    (riconciliazione, KPI, visualizzazione data ultimo pagamento in
+ *    api/subscription), solo non più usato per questo controllo specifico.
+ *    Risultato sul TESTO: l'Art. 7 ("per la prima volta") era già
+ *    accurato una volta corretto il codice — NON riformulato. L'Art. 8
+ *    diceva invece "se il pagamento più recente rientra nella finestra dei
+ *    14 giorni": impreciso, corretto in "se il primo pagamento in assoluto
+ *    ... rientra nella finestra dei 14 giorni — non un rinnovo o un
+ *    riabbono successivo", per riflettere accuratamente il nuovo
+ *    comportamento del codice.
+ *
+ * B. ART. 5 — la sottoscrizione descriveva solo una cadenza mensile.
+ *    Verificato su Stripe reale (query diretta ai Price via API, test
+ *    mode): esistono e sono attivi 6 Price reali, cadenza mensile
+ *    trimestrale e annuale per entrambi i piani (individual_monthly/
+ *    quarterly/annual, professional_monthly/quarterly/annual) — non solo
+ *    configurati, genuinamente selezionabili e funzionanti end-to-end
+ *    tramite checkout/create-session/route.ts. Testo corretto per
+ *    menzionare tutte e 3 le cadenze invece della sola mensile.
+ *
+ * C. ART. 4 — i limiti del periodo di prova (3 ricerche/5 CV adattati/5
+ *    lettere) erano ancora numeri hardcoded nel testo, nonostante questo
+ *    stesso file (vedi punto 4 del changelog originale sotto) documenti
+ *    che questi numeri sono già andati fuori sincrono una volta in
+ *    passato (il testo live riportava "20 ricerche/30 CV" invece dei
+ *    numeri trial reali, corretto il 2026-09-02). Sostituito il numero
+ *    specifico con un rimando generico alla pagina Prezzi del sito — fonte
+ *    unica, non più a rischio di disallineamento futuro.
+ *
  * Costruita a partire da docs/drafts/termini-di-servizio-draft-abbonamento.tsx
  * (salvata il 2026-07-27 prima del revert dei commit 5907aa7/658d5ba,
  * aggiornata l'2026-08-05 in 8f95049) — quel testo resta corretto ed è
