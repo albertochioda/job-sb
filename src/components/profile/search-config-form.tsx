@@ -3,11 +3,6 @@
 import { useState } from "react";
 import CityAutocomplete, { type CityAutocompleteChange } from "@/components/city-autocomplete";
 
-const COUNTRIES = [
-  ["Italia", "🇮🇹"], ["France", "🇫🇷"], ["Deutschland", "🇩🇪"],
-  ["España", "🇪🇸"], ["Nederland", "🇳🇱"], ["Polska", "🇵🇱"],
-] as const;
-
 interface SearchConfig {
   id: string;
   city: string;
@@ -22,7 +17,11 @@ interface SearchConfig {
 
 export default function SearchConfigForm({ config }: { config: SearchConfig }) {
   const [city, setCity] = useState(config.city ?? "");
-  const [country, setCountry] = useState(config.country ?? "Italia");
+  // Selettore Paese nascosto (2026-09): nessuno scraper attivo usa questo
+  // campo per cercare fuori dall'Italia — vedi stesso commento in
+  // onboarding-wizard.tsx. Costante invece di uno state: non più
+  // modificabile da questa UI, sempre "Italia" a ogni salvataggio.
+  const country = "Italia";
   const [geoId, setGeoId] = useState((config as { geo_id?: string }).geo_id ?? "");
   // Il valore già salvato è considerato valido finché l'utente non tocca il
   // campo città in questa sessione — non forziamo una riselezione di
@@ -84,18 +83,6 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
       <h2 className="font-semibold text-lg">Configurazione ricerca</h2>
 
       <div className="grid gap-4 text-sm">
-        <div className="space-y-1">
-          <label className="text-muted-foreground">Paese</label>
-          <select
-            value={country}
-            onChange={e => setCountry(e.target.value)}
-            className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-          >
-            {COUNTRIES.map(([val, flag]) => (
-              <option key={val} value={val}>{flag} {val}</option>
-            ))}
-          </select>
-        </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <label className="text-muted-foreground">Città</label>
@@ -116,7 +103,7 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
               value={radius}
               onChange={e => setRadius(Number(e.target.value))}
               min={10}
-              max={200}
+              max={150}
               className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>

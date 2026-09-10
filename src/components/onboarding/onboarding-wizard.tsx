@@ -24,7 +24,13 @@ export default function OnboardingWizard({ locale }: Props) {
   // step 5 è facoltativo). Digitare senza selezionare un suggerimento lo
   // invalida finché non si sceglie dal menu o si svuota di nuovo il campo.
   const [cityConfirmed, setCityConfirmed] = useState(true);
-  const [country, setCountry] = useState("Italia");
+  // Selettore Paese nascosto (2026-09): nessuno scraper attivo (LinkedIn,
+  // Manpower, Randstad) usa questo campo per cercare fuori dall'Italia —
+  // è sempre e solo Italia in pratica (confermato: 0 utenti reali su 9
+  // configurazioni avevano mai selezionato altro). Restava solo una scelta
+  // fuorviante in UI senza alcun effetto reale sulla ricerca. Costante
+  // invece di uno state: non è più modificabile da nessuna UI.
+  const country = "Italia";
   const [radiusKm, setRadiusKm] = useState(50);
   const [minSalary, setMinSalary] = useState("");
   const [workModes, setWorkModes] = useState<string[]>([]);
@@ -297,18 +303,6 @@ export default function OnboardingWizard({ locale }: Props) {
           </div>
           <div className="space-y-4">
             <div className="space-y-1">
-              <label className="text-sm font-medium">Paese</label>
-              <select
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring bg-background"
-              >
-                {[["Italia","🇮🇹"],["France","🇫🇷"],["Deutschland","🇩🇪"],["España","🇪🇸"],["Nederland","🇳🇱"],["Polska","🇵🇱"]].map(([val, flag]) => (
-                  <option key={val} value={val}>{flag} {val}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
               <label className="text-sm font-medium">Città</label>
               <CityAutocomplete
                 initialValue={city}
@@ -324,13 +318,13 @@ export default function OnboardingWizard({ locale }: Props) {
               <label className="text-sm font-medium">Raggio: <span className="font-bold">{radiusKm} km</span></label>
               <input
                 type="range"
-                min={25} max={150} step={25}
+                min={10} max={150} step={1}
                 value={radiusKm}
                 onChange={(e) => setRadiusKm(parseInt(e.target.value))}
                 className="w-full"
               />
               <div className="flex justify-between text-xs text-muted-foreground">
-                {[25, 50, 80, 100, 150].map((v) => <span key={v}>{v}</span>)}
+                {[10, 50, 100, 150].map((v) => <span key={v}>{v}</span>)}
               </div>
             </div>
             <div className="space-y-2">

@@ -1,6 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+// Limiti reali del raggio di ricerca — stessi valori dello slider
+// onboarding e del campo numerico profilo (vedi onboarding-wizard.tsx,
+// search-config-form.tsx). Prima di questo fix radius_km non era
+// validato qui in alcun modo: un valore fuori range passato via UI
+// bypassata o chiamata diretta all'API veniva salvato così com'è
+// (trovato un caso reale, inattivo, radius_km=1000 — lasciato invariato,
+// questa validazione previene nuovi casi, non corregge quello storico).
+const RADIUS_KM_MIN = 10;
+const RADIUS_KM_MAX = 150;
+
+// Clamp invece di rifiuto esplicito: più semplice, coerente con
+// l'approccio già in uso in questa route per gli altri campi opzionali
+// (default silenziosi, es. country || "Italia" sotto) invece di 400 su
+// input fuori standard ma innocuo da correggere in automatico.
+// undefined/null/non numerico passano invariati (nessun valore fornito),
+// gestiti come già facevano POST/PATCH prima di questo fix.
+function clampRadiusKm(value: unknown): number | undefined {
+  if (value === undefined || value === null) return undefined;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return undefined;
+  return Math.min(RADIUS_KM_MAX, Math.max(RADIUS_KM_MIN, n));
+}
+
 export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -48,7 +71,7 @@ export async function PATCH(request: NextRequest) {
   const { error } = await supabase
     .from("search_configs")
     .update({
-      roles, city, country: country || "Italia", geo_id: geo_id || null, radius_km, min_salary,
+      roles, city, country: country || "Italia", geo_id: geo_id || null, radius_km: clampRadiusKm(radius_km), min_salary,
       work_mode: work_mode || "nessuna_preferenza",
       work_schedule: work_schedule || "nessuna_preferenza",
       contract_types: contract_types?.length ? contract_types : null,
@@ -96,7 +119,7 @@ export async function POST(request: NextRequest) {
       city: city || null,
       geo_id: geo_id || null,
       country: country || "Italia",
-      radius_km: radius_km || 50,
+      radius_km: clampRadiusKm(radius_km) ?? 50,
       min_salary: min_salary || null,
       work_mode: work_mode || "nessuna_preferenza",
       work_schedule: work_schedule || "nessuna_preferenza",
