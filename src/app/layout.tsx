@@ -11,7 +11,7 @@ import "./globals.css";
 // passa mai da [locale]/layout.tsx.
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Job Search Bridge — Più colloqui, meno tempo perso",
+  title: "Job Search Bridge — Le offerte giuste, in un posto solo, senza perdere tempo",
   description:
     "Job Search Bridge cerca, filtra e adatta il CV per te. Tu resti concentrato su quello che conta davvero: il colloquio.",
   // favicon.ico e apple-icon.png in src/app/ vengono già rilevati in

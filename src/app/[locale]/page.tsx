@@ -204,7 +204,7 @@ export default async function HomePage({
 
       {/* Hero — una sola colonna, la card offerte si è spostata sotto i pilastri */}
       <section className="px-6 py-16 md:py-20">
-        <div className="flex flex-col items-center text-center gap-4 max-w-2xl mx-auto">
+        <div className="flex flex-col items-center text-center gap-4 max-w-4xl mx-auto">
           <h1 className="text-3xl md:text-5xl font-medium leading-tight">
             {heroHeadlineLine1}
             <br />
