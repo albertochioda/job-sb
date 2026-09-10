@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
 import CityAutocomplete, { type CityAutocompleteChange } from "@/components/city-autocomplete";
 import Logo from "@/components/logo";
+import { useFileDrop } from "@/hooks/use-file-drop";
 
 interface Props {
   locale: string;
@@ -63,12 +64,6 @@ export default function OnboardingWizard({ locale }: Props) {
     setStep(3);
   }
 
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  }
-
   // --- Step 3: Roles ---
   function addRole() {
     const r = newRole.trim();
@@ -96,6 +91,9 @@ export default function OnboardingWizard({ locale }: Props) {
     setPhotoPreview(URL.createObjectURL(file));
     setStep(5);
   }
+
+  const cvDrop = useFileDrop(handleFile);
+  const photoDrop = useFileDrop(handlePhoto);
 
   // --- Step 5: Città ---
   function handleCityChange(v: CityAutocompleteChange) {
@@ -185,8 +183,7 @@ export default function OnboardingWizard({ locale }: Props) {
             <p className="text-muted-foreground mt-1 text-sm">Formato supportato: solo Word (.docx). Il supporto PDF arriverà presto.</p>
           </div>
           <div
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
+            {...cvDrop}
             onClick={() => fileInputRef.current?.click()}
             className="border-2 border-dashed rounded-lg p-12 text-center cursor-pointer hover:border-primary transition-colors"
           >
@@ -266,6 +263,7 @@ export default function OnboardingWizard({ locale }: Props) {
           ) : (
             <>
               <div
+                {...photoDrop}
                 onClick={() => photoInputRef.current?.click()}
                 className="border-2 border-dashed rounded-lg p-10 text-center cursor-pointer hover:border-primary transition-colors"
               >
@@ -274,14 +272,14 @@ export default function OnboardingWizard({ locale }: Props) {
                 ) : (
                   <>
                     <p className="font-medium">Clicca per caricare una foto</p>
-                    <p className="text-xs text-muted-foreground mt-1">JPG o PNG, max 5MB</p>
+                    <p className="text-xs text-muted-foreground mt-1">JPG, PNG o WebP, max 2MB</p>
                   </>
                 )}
               </div>
               <input
                 ref={photoInputRef}
                 type="file"
-                accept="image/jpeg,image/png"
+                accept="image/jpeg,image/png,image/webp"
                 className="hidden"
                 onChange={e => e.target.files?.[0] && handlePhoto(e.target.files[0])}
               />

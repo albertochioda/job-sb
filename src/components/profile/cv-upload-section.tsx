@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useFileDrop } from "@/hooks/use-file-drop";
 
 interface CvInfo {
   id: string;
@@ -36,8 +37,10 @@ export default function CvUploadSection({ currentCv }: { currentCv: CvInfo | nul
     }
   };
 
+  const dropHandlers = useFileDrop(handleFile);
+
   return (
-    <div className="border rounded-lg p-6 space-y-4">
+    <div className="border rounded-lg p-6 space-y-4" {...dropHandlers}>
       <h2 className="font-semibold text-lg">CV</h2>
 
       {cv ? (

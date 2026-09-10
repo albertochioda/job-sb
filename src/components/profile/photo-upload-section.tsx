@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
+import { useFileDrop } from "@/hooks/use-file-drop";
 
 export default function PhotoUploadSection({ currentPhotoUrl }: { currentPhotoUrl: string | null }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -40,6 +41,8 @@ export default function PhotoUploadSection({ currentPhotoUrl }: { currentPhotoUr
     }
   }
 
+  const dropHandlers = useFileDrop(handleFile);
+
   async function handleRemove() {
     setError("");
     setSuccess("");
@@ -58,7 +61,7 @@ export default function PhotoUploadSection({ currentPhotoUrl }: { currentPhotoUr
   }
 
   return (
-    <div className="border rounded-lg p-6 space-y-4">
+    <div className="border rounded-lg p-6 space-y-4" {...dropHandlers}>
       <h2 className="font-semibold text-lg">Foto profilo</h2>
       <p className="text-sm text-muted-foreground">
         Verrà inserita automaticamente nei CV generati con template. JPG, PNG o WebP — max 2MB.
