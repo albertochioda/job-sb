@@ -11,6 +11,16 @@ import ComingSoonRibbon from "@/components/coming-soon-ribbon";
 
 type TrialStep = "info" | "feedback" | "thanks";
 
+// Solo per la frase di trasparenza pre-Stripe sotto — diverso da
+// CADENCE_LABELS (usato per l'etichetta sui pulsanti di selezione
+// cadenza, "Mensile"/"Trimestrale"/"Annuale": un sostantivo, non
+// componibile in una frase come "si rinnova ogni Mensile").
+const CADENCE_RENEWAL_PHRASE: Record<Cadence, string> = {
+  monthly: "ogni mese",
+  quarterly: "ogni 3 mesi",
+  annual: "ogni anno",
+};
+
 export default function TrialExpiredModal({ locale }: { locale: string }) {
   const { reason, details, showBlockingModal, dismissBlockingModal } = useBlockingModal();
   const [trialStep, setTrialStep] = useState<TrialStep>("info");
@@ -266,6 +276,14 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
                       {" — "}
                       {CADENCE_LABELS[cadenceByTier[checkoutTier]]}, €{PLAN_PRICES[checkoutTier][cadenceByTier[checkoutTier]]}
                     </p>
+                    {/* Trasparenza pre-Stripe richiesta dall'Art. 5 ToS (rinnovo
+                        automatico, importo, disdetta in qualsiasi momento) — Stripe
+                        Checkout la comunica solo in modo implicito, questo testo la
+                        rende esplicita PRIMA del redirect, senza un altro passaggio
+                        di conferma: solo testo visibile, nessuna nuova checkbox. */}
+                    <div className="text-sm bg-blue-50 border border-blue-200 text-blue-800 rounded-md px-4 py-3">
+                      L&apos;abbonamento si rinnova automaticamente {CADENCE_RENEWAL_PHRASE[cadenceByTier[checkoutTier]]} a €{PLAN_PRICES[checkoutTier][cadenceByTier[checkoutTier]]}, finché non lo disdici — puoi farlo in qualsiasi momento dal tuo profilo, con effetto dalla fine del periodo in corso.
+                    </div>
                     <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer">
                       <input
                         type="checkbox"
