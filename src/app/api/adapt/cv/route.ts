@@ -39,10 +39,10 @@ function extractJsonObject(text: string): string {
 
 function buildPrompt(cvText: string, jdText: string, lang: string): string {
   return `CV DEL CANDIDATO:
-${cvText.slice(0, 3000)}
+${cvText.slice(0, 8000)}
 
 JOB DESCRIPTION (${lang}):
-${jdText.slice(0, 3000)}
+${jdText.slice(0, 8000)}
 
 ISTRUZIONI BULLET (priorità alta):
 - Usa le keyword esatte della JD nei bullet dove il CV le supporta (es. se la JD dice "ciclo di vita prodotto", scrivi "ciclo di vita prodotto" non "lancio prodotto")

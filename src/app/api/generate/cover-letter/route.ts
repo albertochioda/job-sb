@@ -107,10 +107,10 @@ function buildCoverLetterPrompt(
 ): string {
   const toneInstruction = TONE_INSTRUCTIONS[tone ?? ""] ?? "Tono professionale bilanciato.";
   return `CV DEL CANDIDATO:
-${cvText.slice(0, 3000)}
+${cvText.slice(0, 8000)}
 
 JOB DESCRIPTION (${lang}):
-${jdText.slice(0, 3000)}
+${jdText.slice(0, 8000)}
 
 AZIENDA: ${company || "non specificata"}
 
