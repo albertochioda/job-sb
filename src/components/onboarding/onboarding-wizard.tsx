@@ -13,6 +13,12 @@ interface Props {
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
+// Tetto ruoli per ricerca — stesso limite del prompt AI in
+// api/cv/upload/route.ts e di MAX_ROLES in api/search-config/route.ts.
+// Ricerche con troppi ruoli producono migliaia di offerte da
+// fetchare/scorare, allungando tempi e costi (vedi analisi worker.py).
+const MAX_ROLES = 4;
+
 export default function OnboardingWizard({ locale }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
@@ -60,14 +66,18 @@ export default function OnboardingWizard({ locale }: Props) {
       return;
     }
     setCvId(data.cv_id);
-    setRoles(data.suggested_roles ?? []);
+    // Difesa in profondità: il prompt istruisce Claude a restituire al
+    // massimo 4 ruoli (api/cv/upload/route.ts), ma un LLM non rispetta
+    // sempre un vincolo numerico alla lettera — stesso tetto applicato
+    // anche qui, coerente con MAX_ROLES lato API (search-config/route.ts).
+    setRoles((data.suggested_roles ?? []).slice(0, MAX_ROLES));
     setStep(3);
   }
 
   // --- Step 3: Roles ---
   function addRole() {
     const r = newRole.trim();
-    if (r && !roles.includes(r)) setRoles([...roles, r]);
+    if (r && !roles.includes(r) && roles.length < MAX_ROLES) setRoles([...roles, r]);
     setNewRole("");
   }
 
@@ -231,10 +241,20 @@ export default function OnboardingWizard({ locale }: Props) {
               onChange={(e) => setNewRole(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addRole()}
               placeholder="Aggiungi un ruolo…"
-              className="flex-1 border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              disabled={roles.length >= MAX_ROLES}
+              className="flex-1 border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
             />
-            <button onClick={addRole} className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm">+</button>
+            <button
+              onClick={addRole}
+              disabled={roles.length >= MAX_ROLES}
+              className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm disabled:opacity-50"
+            >
+              +
+            </button>
           </div>
+          <p className="text-xs text-muted-foreground">
+            {roles.length}/{MAX_ROLES} ruoli — massimo {MAX_ROLES} per mantenere la ricerca mirata e veloce.
+          </p>
           <button
             onClick={() => setStep(4)}
             disabled={roles.length === 0}

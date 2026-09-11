@@ -3,6 +3,12 @@
 import { useState } from "react";
 import CityAutocomplete, { type CityAutocompleteChange } from "@/components/city-autocomplete";
 
+// Tetto ruoli per ricerca — stesso limite del prompt AI in
+// api/cv/upload/route.ts, di onboarding-wizard.tsx e di MAX_ROLES in
+// api/search-config/route.ts. Ricerche con troppi ruoli producono
+// migliaia di offerte da fetchare/scorare, allungando tempi e costi.
+const MAX_ROLES = 4;
+
 interface SearchConfig {
   id: string;
   city: string;
@@ -37,7 +43,8 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
   });
   const [workSchedule, setWorkSchedule] = useState(config.work_schedule ?? "nessuna_preferenza");
   const [contractTypes, setContractTypes] = useState<string[]>(config.contract_types ?? []);
-  const [rolesText, setRolesText] = useState((config.roles ?? []).join("\n"));
+  const [rolesText, setRolesText] = useState((config.roles ?? []).slice(0, MAX_ROLES).join("\n"));
+  const rolesCount = rolesText.split("\n").map(r => r.trim()).filter(Boolean).length;
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -56,7 +63,7 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
     setSaving(true);
     setError("");
     setSaved(false);
-    const roles = rolesText.split("\n").map(r => r.trim()).filter(Boolean);
+    const roles = rolesText.split("\n").map(r => r.trim()).filter(Boolean).slice(0, MAX_ROLES);
     const res = await fetch("/api/search-config", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -190,6 +197,10 @@ export default function SearchConfigForm({ config }: { config: SearchConfig }) {
             rows={6}
             className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary resize-none font-mono"
           />
+          <p className={`text-xs ${rolesCount > MAX_ROLES ? "text-destructive" : "text-muted-foreground"}`}>
+            {rolesCount}/{MAX_ROLES} ruoli — massimo {MAX_ROLES} per mantenere la ricerca mirata e veloce
+            {rolesCount > MAX_ROLES ? " (solo i primi 4 verranno salvati)" : ""}.
+          </p>
         </div>
       </div>
 

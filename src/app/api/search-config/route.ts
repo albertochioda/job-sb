@@ -24,6 +24,19 @@ function clampRadiusKm(value: unknown): number | undefined {
   return Math.min(RADIUS_KM_MAX, Math.max(RADIUS_KM_MIN, n));
 }
 
+// Tetto ruoli per ricerca — stesso limite del suggerimento AI
+// (api/cv/upload/route.ts) e dello stesso motivo: ricerche con molti
+// ruoli producono migliaia di offerte da fetchare/scorare, allungando i
+// tempi e i costi (vedi analisi worker.py). Stesso approccio di clamp
+// silenzioso di clampRadiusKm sopra, non un 400: tronca ai primi 4
+// invece di rifiutare la richiesta.
+const MAX_ROLES = 4;
+
+function clampRoles(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value.slice(0, MAX_ROLES);
+}
+
 export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -71,7 +84,7 @@ export async function PATCH(request: NextRequest) {
   const { error } = await supabase
     .from("search_configs")
     .update({
-      roles, city, country: country || "Italia", geo_id: geo_id || null, radius_km: clampRadiusKm(radius_km), min_salary,
+      roles: clampRoles(roles), city, country: country || "Italia", geo_id: geo_id || null, radius_km: clampRadiusKm(radius_km), min_salary,
       work_mode: work_mode || "nessuna_preferenza",
       work_schedule: work_schedule || "nessuna_preferenza",
       contract_types: contract_types?.length ? contract_types : null,
@@ -115,7 +128,7 @@ export async function POST(request: NextRequest) {
     .insert({
       user_id: user.id,
       cv_id,
-      roles,
+      roles: clampRoles(roles),
       city: city || null,
       geo_id: geo_id || null,
       country: country || "Italia",

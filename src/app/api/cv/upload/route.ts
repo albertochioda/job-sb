@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         const msg = await anthropic.messages.create({
           model: "claude-haiku-4-5-20251001",
           max_tokens: 300,
-          system: "Sei un career coach esperto. Analizza il CV e restituisci SOLO un array JSON di 5-10 titoli di ruolo per cui questa persona è qualificata. Nessun altro testo. Esempio: [\"Lean Manager\", \"CI Manager\", \"Operations PM\"]",
+          system: "Sei un career coach esperto. Analizza il CV e restituisci SOLO un array JSON con al massimo 4 titoli di ruolo — quelli che corrispondono meglio all'esperienza REALE dimostrata nel CV (ruoli ricoperti, competenze effettivamente applicate), non semplicemente i primi che vengono in mente. Valuta insieme, senza far prevalere automaticamente l'uno sull'altro, sia la sostanza/profondità di ciascuna esperienza sia quanto è recente: un'esperienza recente ma breve può essere un cambio di carriera intenzionale (rilevante, da includere — soprattutto se il resto del CV converge in quella direzione, es. una certificazione recente coerente) oppure un episodio isolato e temporaneo (meno rilevante) — usa il buon senso guardando il CV nel suo complesso, non un criterio meccanico di sola durata o sola recency. Ordina l'array dal ruolo più al meno rilevante. Nessun altro testo. Esempio: [\"Lean Manager\", \"CI Manager\", \"Operations PM\"]",
           messages: [{ role: "user", content: extractedText.slice(0, 4000) }],
         });
         const raw = msg.content[0].type === "text" ? msg.content[0].text : "[]";
