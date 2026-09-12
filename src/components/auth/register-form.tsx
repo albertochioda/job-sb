@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { track } from "@vercel/analytics";
 import { createClient } from "@/lib/supabase/client";
+import { CURRENT_TERMS_VERSION } from "@/lib/terms-version";
 
 interface Props {
   locale: string;
@@ -43,7 +44,7 @@ export default function RegisterForm({ locale, t }: Props) {
       email,
       password,
       options: {
-        data: { full_name: fullName, terms_accepted_at: new Date().toISOString(), terms_version: "1.0-beta" },
+        data: { full_name: fullName, terms_accepted_at: new Date().toISOString(), terms_version: CURRENT_TERMS_VERSION },
         emailRedirectTo: `${window.location.origin}/api/auth/callback`,
       },
     });
@@ -162,10 +163,8 @@ export default function RegisterForm({ locale, t }: Props) {
         <span className="text-xs text-muted-foreground leading-relaxed">
           Ho letto e accetto i{" "}
           <a href={`/${locale}/termini-di-servizio`} target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:no-underline">Termini di Servizio</a>
-          {", "}la{" "}
+          {" "}e la{" "}
           <a href={`/${locale}/privacy-policy`} target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:no-underline">Privacy Policy</a>
-          {" "}e l&apos;
-          <a href={`/${locale}/accordo-riservatezza-beta`} target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:no-underline">Accordo di Riservatezza Beta</a>
           {" "}di Job Search Bridge.
         </span>
       </label>
