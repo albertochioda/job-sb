@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Share2 } from "lucide-react";
 import { track } from "@vercel/analytics";
 import SearchFilterBar from "@/components/dashboard/search-filter-bar";
@@ -14,9 +14,13 @@ interface ScoredOffer {
   location: string;
   url: string;
   source: string;
+  score_a?: number;
+  score_b?: number;
   score_final: number;
   flag: "green" | "yellow" | "red";
   motivo: string;
+  hard_gate?: boolean;
+  hard_gate_reason?: string | null;
   is_new?: boolean;
   published_at?: string | null;
 }
@@ -32,6 +36,11 @@ const FLAG_LABELS = {
   yellow: "Media",
   red: "Bassa",
 };
+
+// Stessa etichetta/palette di search-panel.tsx — vedi commento lì per il
+// razionale (esclusione vincolante, non un punteggio basso qualunque).
+const HARD_GATE_LABEL = "Requisito obbligatorio mancante";
+const HARD_GATE_COLOR = "bg-red-100 text-red-800 border-red-200";
 
 type DateBucket = "all" | "24h" | "7d" | "30d";
 const DATE_BUCKET_DAYS: Record<Exclude<DateBucket, "all">, number> = { "24h": 1, "7d": 7, "30d": 30 };
@@ -181,10 +190,33 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
         <p className="text-sm text-muted-foreground py-16 text-center">Nessuna offerta corrisponde alla ricerca.</p>
       ) : (
         <div className="space-y-3">
-          {filteredOffers.map((offer) => {
+          {filteredOffers.map((offer, index, sorted) => {
             const offerId = offer.offer_id ?? offer.id;
+            // Le offerte hard_gate arrivano già raggruppate in fondo (ordinamento
+            // server-side, vedi route.ts) — qui si inserisce solo il separatore
+            // visivo davanti alla PRIMA di esse, sezione concettualmente distinta
+            // e non l'ultimo gradino della stessa scala di merito (il badge da
+            // solo poteva far leggere "compatibilità bassa": qui manca invece un
+            // requisito esplicito della posizione, la compatibilità professionale
+            // sottostante può restare alta).
+            const isFirstGated = offer.hard_gate && (index === 0 || !sorted[index - 1].hard_gate);
             return (
-              <div key={offer.id} className="border rounded-lg p-4 space-y-2">
+              <Fragment key={offer.id}>
+                {isFirstGated && (
+                  <div className="pt-2 pb-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="h-px flex-1 bg-border" />
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        {HARD_GATE_LABEL}
+                      </p>
+                      <div className="h-px flex-1 bg-border" />
+                    </div>
+                    <p className="text-xs text-muted-foreground/70">
+                      Il profilo può comunque avere una buona compatibilità professionale: qui manca un requisito esplicito della posizione (es. normativo o legale), non il fit del ruolo.
+                    </p>
+                  </div>
+                )}
+              <div className="border rounded-lg p-4 space-y-2">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-medium text-sm">{offer.title}</p>
@@ -209,12 +241,17 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
                         </span>
                       )}
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full border font-medium whitespace-nowrap ${FLAG_COLORS[offer.flag]}`}>
-                      {FLAG_LABELS[offer.flag]} · {offer.score_final?.toFixed(1)}
+                    <span className={`text-xs px-2 py-1 rounded-full border font-medium whitespace-nowrap ${offer.hard_gate ? HARD_GATE_COLOR : FLAG_COLORS[offer.flag]}`}>
+                      {offer.hard_gate ? HARD_GATE_LABEL : FLAG_LABELS[offer.flag]} · {offer.score_final?.toFixed(1)}
                     </span>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">{offer.motivo}</p>
+                {typeof offer.score_a === "number" && typeof offer.score_b === "number" && !offer.hard_gate && (
+                  <p className="text-[10px] text-muted-foreground/70 tabular-nums">
+                    Compatibilità {offer.score_a.toFixed(1)} · Preferenze {offer.score_b.toFixed(1)}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground leading-relaxed">{offer.hard_gate ? (offer.hard_gate_reason || offer.motivo) : offer.motivo}</p>
                 <div className="flex items-center gap-3 pt-1 flex-wrap">
                   {offer.url && (
                     <a
@@ -241,6 +278,7 @@ export default function SearchResultsList({ searchId, locale }: { searchId: stri
                   </a>
                 </div>
               </div>
+              </Fragment>
             );
           })}
         </div>

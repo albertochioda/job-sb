@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
   // della vista "nascoste" (?hidden=true).
   let scoredQuery = supabase
     .from("scored_offers")
-    .select("id, score_a, score_b, score_final, flag, motivo, offer_id, is_new, scored_at, cv_id, hidden_by_user")
+    .select("id, score_a, score_b, score_final, flag, motivo, hard_gate, hard_gate_reason, offer_id, is_new, scored_at, cv_id, hidden_by_user")
     .eq("user_id", user.id)
     .eq("hidden_by_user", showHidden)
     .neq("flag", "geo_skip")
@@ -146,11 +146,17 @@ export async function GET(request: NextRequest) {
 
   if (!scored || scored.length === 0) return NextResponse.json({ offers: [], hidden_count: hiddenCount, total_count: totalCount ?? 0, reconfirmed_count: reconfirmedCount });
 
-  // Ordinamento a due livelli: prima la fascia di merito (Alta/Media/Bassa,
-  // stessa mappatura flag→label di search-panel.tsx), poi il composite_score
-  // dentro ciascuna fascia — così un'offerta nuova emerge rispetto alle altre
-  // della sua fascia, ma non scavalca mai una fascia superiore. Stessa logica
-  // applicata identica sia alla vista aggregata sia a quella per search_id.
+  // Ordinamento a tre livelli: PRIMA hard_gate (false sempre sopra true,
+  // indipendentemente dai punteggi — un requisito obbligatorio mancante è
+  // un'esclusione vincolante, non un punteggio basso: score_b da solo può
+  // tirare su score_final a "yellow" nonostante score_a sia stato
+  // limitato a ≤4.0 da compute_score_a(), diagnosi 2026-09-17 sui casi
+  // reali Manpower L.68/99 e RINA), poi la fascia di merito (Alta/Media/
+  // Bassa, stessa mappatura flag→label di search-panel.tsx), poi il
+  // composite_score dentro ciascuna fascia — così un'offerta nuova emerge
+  // rispetto alle altre della sua fascia, ma non scavalca mai una fascia
+  // superiore né un'offerta senza hard_gate. Stessa logica applicata
+  // identica sia alla vista aggregata sia a quella per search_id.
   const FLAG_RANK: Record<string, number> = { green: 0, yellow: 1, red: 2 };
 
   const withComposite = scored.map((o: any) => ({
@@ -158,6 +164,8 @@ export async function GET(request: NextRequest) {
     composite_score: (o.score_final ?? 0) + (isRecentlyScored(o.scored_at) ? 1.0 : 0),
   }));
   withComposite.sort((a, b) => {
+    const gateDiff = (a.hard_gate ? 1 : 0) - (b.hard_gate ? 1 : 0);
+    if (gateDiff !== 0) return gateDiff;
     const rankDiff = (FLAG_RANK[a.flag] ?? 99) - (FLAG_RANK[b.flag] ?? 99);
     if (rankDiff !== 0) return rankDiff;
     return b.composite_score - a.composite_score;
@@ -181,6 +189,8 @@ export async function GET(request: NextRequest) {
     score_final: o.score_final,
     flag: o.flag,
     motivo: o.motivo,
+    hard_gate: o.hard_gate,
+    hard_gate_reason: o.hard_gate_reason,
     is_new: o.is_new,
     hidden_by_user: o.hidden_by_user,
     ...jobMap[o.offer_id],

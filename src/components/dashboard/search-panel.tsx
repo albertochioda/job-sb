@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { Fragment, useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { AlertTriangle, Trash2, Share2 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -23,6 +23,8 @@ interface ScoredOffer {
   score_final: number;
   flag: "green" | "yellow" | "red";
   motivo: string;
+  hard_gate?: boolean;
+  hard_gate_reason?: string | null;
   source: string;
   is_new?: boolean;
   cv_id?: string;
@@ -52,6 +54,15 @@ const FLAG_LABELS = {
   yellow: "Media",
   red: "Bassa",
 };
+
+// hard_gate=true: un requisito obbligatorio della posizione risulta
+// mancante (es. certificazione/idoneità di legge) — un'esclusione
+// vincolante, non un punteggio basso qualunque. Badge dedicato invece
+// della fascia colore standard, stessa palette di "Bassa" ma etichetta
+// esplicita, così l'utente capisce SUBITO perché è in fondo alla lista
+// invece di leggerlo come un'offerta scarsa ma ancora processabile.
+const HARD_GATE_LABEL = "Requisito obbligatorio mancante";
+const HARD_GATE_COLOR = "bg-red-100 text-red-800 border-red-200";
 
 type DateBucket = "all" | "24h" | "7d" | "30d";
 const DATE_BUCKET_DAYS: Record<Exclude<DateBucket, "all">, number> = { "24h": 1, "7d": 7, "30d": 30 };
@@ -619,10 +630,35 @@ export default function SearchPanel({ locale }: { locale: string }) {
       {filteredOffers.length > 0 ? (
         <div className="space-y-3">
           {filteredOffers
-            .sort((a, b) => (b.score_final ?? 0) - (a.score_final ?? 0))
-            .map((offer) => (
+            .sort((a, b) => {
+              const gateDiff = (a.hard_gate ? 1 : 0) - (b.hard_gate ? 1 : 0);
+              if (gateDiff !== 0) return gateDiff;
+              return (b.score_final ?? 0) - (a.score_final ?? 0);
+            })
+            .map((offer, index, sorted) => (
+              <Fragment key={offer.id}>
+                {/* Le offerte hard_gate sono già raggruppate in fondo dal sort
+                    sopra — qui si inserisce solo il separatore visivo davanti
+                    alla PRIMA di esse, per renderle una sezione concettualmente
+                    distinta (non l'ultimo gradino della stessa scala di merito):
+                    il badge da solo poteva far leggere "compatibilità bassa",
+                    mentre qui manca un requisito esplicito della posizione — la
+                    compatibilità professionale sottostante può restare alta. */}
+                {offer.hard_gate && (index === 0 || !sorted[index - 1].hard_gate) && (
+                  <div className="pt-2 pb-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="h-px flex-1 bg-border" />
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        {HARD_GATE_LABEL}
+                      </p>
+                      <div className="h-px flex-1 bg-border" />
+                    </div>
+                    <p className="text-xs text-muted-foreground/70">
+                      Il profilo può comunque avere una buona compatibilità professionale: qui manca un requisito esplicito della posizione (es. normativo o legale), non il fit del ruolo.
+                    </p>
+                  </div>
+                )}
               <div
-                key={offer.id}
                 className="group relative block border rounded-lg p-4 hover:border-foreground/40 transition-colors space-y-2"
               >
                 <button
@@ -683,21 +719,21 @@ export default function SearchPanel({ locale }: { locale: string }) {
                       <span className="text-sm font-bold tabular-nums">
                         {offer.score_final?.toFixed(1)}
                       </span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${FLAG_COLORS[offer.flag]}`}>
-                        {FLAG_LABELS[offer.flag]}
+                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${offer.hard_gate ? HARD_GATE_COLOR : FLAG_COLORS[offer.flag]}`}>
+                        {offer.hard_gate ? HARD_GATE_LABEL : FLAG_LABELS[offer.flag]}
                       </span>
                     </div>
-                    {typeof offer.score_a === "number" && typeof offer.score_b === "number" && (
+                    {typeof offer.score_a === "number" && typeof offer.score_b === "number" && !offer.hard_gate && (
                       <span className="text-[10px] text-muted-foreground/70 tabular-nums">
-                        Compatibilità {offer.score_a.toFixed(1)} · Fit {offer.score_b.toFixed(1)}
+                        Compatibilità {offer.score_a.toFixed(1)} · Preferenze {offer.score_b.toFixed(1)}
                       </span>
                     )}
                   </div>
                 </div>
-                {offer.motivo && (
+                {(offer.hard_gate ? (offer.hard_gate_reason || offer.motivo) : offer.motivo) && (
                   <div>
                     <p className={`text-xs text-muted-foreground leading-relaxed ${expandedCards.has(offer.id) ? "" : "line-clamp-3"}`}>
-                      {offer.motivo}
+                      {offer.hard_gate ? (offer.hard_gate_reason || offer.motivo) : offer.motivo}
                     </p>
                     {offer.motivo.length > 150 && (
                       <button
@@ -820,6 +856,7 @@ export default function SearchPanel({ locale }: { locale: string }) {
                   </div>
                 )}
               </div>
+              </Fragment>
             ))}
         </div>
       ) : offers.length === 0 && viewingHidden ? (
