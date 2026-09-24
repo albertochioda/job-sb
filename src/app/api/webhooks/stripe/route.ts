@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { track } from "@vercel/analytics/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendEmail, escapeHtml } from "@/lib/email";
+import { SITE_URL } from "@/lib/site-url";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -61,6 +63,115 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+
+        // Trial (Opzione A, "paga-prima", 2026-09-23): nessun utente esiste
+        // ancora — a differenza del ramo sotto (upgrade di un utente già
+        // autenticato), qui l'intero account Supabase nasce ORA, solo dopo
+        // pagamento confermato. Ramo separato perché la forma dei dati è
+        // diversa fin dall'inizio (email/nome nei metadata, non uno user_id).
+        if (session.metadata?.intent === "trial_signup") {
+          const email = session.metadata.email;
+          const fullName = session.metadata.full_name;
+          const termsAcceptedAt = session.metadata.terms_accepted_at;
+          const termsVersion = session.metadata.terms_version;
+          const marketingConsent = session.metadata.marketing_consent === "true";
+          const locale = session.metadata.locale === "en" ? "en" : "it";
+          const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
+
+          if (!email || !fullName || !termsAcceptedAt || !termsVersion) {
+            console.error("[stripe-webhook] trial_signup senza metadata completi:", session.id);
+            break;
+          }
+
+          // admin.createUser() fa scattare public.handle_new_user() (trigger
+          // su auth.users, non toccato) esattamente come un signUp() diretto:
+          // crea profiles + subscriptions(tier='trial', status='active',
+          // period_end=+14gg) — la differenza è che ora questo accade SOLO
+          // qui, dopo il pagamento, mai più al semplice signUp() lato client.
+          const { data: created, error: createErr } = await supabase.auth.admin.createUser({
+            email,
+            email_confirm: true,
+            user_metadata: { full_name: fullName, terms_accepted_at: termsAcceptedAt, terms_version: termsVersion },
+          });
+
+          let newUserId = created?.user?.id;
+          if (createErr) {
+            // "già registrato" può succedere con doppio submit/doppia tab —
+            // idempotente: risale all'utente già creato invece di fallire,
+            // così il webhook non va in retry loop su un evento Stripe che
+            // non può più cambiare esito. Qualunque altro errore resta
+            // genuinamente riprovabile (throw sotto, gestito dal catch globale).
+            if (!/already.*registered|already.*exists/i.test(createErr.message)) {
+              throw new Error(`admin.createUser (trial_signup): ${createErr.message}`);
+            }
+            const { data: existing } = await supabase.from("profiles").select("id").eq("email", email).maybeSingle();
+            newUserId = existing?.id;
+            console.warn("[stripe-webhook] trial_signup: utente già esistente, riuso:", email);
+          }
+          if (!newUserId) {
+            throw new Error(`trial_signup: impossibile determinare user_id per ${email}`);
+          }
+
+          const { error: updErr } = await supabase
+            .from("subscriptions")
+            .update({
+              stripe_customer_id: customerId ?? null,
+              first_payment_at: new Date().toISOString(),
+              // Riga appena creata dal trigger: mai valorizzato prima, nessun
+              // controllo "solo se null" necessario a differenza del ramo
+              // upgrade sotto (qui non può esistere un riabbono precedente).
+              first_subscription_started_at: new Date().toISOString(),
+            })
+            .eq("user_id", newUserId);
+          if (updErr) console.error("[stripe-webhook] trial_signup: errore aggiornamento subscriptions:", updErr.message);
+
+          if (marketingConsent) {
+            const { error: profErr } = await supabase
+              .from("profiles")
+              .update({ marketing_consent: true, marketing_consent_at: new Date().toISOString() })
+              .eq("id", newUserId);
+            if (profErr) console.error("[stripe-webhook] trial_signup: errore marketing_consent:", profErr.message);
+          }
+
+          // Magic link invece di una password scelta dall'utente: niente
+          // password è mai transitata per Stripe (metadata visibili in
+          // Dashboard, mai il posto giusto per un segreto).
+          //
+          // redirectTo punta a /trial/activate, NON a /onboarding: i token
+          // di sessione generati da admin.generateLink() arrivano nel
+          // FRAMMENTO dell'url (#access_token=...), mai in una query
+          // ?code= — un frammento non viene mai inviato al server da
+          // nessun browser, quindi nessuna pagina server-side potrebbe
+          // mai stabilire la sessione. /trial/activate è quasi interamente
+          // un Client Component fatto apposta per leggerlo (vedi il file
+          // per il perché) e far scegliere una password prima di procedere
+          // — verificato il 2026-09-24 con un utente reale usa-e-getta.
+          const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
+            type: "magiclink",
+            email,
+            options: { redirectTo: `${SITE_URL}/${locale}/trial/activate` },
+          });
+          if (linkErr || !linkData?.properties?.action_link) {
+            console.error("[stripe-webhook] trial_signup: errore generazione magic link:", linkErr?.message);
+            break; // pagamento e account restano validi; l'utente può comunque
+                    // accedere da /login con "password dimenticata" sulla sua email
+          }
+
+          const safeName = escapeHtml(fullName);
+          const link = linkData.properties.action_link;
+          await sendEmail({
+            to: email,
+            subject: "Il tuo Trial di Job Search Bridge è pronto",
+            html: `<p>Ciao ${safeName},</p>` +
+              `<p>Il pagamento è andato a buon fine: il tuo Trial di 14 giorni è attivo.</p>` +
+              `<p><a href="${link}">Clicca qui per accedere al tuo account</a></p>` +
+              `<p>Il link è valido per un tempo limitato e usabile una sola volta — se scade, richiedine uno nuovo dalla pagina di accesso.</p>`,
+          });
+
+          await track("trial_pagato");
+          break;
+        }
+
         const userId = session.metadata?.user_id;
         const tier = session.metadata?.tier;
         const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
@@ -116,6 +227,20 @@ export async function POST(request: NextRequest) {
         // (vedi scripts/sql-subscriptions-first-subscription-started-at.sql).
         if (!existingSub?.first_subscription_started_at) {
           updatePayload.first_subscription_started_at = new Date().toISOString();
+        }
+
+        // "Un altro giro di Trial" (tier='trial', mode:"payment", nessuna
+        // Subscription Stripe dietro): a differenza di Individual/
+        // Professional, qui non arriverà mai un invoice.paid a impostare
+        // period_start/period_end — un pagamento one-time non ha fatture
+        // successive. Vanno quindi scritti qui, subito, stesso schema di
+        // 14 giorni di handle_new_user(). notified_trial_end_at torna a
+        // NULL: è un nuovo giro, va ri-notificato alla sua fine, non a
+        // quella (già notificata) del giro precedente.
+        if (tier === "trial") {
+          updatePayload.period_start = new Date().toISOString();
+          updatePayload.period_end = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+          updatePayload.notified_trial_end_at = null;
         }
 
         const { data, error } = await supabase

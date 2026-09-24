@@ -37,6 +37,7 @@
     "subheadlineLine2": "You stay focused on what really matters:",
     "subheadlineLine3": "the interview.",
     "cta": "Start for free",
+    "pricingCta": "Start your trial",
     "founderQuote": "I built this because I was job hunting myself. I saved listings by hand, fed them one by one to an AI to see if they made sense for my profile: most didn't. The good ones I adapted with prompt after prompt, never quite getting the format I wanted. And more than once, by the time I was ready to apply, the listing was already gone. Job Search Bridge does that part for you, start to finish, so you never lose an opportunity to the fatigue of endless scrolling.",
     "founderName": "Alberto Chioda",
     "founderRole": "Founder",
@@ -111,13 +112,14 @@
     "pricingTitle": "Pricing",
     "pricingTable": {
       "plans": [
-        { "name": "Trial", "meta": "14 days" },
-        { "name": "Individual", "meta": "€19/month" },
-        { "name": "Professional", "meta": "€29/month", "badge": "Continuity from trial" }
+        { "name": "Trial", "meta": "14 days", "audience": "For anyone who wants to try the service before choosing a full plan" },
+        { "name": "Individual", "meta": "€19/month", "audience": "For active job seekers who want to evaluate more opportunities every week" },
+        { "name": "Professional", "meta": "€29/month", "audience": "For those searching on multiple fronts who need CVs and cover letters at higher volumes", "badge": "Continuity from trial" }
       ],
       "rows": [
         { "label": "Searches/month", "values": ["3", "10", "20"] },
-        { "label": "Adapted CVs/month", "values": ["3", "15", "30"] },
+        { "label": "Adapted CVs/month", "values": ["5", "15", "30"] },
+        { "label": "Cover letters/month", "values": ["5", "15", "30"] },
         { "label": "Minimal Smart template", "values": [true, true, true] },
         { "label": "Professional template", "values": [true, false, true] },
         { "label": "Two Column template", "values": [true, false, true] },

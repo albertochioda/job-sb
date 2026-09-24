@@ -23,6 +23,14 @@ export const PLAN_PRICES: Record<Tier, Record<Cadence, number>> = {
   professional: { monthly: 29, quarterly: 75, annual: 249 },
 };
 
+// Trial: un solo Price Stripe one-time (mode "payment", non "subscription"),
+// fuori da VALID_TIERS/VALID_CADENCES di proposito — quelle guidano la UI e
+// il checkout ricorrente di Individual/Professional, una forma diversa da
+// un pagamento singolo. Vedi scripts/stripe-setup-products.mjs (blocco
+// "trial") e api/checkout/create-trial-signup-session/route.ts.
+export const TRIAL_LOOKUP_KEY = "trial_onetime";
+export const TRIAL_PRICE_EUR = 3.49;
+
 export const CADENCE_LABELS: Record<Cadence, string> = {
   monthly: "Mensile",
   quarterly: "Trimestrale",

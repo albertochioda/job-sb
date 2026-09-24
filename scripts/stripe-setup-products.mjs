@@ -1,5 +1,5 @@
 /**
- * Crea (o recupera, se già esistenti) i 2 Product e 6 Price di Job Search Bridge su Stripe.
+ * Crea (o recupera, se già esistenti) i 3 Product e 7 Price di Job Search Bridge su Stripe.
  * Idempotente: usa `lookup_key` sui Price per evitare duplicati a run ripetuti —
  * se un Price con quel lookup_key esiste già, viene riusato invece di ricreato.
  *
@@ -8,6 +8,11 @@
  *
  * Richiede STRIPE_SECRET_KEY impostata in .env.local (o nell'ambiente).
  * Non tocca checkout/webhook/customer portal — solo catalogo prodotti.
+ *
+ * Trial (aggiunto 2026-09-23): un solo Price ONE-TIME (mode "payment" nel
+ * checkout, non "subscription") — niente campo `recurring`, a differenza di
+ * Individual/Professional. `oneTime: true` in PRICES fa saltare
+ * `recurring: {...}` nella chiamata a stripe.prices.create() sotto.
  */
 import Stripe from "stripe";
 import { readFileSync } from "fs";
@@ -31,6 +36,14 @@ if (!apiKey) {
 const stripe = new Stripe(apiKey);
 
 const PLANS = [
+  {
+    tier: "trial",
+    productName: "Job Search Bridge Trial",
+    productMetadata: { job_sb_tier: "trial" },
+    prices: [
+      { cadence: "onetime", lookup_key: "trial_onetime", amount: 349, oneTime: true },
+    ],
+  },
   {
     tier: "individual",
     productName: "Job Search Bridge Individual",
@@ -87,7 +100,9 @@ async function findOrCreatePrice(product, plan, priceSpec) {
     product: product.id,
     currency: "eur",
     unit_amount: priceSpec.amount,
-    recurring: { interval: priceSpec.interval, interval_count: priceSpec.interval_count },
+    // Trial: nessun campo `recurring` -> Price one-time, usato in checkout
+    // con mode:"payment" invece di mode:"subscription" (vedi create-session).
+    ...(priceSpec.oneTime ? {} : { recurring: { interval: priceSpec.interval, interval_count: priceSpec.interval_count } }),
     lookup_key: priceSpec.lookup_key,
     metadata: { job_sb_tier: plan.tier, job_sb_cadence: priceSpec.cadence },
   });

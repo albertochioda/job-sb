@@ -113,7 +113,7 @@ const SCORE_LABEL: Record<"high" | "mid", string> = {
 };
 
 type CompetitorRow = { label: string; diy: string; bot: string; us: string };
-type PricingPlan = { name: string; meta: string; badge?: string };
+type PricingPlan = { name: string; meta: string; audience: string; badge?: string };
 type PricingRow = { label: string; values: (string | boolean)[] };
 
 const PILLAR_ICONS = [Target, FilePenLine, EyeOff];
@@ -385,6 +385,7 @@ export default async function HomePage({
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">{plan.name}</p>
                   <p className="text-2xl font-medium">{plan.meta}</p>
+                  <p className="text-sm text-muted-foreground mt-2">{plan.audience}</p>
                 </div>
                 <ul className="flex flex-col gap-1.5 text-sm">
                   {pricingRows.map((row) => {
@@ -417,7 +418,7 @@ export default async function HomePage({
               href="/register"
               className="bg-primary text-primary-foreground px-8 py-3 rounded-lg text-lg font-medium hover:bg-primary/90"
             >
-              {t("cta")}
+              {t("pricingCta")}
             </Link>
           </div>
         </div>
