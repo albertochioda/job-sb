@@ -10,8 +10,8 @@ const ALERT_EMAIL_TO = process.env.ALERT_EMAIL_TO || "alberto.chioda@orvendecisi
 const REFUND_WINDOW_MS = 14 * 24 * 60 * 60 * 1000; // Art. 7 ToS
 
 // Tabelle con user_id ma SENZA foreign key verso auth.users (verificato via
-// information_schema — vedi scripts/sql-account-deletion.sql per il
-// contesto): il CASCADE di deleteUser() non le tocca, vanno svuotate qui
+// pg_constraint — vedi scripts/sql-account-deletion.sql per il contesto):
+// il CASCADE di deleteUser() non le tocca, vanno svuotate qui
 // esplicitamente. Includerne una che in realtà avesse già CASCADE non fa
 // danno: diventa solo un DELETE ridondante di 0 righe.
 //
@@ -19,7 +19,19 @@ const REFUND_WINDOW_MS = 14 * 24 * 60 * 60 * 1000; // Art. 7 ToS
 // searches.id (FK confermata da un test end-to-end reale — cancellare
 // searches PRIMA di scored_offers fallisce con violazione di foreign key,
 // finché scored_offers non viene svuotata a sua volta). scored_offers deve
-// quindi precedere searches in questa lista.
+// quindi precedere searches in questa lista. Diventa irrilevante una volta
+// eseguita la migration che porta quella FK a ON DELETE SET NULL, ma non la
+// rimuoviamo finché quella migration non è confermata applicata — non fa
+// danno lasciarla.
+//
+// track_v_demand_log, track_v_cluster_discoveries e
+// diagnostic_search_params_log non hanno FK per scelta di design (scritte
+// solo dal worker via service-role key, vedi le rispettive migration nel
+// repo job-sb-worker) — ma contengono comunque user_id, quindi vanno
+// svuotate qui allo stesso modo per una cancellazione account davvero
+// completa. diagnostic_search_params_log è qui SOLO finché non viene
+// eventualmente droppata (vedi audit privacy 2026-09-24, punto 7): se in
+// futuro la tabella viene rimossa, questa riga va tolta insieme al resto.
 const TABLES_WITHOUT_CASCADE = [
   "cancellation_feedback",
   "generated_letters",
@@ -27,7 +39,50 @@ const TABLES_WITHOUT_CASCADE = [
   "searches",
   "support_reports",
   "support_chat_log",
+  "track_v_demand_log",
+  "track_v_cluster_discoveries",
+  "diagnostic_search_params_log",
 ] as const;
+
+// Storage bucket "cvs": oltre al prefisso radice {userId}/ (CV originali),
+// il worker Python scrive anche CV adattati e lettere generate sotto due
+// sotto-prefissi paralleli — mai ripuliti finché questa funzione non è
+// stata aggiunta (audit privacy 2026-09-24, punto 1). list() di Supabase
+// Storage pagina a 100 file di default: senza il loop, un utente con più
+// di 100 CV adattati/lettere lascerebbe file orfani.
+async function removeAllInPrefix(
+  admin: ReturnType<typeof createAdminClient>,
+  bucket: string,
+  prefix: string
+): Promise<void> {
+  const PAGE_SIZE = 100;
+  // NIENTE offset incrementale: list() è sempre relativa allo stato
+  // ATTUALE del prefisso, non a uno snapshot. Dopo ogni remove(), i file
+  // restanti si spostano in cima alla lista — un offset che avanza
+  // salterebbe elementi appena scivolati in prima posizione, lasciandoli
+  // orfani (bug reale, trovato testando questa funzione su più pagine
+  // prima del deploy: con offset incrementale, su 5 file con pagine da 2,
+  // ne restavano 2 su 5 mai rimossi). Si richiede quindi sempre la stessa
+  // "prima pagina", finché non è vuota o parziale.
+  for (;;) {
+    const { data: files, error } = await admin.storage
+      .from(bucket)
+      .list(prefix, { limit: PAGE_SIZE });
+    if (error) {
+      console.error(`[account/delete/confirm] errore list storage '${bucket}/${prefix}':`, error.message);
+      return;
+    }
+    if (!files?.length) return;
+    const { error: removeError } = await admin.storage
+      .from(bucket)
+      .remove(files.map((f) => `${prefix}${f.name}`));
+    if (removeError) {
+      console.error(`[account/delete/confirm] errore remove storage '${bucket}/${prefix}':`, removeError.message);
+      return;
+    }
+    if (files.length < PAGE_SIZE) return;
+  }
+}
 
 export async function POST(request: NextRequest) {
   const { token } = await request.json();
@@ -187,14 +242,11 @@ export async function POST(request: NextRequest) {
   }
 
   // Storage: nessun CASCADE tocca mai i bucket, vanno svuotati esplicitamente.
-  try {
-    const { data: cvFiles } = await admin.storage.from("cvs").list(userId);
-    if (cvFiles?.length) {
-      await admin.storage.from("cvs").remove(cvFiles.map((f) => `${userId}/${f.name}`));
-    }
-  } catch (storageError) {
-    console.error("[account/delete/confirm] errore pulizia storage 'cvs':", storageError);
-  }
+  // Tre prefissi nel bucket "cvs": CV originali (radice), CV adattati e
+  // lettere generate (sotto-prefissi scritti dal worker Python).
+  await removeAllInPrefix(admin, "cvs", `${userId}/`);
+  await removeAllInPrefix(admin, "cvs", `adapted_cvs/${userId}/`);
+  await removeAllInPrefix(admin, "cvs", `cover_letters/${userId}/`);
   await admin.storage.from("photos").remove([
     `${userId}/profile.jpg`,
     `${userId}/profile.png`,
@@ -214,6 +266,19 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ error: "Si è verificato un errore, il nostro team è stato avvisato" }, { status: 500 });
   }
+
+  // A questo punto l'utente non esiste più in auth.users — l'indirizzo va
+  // preso dalla variabile locale userEmail (catturata a inizio funzione),
+  // mai da una query post-cancellazione che non troverebbe più nulla.
+  await sendEmail({
+    to: userEmail,
+    subject: "Il tuo account Job Search Bridge è stato eliminato",
+    html: `<p>Confermiamo che il tuo account e tutti i dati associati sono stati eliminati come richiesto.</p>` +
+      (refundIssued
+        ? `<p>Il rimborso pro-rata (${((refundAmountCents ?? 0) / 100).toFixed(2)}€) è stato elaborato sul metodo di pagamento originale.</p>`
+        : "") +
+      `<p>Se non hai richiesto tu questa cancellazione, scrivi immediatamente a support@jobsearchbridge.com.</p>`,
+  });
 
   return NextResponse.json({ success: true });
 }

@@ -104,6 +104,10 @@ export async function POST() {
       languages: config.languages ?? ["it"],
     },
     cv_text: cv.extracted_text ?? "",
+    // Epoch secondi, non ISO: il worker Python lo confronta direttamente
+    // con time.time() al pop dalla coda, per scartare task rimasti troppo
+    // a lungo senza essere processati (audit privacy 2026-09-24, punto 5).
+    enqueued_at: Math.floor(Date.now() / 1000),
   };
 
   try {

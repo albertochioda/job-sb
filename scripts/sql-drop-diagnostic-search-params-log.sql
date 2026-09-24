@@ -1,0 +1,23 @@
+-- Audit privacy 2026-09-24, punto 7 — NON ESEGUIRE finché non confermi
+-- esplicitamente che l'indagine sulla contaminazione di parametri fra
+-- ricerche concorrenti è chiusa.
+--
+-- Evidenza raccolta a supporto della rimozione (analisi read-only dei 98
+-- dati esistenti, 25/8→23/9/2026): 51 ricerche distinte, 47 con entrambi
+-- i checkpoint confrontabili, ZERO divergenze trovate, e 8 coppie di
+-- ricerche con overlap temporale reale confermato (la concorrenza che il
+-- test doveva catturare si è davvero verificata, non solo in teoria).
+--
+-- Nel frattempo, in sostituzione, è attivo un passo di retention a 30
+-- giorni CONSOLIDATO dentro api/cron/trial-end-check/route.ts (non un
+-- cron a sé — vedi il commento in cima a quel file per il perché) — se
+-- decidi di eseguire questa migration, quel passo va rimosso insieme ad
+-- essa (non lasciato a girare a vuoto su una tabella che non esiste più),
+-- e vanno rimossi anche:
+--   - le chiamate _log_diagnostic_params() in job-sb-worker/worker.py
+--   - la voce "diagnostic_search_params_log" in TABLES_WITHOUT_CASCADE
+--     (job-ssb/src/app/api/account/delete/confirm/route.ts)
+-- Nessuna di queste rimozioni di codice è stata fatta: solo questa
+-- migration è pronta, in attesa della tua conferma.
+
+DROP TABLE diagnostic_search_params_log;

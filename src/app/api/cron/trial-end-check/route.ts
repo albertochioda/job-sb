@@ -22,9 +22,20 @@ import { TRIAL_PRICE_EUR } from "@/lib/billing/plans";
  *
  * Idempotente per costruzione: notified_trial_end_at (NULL = da notificare)
  * evita reinvii — nessuna tabella di dedup evento separata necessaria.
+ *
+ * Include anche la retention temporanea di diagnostic_search_params_log
+ * (audit privacy 2026-09-24, punto 7) come passo AGGIUNTIVO, non un cron
+ * a sé — consolidamento deciso per restare sotto il limite di 2 cron job
+ * del piano Vercel Hobby (rimandato l'upgrade a Pro finché Stripe non
+ * passa in modalità live). Stesso giorno/orario di esecuzione di questo
+ * cron, ma completamente isolato: un fallimento nella pulizia diagnostica
+ * non deve mai impedire l'invio delle email di fine Trial, e viceversa —
+ * per questo il blocco sotto ha il proprio try/catch indipendente ed è
+ * best-effort, mai un throw che interromperebbe il resto della funzione.
  */
 
 const TRIAL_RUNS_LIMIT = 3; // usage_limits.runs_per_month per tier='trial' — vedi nota sotto
+const DIAGNOSTIC_LOG_RETENTION_DAYS = 30;
 
 export async function GET(request: NextRequest) {
   const auth = request.headers.get("Authorization");
@@ -33,6 +44,26 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = createAdminClient();
+
+  // Passo indipendente, isolato dal resto della funzione — vedi commento
+  // sopra. diagnosticLogDeleted resta null se il passo fallisce o se la
+  // tabella non esiste più (es. droppata nel frattempo): non è un errore
+  // da propagare, solo un'informazione in più nella risposta JSON finale.
+  let diagnosticLogDeleted: number | null = null;
+  try {
+    const cutoff = new Date(Date.now() - DIAGNOSTIC_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    const { error: diagError, count } = await supabase
+      .from("diagnostic_search_params_log")
+      .delete({ count: "exact" })
+      .lt("logged_at", cutoff);
+    if (diagError) {
+      console.error("[cron/trial-end-check] retention diagnostic_search_params_log fallita:", diagError.message);
+    } else {
+      diagnosticLogDeleted = count ?? 0;
+    }
+  } catch (diagException) {
+    console.error("[cron/trial-end-check] retention diagnostic_search_params_log — eccezione:", diagException);
+  }
 
   // TRIAL_RUNS_LIMIT è oggi una costante locale, non letta da usage_limits:
   // quella tabella non ha una policy di cache/invalidazione qui, e il
@@ -107,5 +138,5 @@ export async function GET(request: NextRequest) {
     sent += 1;
   }
 
-  return NextResponse.json({ checked: rows.length, sent, failed });
+  return NextResponse.json({ checked: rows.length, sent, failed, diagnosticLogDeleted });
 }

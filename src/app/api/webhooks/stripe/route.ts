@@ -241,6 +241,17 @@ export async function POST(request: NextRequest) {
           updatePayload.period_start = new Date().toISOString();
           updatePayload.period_end = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
           updatePayload.notified_trial_end_at = null;
+        } else if (subscriptionId) {
+          // Cadenza di fatturazione (monthly/quarterly/annual), letta dal
+          // Price di Stripe — serve al cron di reminder pre-rinnovo
+          // (api/cron/renewal-reminder), che oggi non ha altro modo di
+          // sapere il ciclo di un abbonamento senza richiamare Stripe per
+          // ognuno. Il Trial (one-time, mode:"payment") non ha una vera
+          // cadenza: il ramo sopra lo gestisce a parte.
+          const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+          const cadence = stripeSub.items.data[0]?.price?.metadata?.job_sb_cadence;
+          if (cadence) updatePayload.cadence = cadence;
+          updatePayload.notified_renewal_at = null;
         }
 
         const { data, error } = await supabase
@@ -297,6 +308,11 @@ export async function POST(request: NextRequest) {
           updatePayload.runs_used = 0;
           updatePayload.cvs_adapted_used = 0;
           updatePayload.cover_letters_used = 0;
+          // Nuovo ciclo iniziato: il reminder pre-rinnovo va ri-notificato
+          // per QUESTO periodo, non deve restare "già notificato" per
+          // sempre dal periodo precedente (stesso principio già applicato
+          // a notified_trial_end_at).
+          updatePayload.notified_renewal_at = null;
         }
         if (item) {
           updatePayload.period_start = toIso(item.current_period_start);
@@ -317,12 +333,35 @@ export async function POST(request: NextRequest) {
         const subscriptionId = getInvoiceSubscriptionId(invoice);
         if (!subscriptionId) break;
 
-        const { error } = await supabase
+        const { data: failedSub, error } = await supabase
           .from("subscriptions")
           .update({ status: "past_due" })
-          .eq("stripe_subscription_id", subscriptionId);
+          .eq("stripe_subscription_id", subscriptionId)
+          .select("user_id")
+          .single();
 
         if (error) throw new Error(`update status past_due: ${error.message}`);
+
+        // Best-effort: l'email è un avviso aggiuntivo al modale in-app già
+        // esistente (trial-expired-modal.tsx), non l'unico canale — un suo
+        // fallimento non deve far fallire l'intero webhook.
+        if (failedSub?.user_id) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("email, full_name")
+            .eq("id", failedSub.user_id)
+            .single();
+          if (profile?.email) {
+            const safeName = escapeHtml(profile.full_name || "");
+            await sendEmail({
+              to: profile.email,
+              subject: "Non siamo riusciti ad addebitare il rinnovo — Job Search Bridge",
+              html: `<p>Ciao ${safeName || ""},</p>` +
+                `<p>Il pagamento per il rinnovo del tuo abbonamento non è andato a buon fine. Il tuo accesso resta attivo nel frattempo, ma ti consigliamo di aggiornare il metodo di pagamento dal tuo profilo per evitare interruzioni.</p>` +
+                `<p>Se il problema persiste, scrivici a support@jobsearchbridge.com.</p>`,
+            });
+          }
+        }
         break;
       }
 
@@ -334,12 +373,14 @@ export async function POST(request: NextRequest) {
         // sovrascrivere uno stato aggiornato con uno stantio.
         const stripeSub = await stripe.subscriptions.retrieve(subEvent.id);
         const tier = stripeSub.items.data[0]?.price?.metadata?.job_sb_tier;
+        const cadence = stripeSub.items.data[0]?.price?.metadata?.job_sb_cadence;
 
         const updatePayload: Record<string, unknown> = {
           status: stripeSub.status,
           cancel_at_period_end: stripeSub.cancel_at_period_end,
         };
         if (tier) updatePayload.tier = tier;
+        if (cadence) updatePayload.cadence = cadence;
 
         // pending_tier_change (api/billing/change-plan) va ripulito solo
         // quando il tier confermato da Stripe coincide con quello

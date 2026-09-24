@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/trial-end-check",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/renewal-reminder",
+      "schedule": "0 8 * * *"
     }
   ]
 }
