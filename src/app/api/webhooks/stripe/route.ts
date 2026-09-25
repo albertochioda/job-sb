@@ -318,6 +318,8 @@ export async function POST(request: NextRequest) {
               <p>Puoi disdire in qualsiasi momento dal tuo profilo: se lo fai, il servizio resta comunque attivo fino al <strong>${renewalDateLabel}</strong> già pagato, senza ulteriori addebiti.</p>
               <p><a href="${manageUrl}">Gestisci il tuo abbonamento</a></p>
               <p>Per assistenza: support@jobsearchbridge.com</p>
+              <hr>
+              <p style="font-size:12px;color:#666;">Questa è una comunicazione di servizio relativa al tuo abbonamento e viene inviata indipendentemente dalle preferenze relative alle comunicazioni promozionali.</p>
             `;
 
             const emailResult = await sendEmail({
