@@ -44,14 +44,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "upload_failed", message: "Errore caricamento foto" }, { status: 500 });
     }
 
-    // URL pubblico (il bucket photos deve essere public, oppure usiamo signed)
-    const { data: publicData } = admin.storage.from("photos").getPublicUrl(storagePath);
-    const photoUrl = publicData.publicUrl;
-
-    // Salva photo_url nel profilo
+    // Bucket "photos" privato (corretto 2026-09-25, era pubblico) — si
+    // salva il path relativo, mai un URL, coerente con cvs.file_url.
+    // Ogni lettura genera un signed URL al momento, mai persistito.
     const { error: dbError } = await supabase
       .from("profiles")
-      .update({ photo_url: photoUrl })
+      .update({ photo_url: storagePath })
       .eq("id", user.id);
 
     if (dbError) {
@@ -59,7 +57,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "db_error", message: "Errore salvataggio profilo" }, { status: 500 });
     }
 
-    return NextResponse.json({ photo_url: photoUrl });
+    // Signed URL SOLO per l'anteprima immediata lato client — mai
+    // persistito. Se la firma fallisse (raro, errore transitorio), il
+    // caricamento resta comunque riuscito: il client mostra un placeholder
+    // finché la pagina non viene ricaricata.
+    const { data: signedData, error: signError } = await admin.storage
+      .from("photos")
+      .createSignedUrl(storagePath, 3600);
+    if (signError) {
+      console.error("[photo-upload] sign error (upload comunque riuscito):", signError);
+    }
+
+    return NextResponse.json({ photo_url: signedData?.signedUrl ?? null });
   } catch (e) {
     console.error("[photo-upload] unexpected:", e);
     return NextResponse.json({ error: "server_error", message: "Errore interno" }, { status: 500 });

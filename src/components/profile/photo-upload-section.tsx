@@ -33,7 +33,13 @@ export default function PhotoUploadSection({ currentPhotoUrl }: { currentPhotoUr
         setError(data.message ?? "Errore caricamento");
         return;
       }
-      setPhotoUrl(data.photo_url + "?t=" + Date.now()); // cache-bust
+      // data.photo_url è ora un signed URL fresco (token univoco ad ogni
+      // generazione) — nessun cache-bust manuale necessario, e comunque
+      // dannoso: concatenare "?t=" a un URL che ha già una propria query
+      // string di firma produrrebbe due "?" nello stesso URL, non valido.
+      // Se la firma fosse fallita lato server (raro), photo_url è null:
+      // l'upload resta riuscito, l'anteprima si aggiorna al prossimo reload.
+      if (data.photo_url) setPhotoUrl(data.photo_url);
       setSuccess("Foto aggiornata.");
     } finally {
       setUploading(false);

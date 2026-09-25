@@ -13,6 +13,7 @@ import AccountDangerZone from "@/components/profile/account-danger-zone";
 import { getTierLimits } from "@/lib/usage-limits";
 import Link from "next/link";
 import SupportChatIcon from "@/components/support-chat-icon";
+import { normalizePhotoPath } from "@/lib/storage-path";
 
 export default async function ProfilePage({
   params,
@@ -55,13 +56,15 @@ export default async function ProfilePage({
     .eq("is_active", true)
     .single();
 
-  // Signed URL per anteprima foto (funziona con bucket privato)
+  // Signed URL per anteprima foto — bucket privato, accetta sia il path
+  // relativo (formato attuale) sia il vecchio URL pubblico completo
+  // (profili salvati prima della correzione privacy 2026-09-25).
   let photoPreviewUrl: string | null = null;
   if (profile?.photo_url) {
-    const pathMatch = profile.photo_url.match(/\/photos\/(.+?)(?:\?|$)/);
-    if (pathMatch) {
+    const path = normalizePhotoPath(profile.photo_url);
+    if (path) {
       const admin = createAdminClient();
-      const { data: photoSigned } = await admin.storage.from("photos").createSignedUrl(pathMatch[1], 3600);
+      const { data: photoSigned } = await admin.storage.from("photos").createSignedUrl(path, 3600);
       photoPreviewUrl = photoSigned?.signedUrl ?? null;
     }
   }

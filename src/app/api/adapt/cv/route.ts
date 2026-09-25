@@ -5,6 +5,7 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { getTierLimits } from "@/lib/usage-limits";
 import { isTemplateAllowed } from "@/lib/cv-templates";
 import { reserveUsage, releaseUsage } from "@/lib/usage-counter";
+import { normalizePhotoPath } from "@/lib/storage-path";
 
 const adminSupabase = createAdminClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -270,15 +271,16 @@ export async function POST(request: NextRequest) {
   }
   const cvSignedUrl: string = cvSigned.signedUrl;
 
-  // Genera signed URL per la foto profilo (funziona anche con bucket privato)
+  // Genera signed URL per la foto profilo — bucket privato, accetta sia il
+  // path relativo (formato attuale) sia il vecchio URL pubblico completo
+  // (profili salvati prima della correzione privacy 2026-09-25).
   let photoSignedUrl: string | null = null;
   if (profile?.photo_url) {
-    // Estrai il path relativo dall'URL memorizzato: tutto dopo "/photos/"
-    const photoPathMatch = profile.photo_url.match(/\/photos\/(.+?)(?:\?|$)/);
-    if (photoPathMatch) {
+    const photoPath = normalizePhotoPath(profile.photo_url);
+    if (photoPath) {
       const { data: photoSigned } = await adminSupabase.storage
         .from("photos")
-        .createSignedUrl(photoPathMatch[1], 3600);
+        .createSignedUrl(photoPath, 3600);
       photoSignedUrl = photoSigned?.signedUrl ?? null;
     }
     if (!photoSignedUrl) {
