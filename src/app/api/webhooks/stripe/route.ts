@@ -4,6 +4,16 @@ import { track } from "@vercel/analytics/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, escapeHtml } from "@/lib/email";
 import { SITE_URL } from "@/lib/site-url";
+import { CADENCE_LABELS } from "@/lib/billing/plans";
+
+const TIER_LABELS: Record<string, string> = {
+  individual: "Individual",
+  professional: "Professional",
+};
+
+function formatDateIt(unixSeconds: number): string {
+  return new Date(unixSeconds * 1000).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" });
+}
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -237,6 +247,10 @@ export async function POST(request: NextRequest) {
         // 14 giorni di handle_new_user(). notified_trial_end_at torna a
         // NULL: è un nuovo giro, va ri-notificato alla sua fine, non a
         // quella (già notificata) del giro precedente.
+        // Usati sotto per l'email di conferma abbonamento mensile, fuori
+        // dallo scope del blocco if/else in cui vengono valorizzati.
+        let monthlySub: Stripe.Subscription | null = null;
+
         if (tier === "trial") {
           updatePayload.period_start = new Date().toISOString();
           updatePayload.period_end = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
@@ -252,6 +266,14 @@ export async function POST(request: NextRequest) {
           const cadence = stripeSub.items.data[0]?.price?.metadata?.job_sb_cadence;
           if (cadence) updatePayload.cadence = cadence;
           updatePayload.notified_renewal_at = null;
+          // Il mensile è l'unica cadenza esclusa per sempre dal cron
+          // renewal-reminder (30gg di preavviso su un ciclo di ~30gg non ha
+          // senso) — senza questa email, un abbonato mensile non riceve MAI
+          // alcuna comunicazione su prezzo/rinnovo automatico/disdetta
+          // (audit privacy 2026-09-25, chiusura blocco "comunicazioni di
+          // rinnovo"). Trimestrale/annuale restano coperti dal reminder
+          // 30gg prima del primo rinnovo, quindi non replicati qui.
+          if (cadence === "monthly") monthlySub = stripeSub;
         }
 
         const { data, error } = await supabase
@@ -266,6 +288,49 @@ export async function POST(request: NextRequest) {
           // registrazione. Logghiamo per indagare ma non trattiamo come
           // errore riprovabile — ritentare non crea la riga mancante.
           console.error("[stripe-webhook] nessuna riga subscriptions per user_id:", userId);
+        }
+
+        // Email di conferma abbonamento mensile — best-effort: la
+        // subscription è già attiva e il DB già aggiornato sopra, un
+        // fallimento qui non deve far ritentare Stripe l'intero webhook
+        // (stesso pattern già usato per invoice.payment_failed).
+        if (monthlySub) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("email, full_name")
+            .eq("id", userId)
+            .maybeSingle();
+          if (profile?.email) {
+            const item = monthlySub.items.data[0];
+            const price = item && typeof item.price === "string" ? await stripe.prices.retrieve(item.price) : item?.price;
+            const amountLabel = price?.unit_amount != null
+              ? `${(price.unit_amount / 100).toFixed(2).replace(".", ",")} €`
+              : "—";
+            const renewalDateLabel = item ? formatDateIt(item.current_period_end) : "—";
+            const planLabel = `${TIER_LABELS[tier] ?? tier} ${CADENCE_LABELS.monthly}`;
+            const safeName = escapeHtml(profile.full_name || "");
+            const manageUrl = `${SITE_URL}/it/profile`;
+
+            const html = `
+              <p>Ciao${safeName ? " " + safeName : ""},</p>
+              <p>il pagamento è andato a buon fine: il tuo abbonamento ${escapeHtml(planLabel)} a Job Search Bridge è attivo, al prezzo di <strong>${amountLabel}</strong> al mese.</p>
+              <p>L&apos;abbonamento si rinnova automaticamente ogni mese; il prossimo rinnovo è previsto per il <strong>${renewalDateLabel}</strong>.</p>
+              <p>Puoi disdire in qualsiasi momento dal tuo profilo: se lo fai, il servizio resta comunque attivo fino al <strong>${renewalDateLabel}</strong> già pagato, senza ulteriori addebiti.</p>
+              <p><a href="${manageUrl}">Gestisci il tuo abbonamento</a></p>
+              <p>Per assistenza: support@jobsearchbridge.com</p>
+            `;
+
+            const emailResult = await sendEmail({
+              to: profile.email,
+              subject: `Il tuo abbonamento Job Search Bridge ${planLabel} è attivo`,
+              html,
+            });
+            if (!emailResult.success) {
+              console.error(`[stripe-webhook] email conferma abbonamento mensile fallita per user_id=${userId}:`, emailResult.error);
+            }
+          } else {
+            console.error(`[stripe-webhook] nessun profilo/email per conferma abbonamento mensile, user_id=${userId}`);
+          }
         }
 
         await track("pagamento_completato", { tier });
