@@ -194,6 +194,29 @@ export async function POST(request: NextRequest) {
           break;
         }
 
+        // Difesa in profondità — non solo rimozione del punto d'accesso UI
+        // (api/checkout/create-session non accetta più tier='trial': vedi
+        // lì). Questo ramo (utente GIÀ autenticato, quindi con un account
+        // che ha già ricevuto il suo unico Trial alla creazione) non deve
+        // MAI poter concedere un secondo Trial — a differenza del ramo
+        // trial_signup sopra (unico punto legittimo di concessione, per un
+        // utente che non esiste ancora). Se questo blocco viene comunque
+        // raggiunto con tier='trial', è un'anomalia (bug futuro, bypass,
+        // chiamata diretta all'API) da segnalare forte: il pagamento
+        // Stripe è già avvenuto a questo punto (checkout.session.completed
+        // arriva solo a pagamento riuscito), quindi qui non c'è nulla da
+        // "rifiutare" lato Stripe — la difesa consiste nel non concedere
+        // comunque il beneficio (nessun tier/period_end aggiornato), così
+        // il buco di pricing resta chiuso anche in questo scenario limite,
+        // lasciando il caso a un intervento manuale (verifica/eventuale
+        // rimborso) invece di un secondo Trial concesso in silenzio.
+        if (tier === "trial") {
+          console.error(
+            `[stripe-webhook] ANOMALIA: tier='trial' su un utente già esistente (user_id=${userId}, session=${session.id}) — secondo Trial non concesso, richiede verifica manuale (pagamento Stripe già effettuato).`
+          );
+          break;
+        }
+
         // first_subscription_started_at va scritto una volta sola nella vita
         // del cliente — richiede leggere il valore attuale PRIMA di decidere
         // se includerlo nell'update sotto (Supabase non espone un
@@ -239,23 +262,14 @@ export async function POST(request: NextRequest) {
           updatePayload.first_subscription_started_at = new Date().toISOString();
         }
 
-        // "Un altro giro di Trial" (tier='trial', mode:"payment", nessuna
-        // Subscription Stripe dietro): a differenza di Individual/
-        // Professional, qui non arriverà mai un invoice.paid a impostare
-        // period_start/period_end — un pagamento one-time non ha fatture
-        // successive. Vanno quindi scritti qui, subito, stesso schema di
-        // 14 giorni di handle_new_user(). notified_trial_end_at torna a
-        // NULL: è un nuovo giro, va ri-notificato alla sua fine, non a
-        // quella (già notificata) del giro precedente.
-        // Usati sotto per l'email di conferma abbonamento mensile, fuori
-        // dallo scope del blocco if/else in cui vengono valorizzati.
+        // Usato sotto per l'email di conferma abbonamento mensile, fuori
+        // dallo scope del blocco if in cui viene valorizzato. Da qui in
+        // poi tier non può più essere 'trial' (già intercettato/bloccato
+        // sopra) — resta solo Individual/Professional, sempre con una
+        // vera Subscription Stripe dietro.
         let monthlySub: Stripe.Subscription | null = null;
 
-        if (tier === "trial") {
-          updatePayload.period_start = new Date().toISOString();
-          updatePayload.period_end = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
-          updatePayload.notified_trial_end_at = null;
-        } else if (subscriptionId) {
+        if (subscriptionId) {
           // Cadenza di fatturazione (monthly/quarterly/annual), letta dal
           // Price di Stripe — serve al cron di reminder pre-rinnovo
           // (api/cron/renewal-reminder), che oggi non ha altro modo di

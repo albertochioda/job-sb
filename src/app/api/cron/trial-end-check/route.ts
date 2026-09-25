@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, escapeHtml } from "@/lib/email";
 import { SITE_URL } from "@/lib/site-url";
-import { TRIAL_PRICE_EUR } from "@/lib/billing/plans";
 
 /**
  * Controllo giornaliero (Vercel Cron, vedi vercel.json) di fine Trial —
@@ -101,16 +100,14 @@ export async function GET(request: NextRequest) {
 
     const reason = row.runs_used >= TRIAL_RUNS_LIMIT ? "runs" : "time";
     const safeName = escapeHtml(profile.full_name || "");
-    const trialPriceLabel = TRIAL_PRICE_EUR.toFixed(2).replace(".", ",");
 
+    // "Un altro giro di Trial" rimosso (2026-09-25): 1 Trial per account,
+    // mai rinnovabile — un secondo Trial costerebbe meno di Individual, un
+    // buco di pricing reale. Resta solo il passaggio a un piano completo.
     const html = `
       <p>Ciao${safeName ? " " + safeName : ""},</p>
       <p>${reason === "runs" ? "hai esaurito le 3 ricerche del tuo Trial." : "il tuo Trial di 14 giorni è terminato."}</p>
-      <p>Puoi continuare in uno di questi modi:</p>
-      <ul>
-        <li><a href="${SITE_URL}/it/checkout/another-trial">Un altro giro di Trial</a> — un nuovo pagamento singolo di €${trialPriceLabel}, nessun rinnovo automatico</li>
-        <li><a href="${SITE_URL}/it/profile">Passa a un piano completo</a> — Individual o Professional, ricerche/CV/lettere ogni mese</li>
-      </ul>
+      <p><a href="${SITE_URL}/it/profile">Passa a un piano completo</a> — Individual o Professional, ricerche/CV/lettere ogni mese.</p>
       <p>Se non fai nulla, il tuo account resta semplicemente inattivo — nessun addebito.</p>
     `;
 

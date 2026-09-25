@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
-import { VALID_TIERS, VALID_CADENCES, lookupKeyFor, TRIAL_LOOKUP_KEY, type Tier, type Cadence } from "@/lib/billing/plans";
+import { VALID_TIERS, VALID_CADENCES, lookupKeyFor, type Tier, type Cadence } from "@/lib/billing/plans";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -17,19 +17,21 @@ export async function POST(request: NextRequest) {
 
   const { tier, cadence, locale } = await request.json();
 
-  // "Un altro giro di Trial" (2026-09-23): un utente GIA' AUTENTICATO che
-  // vuole ripagare €3,49 dopo la fine del giro precedente — a differenza
-  // della prima iscrizione (api/checkout/create-trial-signup-session, dove
-  // l'utente non esiste ancora), qui esiste già e non c'è alcuna cadenza da
-  // scegliere: un solo Price one-time, mode "payment" invece di
-  // "subscription". Ramo separato perché la forma della sessione Stripe è
-  // diversa (niente subscription_data, che mode:"payment" rifiuta).
-  const isTrial = tier === "trial";
-  if (!isTrial && (!VALID_TIERS.includes(tier) || !VALID_CADENCES.includes(cadence))) {
+  // "Un altro giro di Trial" (un utente già autenticato che ripaga il
+  // Trial one-time dopo la fine del giro precedente) è stato rimosso
+  // (2026-09-25): 1 Trial per account, mai rinnovabile — un secondo Trial
+  // costerebbe meno di Individual, un buco di pricing reale. tier='trial'
+  // non è mai un valore valido per questa route (solo per un utente già
+  // autenticato, quindi con un account che ha già ricevuto il suo unico
+  // Trial): VALID_TIERS non lo include, quindi il controllo sotto lo
+  // rifiuta esplicitamente con 400, prima che parta qualunque sessione di
+  // pagamento. Il primo Trial resta invariato, gestito interamente da
+  // api/checkout/create-trial-signup-session (utente non ancora esistente).
+  if (!VALID_TIERS.includes(tier) || !VALID_CADENCES.includes(cadence)) {
     return NextResponse.json({ error: "tier o cadence non valido" }, { status: 400 });
   }
 
-  const lookupKey = isTrial ? TRIAL_LOOKUP_KEY : lookupKeyFor(tier as Tier, cadence as Cadence);
+  const lookupKey = lookupKeyFor(tier as Tier, cadence as Cadence);
 
   // Recupera il Price ID via lookup_key — mai hardcoded, così il catalogo
   // (script scripts/stripe-setup-products.mjs) resta l'unica fonte di verità
@@ -43,24 +45,19 @@ export async function POST(request: NextRequest) {
   const origin = request.headers.get("origin") ?? new URL(request.url).origin;
 
   const session = await stripe.checkout.sessions.create({
-    mode: isTrial ? "payment" : "subscription",
+    mode: "subscription",
     line_items: [{ price: price.id, quantity: 1 }],
     // client_reference_id + metadata: collegano la subscription Stripe
     // all'utente Job SB — servono al webhook per aggiornare
-    // subscriptions.tier/stripe_subscription_id (o, per il Trial,
-    // period_start/period_end/notified_trial_end_at: vedi il ramo dedicato
-    // in checkout.session.completed).
+    // subscriptions.tier/stripe_subscription_id/cadence.
     client_reference_id: user.id,
-    metadata: { user_id: user.id, tier, cadence: cadence ?? "onetime" },
-    // subscription_data e' valido SOLO con mode:"subscription" — Stripe
-    // rifiuta la sessione se presente insieme a mode:"payment".
-    ...(isTrial ? {} : { subscription_data: { metadata: { user_id: user.id, tier, cadence } } }),
-    // "trial-success" (con la sua email "controlla la posta") e' solo per la
-    // PRIMA iscrizione (create-trial-signup-session, nessuna sessione ancora
-    // esistente) — questa route richiede sempre un utente già autenticato
-    // (vedi getUser() sopra), quindi anche per isTrial va bene la stessa
-    // pagina "success" di un upgrade: l'utente ha già un account e una
-    // sessione, torna dritto in dashboard.
+    metadata: { user_id: user.id, tier, cadence },
+    subscription_data: { metadata: { user_id: user.id, tier, cadence } },
+    // Questa route richiede sempre un utente già autenticato (vedi
+    // getUser() sopra): l'utente ha già un account e una sessione, torna
+    // dritto in dashboard. "trial-success" resta solo per la prima
+    // iscrizione (create-trial-signup-session, nessuna sessione ancora
+    // esistente).
     success_url: `${origin}/${loc}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/${loc}/checkout/cancel`,
     // Nessun payment_method_types: Stripe li gestisce dinamicamente da Dashboard
