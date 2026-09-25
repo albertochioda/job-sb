@@ -4,13 +4,25 @@
  * Alzare questo valore attiva il banner di ri-accettazione bloccante per
  * ogni utente il cui profiles.terms_version è diverso da questo valore.
  *
- * "2.0-2026-09-07" pubblicata il 2026-09-07 (ToS: docs/drafts/
- * termini-di-servizio-draft-v2-abbonamento-e-cancellazione-account.tsx;
- * Privacy Policy: docs/drafts/privacy-policy-draft-stripe.tsx) — SENZA
- * revisione legale formale, scelta consapevole del Titolare (vedi nota in
- * testa a entrambi i file di bozza). I 6 utenti esistenti a quella data
- * avevano tutti terms_version="1.0-beta" e vedranno quindi il banner al
- * primo accesso successivo.
+ * "3.0-2026-09-25" pubblicata il 2026-09-25 — revisione sostanziale
+ * successiva all'audit privacy/sicurezza del 2026-09-24/25 (vedi memoria
+ * di sessione): riflette il motore Gemini come motore di scoring attivo
+ * (non più solo Anthropic), il nuovo Trial a pagamento one-time (€3,49,
+ * non più gratuito), i flussi di pagamento/rinnovo per Individual e
+ * Professional, la regione Supabase (eu-west-1/Irlanda) e i dettagli di
+ * retention verificati punto per punto nell'audit. Testo finale in
+ * C:\Users\proprietario\Downloads\Job_Search_Bridge_Privacy_Policy_V3_aggiornata.docx
+ * e Job_Search_Bridge_Termini_Condizioni_V3.docx.
+ *
+ * IMPORTANTE — versione "2.0-2026-09-07" non è mai stata notificata: il
+ * passo 3 della procedura sotto non era mai stato lanciato per quella
+ * versione (era rimasto "in attesa di conferma esplicita di Alberto").
+ * Passando direttamente a 3.0, gli utenti che hanno accettato 1.0-beta o
+ * 2.0-2026-09-07 vedranno comunque il banner di ri-accettazione al primo
+ * accesso (confronto sempre contro l'ultimo valore), quindi tecnicamente
+ * nessuno "salta" un'accettazione — ma nessuno è mai stato informato via
+ * email del contenuto della versione 2.0. Da tenere presente prima di
+ * lanciare la notifica per la 3.0.
  *
  * PROCEDURA COMPLETA per pubblicare una nuova versione dei documenti legali:
  * 1. Pubblicare il nuovo testo in src/app/[locale]/termini-di-servizio/page.tsx
@@ -31,7 +43,7 @@
  *    registrato, in batch con un piccolo ritardo tra un invio e l'altro per
  *    rispettare i rate limit di Resend. Mai automatico: va lanciato a mano,
  *    solo quando si decide davvero di pubblicare. Per la versione
- *    2.0-2026-09-07: NON ancora lanciato, in attesa di conferma esplicita
- *    di Alberto dopo aver verificato che il resto funzioni correttamente.
+ *    3.0-2026-09-25: NON ancora lanciato, in attesa di conferma esplicita
+ *    di Alberto dopo aver verificato che le pagine siano corrette.
  */
-export const CURRENT_TERMS_VERSION = "2.0-2026-09-07";
+export const CURRENT_TERMS_VERSION = "3.0-2026-09-25";
