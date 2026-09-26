@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import Link from "next/link";
 import Logo from "@/components/logo";
 import ComingSoonRibbon from "@/components/coming-soon-ribbon";
+import HowItWorksVideo from "@/components/how-it-works-video";
 import { SITE_COMING_SOON } from "@/lib/billing/plans";
 import { SITE_URL } from "@/lib/site-url";
 import {
@@ -322,6 +323,9 @@ export default async function HomePage({
                 </div>
               </div>
             ))}
+          </div>
+          <div className="mt-8">
+            <HowItWorksVideo />
           </div>
         </div>
       </section>

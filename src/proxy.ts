@@ -34,7 +34,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/api") ||
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
-    /\.(svg|png|jpg|jpeg|gif|webp|ico|css|js)$/.test(pathname)
+    /\.(svg|png|jpg|jpeg|gif|webp|ico|css|js|mp4|webm)$/.test(pathname)
   ) {
     return NextResponse.next();
   }
@@ -142,6 +142,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm)$).*)",
   ],
 };
