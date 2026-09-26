@@ -16,7 +16,7 @@ Job Search Bridge offre 4 template per il CV: Professional, Two Column, Bold Hea
 
 ## Meccanica trial
 
-Il trial dura 14 giorni dalla registrazione, gratis e senza carta di credito. Durante il trial hai a disposizione 3 ricerche, 5 CV adattati e 5 lettere di motivazione, con accesso a tutti e 4 i template. Alla scadenza, per continuare a usare Job Search Bridge serve sottoscrivere un piano a pagamento.
+Il trial è un pagamento singolo di €3,49, valido per 14 giorni o fino a esaurire le 3 ricerche incluse, a seconda di quale arriva prima — non si rinnova mai automaticamente. Durante il trial hai a disposizione 3 ricerche, 5 CV adattati e 5 lettere di motivazione, con accesso a tutti e 4 i template. Alla scadenza, per continuare a usare Job Search Bridge serve sottoscrivere un piano a pagamento.
 
 ## Limiti per tier
 
@@ -24,15 +24,19 @@ Individual: 10 ricerche e 15 CV/lettere al mese, solo template Minimal Smart. Pr
 
 ## Rinnovo automatico
 
-L'abbonamento si rinnova automaticamente alla scadenza di ogni periodo (mensile, trimestrale o annuale, in base al piano scelto). Puoi cancellare in qualsiasi momento dalla sezione Profilo — la cancellazione ferma i rinnovi futuri, ma mantieni l'accesso fino alla fine del periodo già pagato.
+L'abbonamento si rinnova automaticamente alla scadenza di ogni periodo (mensile, trimestrale o annuale, in base al piano scelto). Per i piani trimestrale e annuale ricevi una email di promemoria 30 giorni prima di ogni rinnovo; per il piano mensile ricevi invece una email di conferma subito alla sottoscrizione (o al rinnovo), con l'importo e la data del prossimo addebito. Puoi cancellare in qualsiasi momento dalla sezione Profilo, anche prima del rinnovo — la cancellazione ferma i rinnovi futuri, ma mantieni l'accesso fino alla fine del periodo già pagato.
 
 ## Politica di rimborso
 
-La finestra di 14 giorni parte dalla registrazione (inizio del trial), non dal pagamento. Se sottoscrivi un piano prima che il trial finisca, la finestra non riparte da zero — resta comunque calcolata sui 14 giorni totali dalla registrazione. Rimborsiamo sempre in caso di addebito errato o doppio addebito, indipendentemente da questa finestra.
+La finestra di 14 giorni parte dall'attivazione del trial. Se sottoscrivi un piano prima che il trial finisca, la finestra non riparte da zero — resta comunque calcolata sui 14 giorni totali dall'attivazione del trial. Rimborsiamo sempre in caso di addebito errato o doppio addebito, indipendentemente da questa finestra.
 
 ## Cambiare piano
 
-Puoi passare da un piano all'altro in qualsiasi momento dalla sezione Profilo. Se passi a un piano superiore, il cambio è immediato: ottieni subito l'accesso completo, con un addebito proporzionato ai giorni rimanenti del mese in corso. Se passi a un piano inferiore, il cambio ha effetto dal rinnovo successivo — mantieni l'accesso al piano attuale fino alla scadenza già pagata.
+Puoi passare da un piano all'altro in qualsiasi momento dalla sezione Profilo. Se passi a un piano superiore, il cambio è immediato: ottieni subito l'accesso completo, con un addebito proporzionato ai giorni rimanenti del periodo in corso. Se passi a un piano inferiore, il cambio ha effetto dal rinnovo successivo — mantieni l'accesso al piano attuale fino alla scadenza già pagata.
+
+## Cancellazione account
+
+Cancellare l'account è diverso da cancellare l'abbonamento: elimina definitivamente tutti i tuoi dati, non solo l'accesso al servizio. Vengono eliminati il CV caricato, tutti i CV adattati generati, le lettere di motivazione, le ricerche effettuate, le candidature salvate nel tracker e i dati del tuo profilo. La richiesta parte dalla sezione Profilo: ricevi prima una email di conferma, e solo dopo aver confermato la cancellazione diventa definitiva e irreversibile.
 
 ## Nascondi/archivia offerte
 
