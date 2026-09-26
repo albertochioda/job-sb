@@ -36,7 +36,7 @@
     "subheadlineLine1": "Job Search Bridge cerca, filtra e adatta il CV per te.",
     "subheadlineLine2": "Tu resti concentrato su quello che conta davvero:",
     "subheadlineLine3": "il colloquio.",
-    "cta": "Inizia gratis",
+    "cta": "Comincia la prova",
     "pricingCta": "Comincia la prova",
     "founderQuote": "L'ho costruito perché cercavo lavoro anch'io. Salvavo gli annunci a mano, li passavo uno per uno a un'AI per capire se avevano senso per il mio profilo: la maggior parte no. Quelli buoni li adattavo con prompt su prompt, senza mai ottenere il formato che volevo. E più di una volta, quando finalmente ero pronto a candidarmi, l'offerta non era già più disponibile. Job Search Bridge fa quella parte al posto tuo, dall'inizio alla fine, senza farti perdere le occasioni per la stanchezza di uno scroll infinito.",
     "founderName": "Alberto Chioda",
@@ -112,7 +112,7 @@
     "pricingTitle": "Prezzi",
     "pricingTable": {
       "plans": [
-        { "name": "Trial", "meta": "14 giorni", "audience": "Per chi vuole provare il servizio prima di scegliere un piano completo" },
+        { "name": "Trial", "meta": "3,49€/14 giorni", "audience": "Per chi vuole provare il servizio prima di scegliere un piano completo" },
         { "name": "Individual", "meta": "19€/mese", "audience": "Per chi cerca lavoro attivamente e vuole valutare più opportunità ogni settimana" },
         { "name": "Professional", "meta": "29€/mese", "audience": "Per chi cerca su più fronti contemporaneamente e ha bisogno di CV e lettere su volumi più alti", "badge": "Continuità dal trial" }
       ],

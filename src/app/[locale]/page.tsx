@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import Link from "next/link";
 import Logo from "@/components/logo";
 import ComingSoonRibbon from "@/components/coming-soon-ribbon";
-import { PAID_PLANS_COMING_SOON } from "@/lib/billing/plans";
+import { SITE_COMING_SOON } from "@/lib/billing/plans";
 import { SITE_URL } from "@/lib/site-url";
 import {
   Target,
@@ -373,8 +373,11 @@ export default async function HomePage({
                   plan.badge ? "border-2 border-primary" : "border"
                 }`}
               >
-                {/* Trial (planIdx 0) resta l'unico piano davvero attivo oggi */}
-                {PAID_PLANS_COMING_SOON && planIdx > 0 && (
+                {/* Uniforme sulle 3 card: il Trial è tecnicamente
+                    funzionante (pagamenti Stripe reali testati), ma
+                    restano azioni pratiche prima del lancio a clienti veri
+                    — vedi commento su SITE_COMING_SOON in lib/billing/plans.ts. */}
+                {SITE_COMING_SOON && (
                   <ComingSoonRibbon label={t("comingSoonBadge")} />
                 )}
                 {plan.badge && (
@@ -391,6 +394,14 @@ export default async function HomePage({
                   {pricingRows.map((row) => {
                     const value = row.values[planIdx];
                     const isIncluded = typeof value !== "boolean" || value;
+                    // Il Trial (planIdx 0) non ha una vera cadenza mensile —
+                    // i limiti sono il totale per l'intero Trial (14gg o
+                    // fino a esaurimento, quale primo), non "al mese" come
+                    // per Individual/Professional. La label è condivisa fra
+                    // le 3 colonne nei messages (un solo "Ricerche/mese" per
+                    // riga), quindi il suffisso va tolto qui solo per questa
+                    // colonna, non nella traduzione.
+                    const label = planIdx === 0 ? row.label.replace(/\/(mese|month)$/i, "") : row.label;
                     return (
                       <li key={row.label} className="flex items-center gap-2">
                         {typeof value === "boolean" ? (
@@ -399,7 +410,7 @@ export default async function HomePage({
                           <Check className="h-4 w-4 text-foreground shrink-0" aria-hidden="true" />
                         )}
                         <span className={isIncluded ? "" : "text-muted-foreground/60"}>
-                          {typeof value === "string" ? `${value} ${row.label}` : row.label}
+                          {typeof value === "string" ? `${value} ${label}` : label}
                         </span>
                       </li>
                     );

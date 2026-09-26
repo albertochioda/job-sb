@@ -5,12 +5,24 @@
  * validazioni non possono divergere. I prezzi reali restano sempre quelli
  * di Stripe (recuperati via lookup_key), questi servono solo per la UI.
  */
-// Blocco temporaneo dei piani a pagamento: Stripe non è ancora in modalità
-// live, solo il trial è attivo. Un solo cambiamento (a false) rimuove la
-// striscia "Presto disponibile" e riattiva il checkout reale — vedi
-// ComingSoonRibbon, TrialExpiredModal e la sezione prezzi della home
-// (src/app/[locale]/page.tsx).
+// Blocco specifico di Individual/Professional: Stripe non è ancora in
+// modalità live per QUEI due piani. Un solo cambiamento (a false) rimuove
+// il blocco all'upgrade in TrialExpiredModal (bottone "Sottoscrivi" e
+// messaggio "presto disponibile"). Non copre il Trial, che ha un motivo di
+// blocco diverso — vedi SITE_COMING_SOON sotto.
 export const PAID_PLANS_COMING_SOON = true;
+
+// Blocco più ampio, non specifico di un piano: il prodotto nel suo insieme
+// non è ancora pronto per clienti veri, a prescindere dal fatto che il
+// Trial sia già tecnicamente funzionante (pagamenti Stripe reali testati)
+// — restano azioni pratiche prima del lancio (upgrade Vercel Pro, switch
+// Stripe test→live). Controlla SOLO la striscia "Presto disponibile" sulla
+// sezione Prezzi della home (src/app/[locale]/page.tsx), applicata alle 3
+// card in modo uniforme — non blocca né la UI né l'API di nessun flusso
+// (il Trial resta acquistabile da /register indipendentemente da questo
+// flag, che è solo visivo). Un solo cambiamento (a false) rimuove la
+// striscia da tutte e tre le card.
+export const SITE_COMING_SOON = true;
 
 export const VALID_TIERS = ["individual", "professional"] as const;
 export const VALID_CADENCES = ["monthly", "quarterly", "annual"] as const;
