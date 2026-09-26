@@ -16,7 +16,7 @@ Job Search Bridge offre 4 template per il CV: Professional, Two Column, Bold Hea
 
 ## Meccanica trial
 
-Il trial è un pagamento singolo di €3,49, valido per 14 giorni o fino a esaurire le 3 ricerche incluse, a seconda di quale arriva prima — non si rinnova mai automaticamente. Durante il trial hai a disposizione 3 ricerche, 5 CV adattati e 5 lettere di motivazione, con accesso a tutti e 4 i template. Alla scadenza, per continuare a usare Job Search Bridge serve sottoscrivere un piano a pagamento.
+Il trial è un pagamento singolo di €3,49, valido 14 giorni — non si rinnova mai automaticamente. Include 3 ricerche, 5 CV adattati e 5 lettere di motivazione, con accesso a tutti e 4 i template: sono limiti indipendenti, non un unico blocco. Se esaurisci le 3 ricerche prima dei 14 giorni, non puoi avviarne di nuove, ma puoi continuare ad adattare CV e generare lettere (fino ai tuoi 5+5) per le offerte già trovate. Alla scadenza dei 14 giorni, per continuare a usare Job Search Bridge serve sottoscrivere un piano a pagamento.
 
 ## Limiti per tier
 

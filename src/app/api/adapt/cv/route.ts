@@ -214,8 +214,13 @@ export async function POST(request: NextRequest) {
     }
     if (!reserved.ok) {
       const limits = await getTierLimits(supabase, sub.tier);
+      // Il Trial non ha un limite MENSILE: è un totale una tantum per
+      // l'intero periodo di prova — "mensili" lì sarebbe fuorviante.
+      const message = sub.tier === "trial"
+        ? `Hai raggiunto il limite di ${limits?.cvs_per_month ?? "?"} CV adattati inclusi nel trial. Sottoscrivi un piano per continuare.`
+        : `Hai raggiunto il limite di ${limits?.cvs_per_month ?? "?"} CV adattati mensili per il piano ${sub.tier}. Aggiorna il piano per continuare.`;
       return NextResponse.json({
-        error: `Hai raggiunto il limite di ${limits?.cvs_per_month ?? "?"} CV adattati mensili per il piano ${sub.tier}. Aggiorna il piano per continuare.`,
+        error: message,
         code: "limit_reached",
         resource: "CV adattati",
         limit: limits?.cvs_per_month,

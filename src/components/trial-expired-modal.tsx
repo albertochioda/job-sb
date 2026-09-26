@@ -188,6 +188,64 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
     }
   };
 
+  // Step di conferma+consenso+pagamento, condiviso fra il ramo trial_expired
+  // (selezione manuale del piano) e il ramo limit_reached quando
+  // PAID_PLANS_COMING_SOON=false (piano pre-selezionato, vedi sotto) — stessa
+  // identica UI, un solo posto da aggiornare se cambia il testo di
+  // trasparenza Art. 5 ToS o il flusso di checkout.
+  const renderCheckoutConfirmation = () => {
+    if (!checkoutTier) return null;
+    return (
+      <div className="space-y-3 text-left">
+        <p className="text-sm">
+          <span className="font-medium capitalize">{checkoutTier}</span>
+          {" — "}
+          {CADENCE_LABELS[cadenceByTier[checkoutTier]]}, €{PLAN_PRICES[checkoutTier][cadenceByTier[checkoutTier]]}
+        </p>
+        {/* Trasparenza pre-Stripe richiesta dall'Art. 5 ToS (rinnovo
+            automatico, importo, disdetta in qualsiasi momento) — Stripe
+            Checkout la comunica solo in modo implicito, questo testo la
+            rende esplicita PRIMA del redirect, senza un altro passaggio
+            di conferma: solo testo visibile, nessuna nuova checkbox. */}
+        <div className="text-sm bg-blue-50 border border-blue-200 text-blue-800 rounded-md px-4 py-3">
+          L&apos;abbonamento si rinnova automaticamente {CADENCE_RENEWAL_PHRASE[cadenceByTier[checkoutTier]]} a €{PLAN_PRICES[checkoutTier][cadenceByTier[checkoutTier]]}, finché non lo disdici — puoi farlo in qualsiasi momento dal tuo profilo, con effetto dalla fine del periodo in corso.
+        </div>
+        <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer">
+          <input
+            type="checkbox"
+            checked={checkoutConsent}
+            onChange={(e) => setCheckoutConsent(e.target.checked)}
+            className="mt-0.5 accent-primary shrink-0"
+          />
+          <span>
+            Richiedo che l&apos;esecuzione del Servizio abbia inizio immediatamente, anche prima della
+            scadenza del termine di 14 giorni per l&apos;esercizio del diritto di recesso, e sono
+            consapevole che, qualora inizi a utilizzare il Servizio durante tale periodo, perderò il
+            diritto di recesso e al connesso rimborso.
+          </span>
+        </label>
+        {checkoutError && <p className="text-xs text-destructive">{checkoutError}</p>}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setCheckoutTier(null)}
+            className="text-sm text-muted-foreground hover:text-foreground px-2"
+          >
+            Annulla
+          </button>
+          <button
+            type="button"
+            onClick={startCheckout}
+            disabled={!checkoutConsent || checkoutLoading}
+            className="flex-1 bg-foreground text-background text-sm py-2.5 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+          >
+            {checkoutLoading ? "Attendere..." : "Procedi al pagamento"}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       {/* Backdrop */}
@@ -270,53 +328,7 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
                     ))}
                   </div>
                 ) : (
-                  <div className="space-y-3 text-left">
-                    <p className="text-sm">
-                      <span className="font-medium capitalize">{checkoutTier}</span>
-                      {" — "}
-                      {CADENCE_LABELS[cadenceByTier[checkoutTier]]}, €{PLAN_PRICES[checkoutTier][cadenceByTier[checkoutTier]]}
-                    </p>
-                    {/* Trasparenza pre-Stripe richiesta dall'Art. 5 ToS (rinnovo
-                        automatico, importo, disdetta in qualsiasi momento) — Stripe
-                        Checkout la comunica solo in modo implicito, questo testo la
-                        rende esplicita PRIMA del redirect, senza un altro passaggio
-                        di conferma: solo testo visibile, nessuna nuova checkbox. */}
-                    <div className="text-sm bg-blue-50 border border-blue-200 text-blue-800 rounded-md px-4 py-3">
-                      L&apos;abbonamento si rinnova automaticamente {CADENCE_RENEWAL_PHRASE[cadenceByTier[checkoutTier]]} a €{PLAN_PRICES[checkoutTier][cadenceByTier[checkoutTier]]}, finché non lo disdici — puoi farlo in qualsiasi momento dal tuo profilo, con effetto dalla fine del periodo in corso.
-                    </div>
-                    <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={checkoutConsent}
-                        onChange={(e) => setCheckoutConsent(e.target.checked)}
-                        className="mt-0.5 accent-primary shrink-0"
-                      />
-                      <span>
-                        Richiedo che l&apos;esecuzione del Servizio abbia inizio immediatamente, anche prima della
-                        scadenza del termine di 14 giorni per l&apos;esercizio del diritto di recesso, e sono
-                        consapevole che, qualora inizi a utilizzare il Servizio durante tale periodo, perderò il
-                        diritto di recesso e al connesso rimborso.
-                      </span>
-                    </label>
-                    {checkoutError && <p className="text-xs text-destructive">{checkoutError}</p>}
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setCheckoutTier(null)}
-                        className="text-sm text-muted-foreground hover:text-foreground px-2"
-                      >
-                        Annulla
-                      </button>
-                      <button
-                        type="button"
-                        onClick={startCheckout}
-                        disabled={!checkoutConsent || checkoutLoading}
-                        className="flex-1 bg-foreground text-background text-sm py-2.5 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
-                      >
-                        {checkoutLoading ? "Attendere..." : "Procedi al pagamento"}
-                      </button>
-                    </div>
-                  </div>
+                  renderCheckoutConfirmation()
                 )}
 
                 {!checkoutTier && (
@@ -422,10 +434,15 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
                 href={`mailto:${SUPPORT_EMAIL}?subject=Problema pagamento Job Search Bridge`}
                 className="inline-flex items-center justify-center rounded-lg border px-5 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
               >
-                Contatta Alberto
+                Contatta il supporto
               </a>
             </div>
           </>
+        ) : checkoutTier ? (
+          // Piano pre-selezionato (vedi bottone "Aggiorna a ..." sotto,
+          // ramo limit_reached con PAID_PLANS_COMING_SOON=false) — stessa
+          // conferma+consenso+pagamento già usata per trial_expired.
+          renderCheckoutConfirmation()
         ) : (
           <>
             <div className="space-y-2">
@@ -436,6 +453,14 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
                     Hai raggiunto il limite di {details?.limit ?? "-"} {details?.resource ?? "azioni"} del tuo piano
                     Professional questo mese. Riprova quando il conteggio si azzera, oppure scrivici se ti serve un
                     limite più alto per questo mese.
+                  </>
+                ) : details?.tier === "trial" ? (
+                  // Il Trial non si azzera mensilmente: è un totale una
+                  // tantum per l'intero periodo di prova — niente "questo
+                  // mese"/"si azzera", altrimenti fuorviante.
+                  <>
+                    Hai raggiunto il limite di {details?.limit ?? "-"} {details?.resource ?? "azioni"} incluse nel
+                    trial. Sottoscrivi un piano per continuare a usare Job Search Bridge.
                   </>
                 ) : (
                   <>
@@ -448,12 +473,38 @@ export default function TrialExpiredModal({ locale }: { locale: string }) {
             </div>
 
             <div className="flex flex-col gap-3 pt-2">
-              <a
-                href={`mailto:${SUPPORT_EMAIL}?subject=Upgrade Job SSB`}
-                className="inline-flex items-center justify-center rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
-              >
-                Contatta Alberto
-              </a>
+              {/* Professional non ha un piano superiore a cui salire qui
+                  dentro — resta sempre "contatta il supporto",
+                  indipendentemente da PAID_PLANS_COMING_SOON (non è un
+                  blocco temporaneo, è che non esiste un tier più alto).
+                  Per gli altri, quando i piani sono ancora "in arrivo" il
+                  self-service non è disponibile: stesso "contatta il
+                  supporto", ma con un avviso che chiarisce il motivo reale
+                  (non un errore, solo non ancora pronto) invece di
+                  lasciarlo ambiguo. */}
+              {PAID_PLANS_COMING_SOON || details?.tier === "professional" ? (
+                <>
+                  {PAID_PLANS_COMING_SOON && details?.tier !== "professional" && (
+                    <div className="text-sm bg-blue-50 border border-blue-200 text-blue-800 rounded-md px-4 py-3">
+                      I piani a pagamento saranno presto disponibili — nel frattempo scrivici se ti serve più margine.
+                    </div>
+                  )}
+                  <a
+                    href={`mailto:${SUPPORT_EMAIL}?subject=Upgrade Job SSB`}
+                    className="inline-flex items-center justify-center rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
+                  >
+                    Contatta il supporto
+                  </a>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setCheckoutTier(details?.tier === "individual" ? "professional" : "individual")}
+                  className="inline-flex items-center justify-center rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
+                >
+                  Aggiorna a {details?.tier === "individual" ? "Professional" : "Individual"}
+                </button>
+              )}
             </div>
           </>
         )}
