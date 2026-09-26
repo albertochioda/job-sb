@@ -131,7 +131,28 @@
     "pricingMicroNote": "If during your trial you used more than one template, or applied across more than one industry, Professional is the one that lets you keep going without giving anything up.",
     "comingSoonBadge": "Coming soon",
     "heroCardLabel": "Your matching offers",
-    "heroCardCaption": "CV automatically tailored for every offer"
+    "heroCardCaption": "CV automatically tailored for every offer",
+    "faqTitle": "Frequently asked questions",
+    "faq": {
+      "items": [
+        {
+          "question": "How does Job Search Bridge work?",
+          "answer": "Job Search Bridge automatically searches for the job listings that best match your profile, scores how compatible each one is with your CV and your preferences, and helps you tailor your CV and cover letters for the offers you care about most — all in one place, without manually checking dozens of different sites."
+        },
+        {
+          "question": "How much does it cost? Does the trial auto-renew?",
+          "answer": "The Trial costs €3.49 (one-time payment), lasts 14 days or up to 3 searches (whichever comes first), and includes 5 adapted CVs and 5 cover letters. It never renews automatically — when it ends, it's your choice whether to move to an Individual or Professional plan. No surprises, no charges without your knowledge."
+        },
+        {
+          "question": "What do you do with my CV? Is it safe?",
+          "answer": "Your CV is only used to assess compatibility with job offers and to generate tailored versions when you request them. Data handling is described in detail in our <link>Privacy Policy</link> — in short, your data is never sold or used for anything other than making the service work for you."
+        },
+        {
+          "question": "Can I cancel whenever I want?",
+          "answer": "Yes, at any time, with no penalties. If you cancel a subscription, the service stays active until the end of the period you already paid for — no further charges."
+        }
+      ]
+    }
   },
   "auth": {
     "email": "Email",

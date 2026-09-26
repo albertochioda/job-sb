@@ -4,6 +4,7 @@ import Link from "next/link";
 import Logo from "@/components/logo";
 import ComingSoonRibbon from "@/components/coming-soon-ribbon";
 import HowItWorksVideo from "@/components/how-it-works-video";
+import FaqAccordion, { type FaqItem } from "@/components/faq-accordion";
 import { SITE_COMING_SOON } from "@/lib/billing/plans";
 import { SITE_URL } from "@/lib/site-url";
 import {
@@ -149,6 +150,19 @@ export default async function HomePage({
   const pricingPlans = t.raw("pricingTable.plans") as PricingPlan[];
   const pricingRows = t.raw("pricingTable.rows") as PricingRow[];
 
+  const faqRaw = t.raw("faq.items") as { question: string; answer: string }[];
+  const faqItems: FaqItem[] = faqRaw.map((item) => ({ question: item.question, answer: item.answer }));
+  // Unica delle 4 risposte con un link inline (Privacy Policy) — le altre
+  // restano stringhe semplici da t.raw() sopra, questa sola ha bisogno di
+  // t.rich() per interpolare un vero <Link>, non solo testo.
+  faqItems[2].answer = t.rich("faq.items.2.answer", {
+    link: (chunks) => (
+      <Link href={`/${locale}/privacy-policy`} className="underline text-foreground hover:no-underline">
+        {chunks}
+      </Link>
+    ),
+  });
+
   // SoftwareApplication (schema.org) — per SEO tradizionale e GEO (i motori
   // AI si affidano a dati strutturati per capire rapidamente cos'è il
   // prodotto). Nessun dato inventato: solo campi già approvati altrove
@@ -187,6 +201,7 @@ export default async function HomePage({
           <a href="#come-funziona" className="hover:text-foreground">{t("howItWorks")}</a>
           <a href="#confronto" className="hover:text-foreground">{t("competitorTitle")}</a>
           <a href="#prezzi" className="hover:text-foreground">{t("pricingTitle")}</a>
+          <a href="#faq" className="hover:text-foreground">{t("faqTitle")}</a>
         </nav>
         <div className="flex items-center gap-2">
           <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground px-2">
@@ -436,6 +451,17 @@ export default async function HomePage({
               {t("pricingCta")}
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* FAQ — statica, nessuna chiamata di rete: subito dopo Prezzi, dove
+          il dubbio pre-acquisto è più alto. Diversa dalla chat di supporto
+          (quella richiede login, questa serve proprio a chi non si è ancora
+          registrato). */}
+      <section id="faq" className="px-6 py-16 scroll-mt-16">
+        <div className="max-w-2xl mx-auto space-y-8">
+          <h2 className="text-2xl font-bold text-center">{t("faqTitle")}</h2>
+          <FaqAccordion items={faqItems} />
         </div>
       </section>
     </main>

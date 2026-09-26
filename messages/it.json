@@ -131,7 +131,28 @@
     "pricingMicroNote": "Se durante il trial hai usato più di un template, o candidature in più di un settore, Professional è quello che ti fa continuare senza rinunce.",
     "comingSoonBadge": "Presto disponibile",
     "heroCardLabel": "Le tue offerte in target",
-    "heroCardCaption": "CV adattato automaticamente per ogni offerta"
+    "heroCardCaption": "CV adattato automaticamente per ogni offerta",
+    "faqTitle": "Domande frequenti",
+    "faq": {
+      "items": [
+        {
+          "question": "Come funziona Job Search Bridge?",
+          "answer": "Job Search Bridge cerca automaticamente le offerte di lavoro più adatte al tuo profilo, valuta quanto ciascuna è compatibile con il tuo CV e le tue preferenze, e ti aiuta ad adattare CV e lettere di presentazione per le offerte che ti interessano di più — tutto in un unico posto, senza dover controllare manualmente decine di siti diversi."
+        },
+        {
+          "question": "Quanto costa? Il trial si rinnova da solo?",
+          "answer": "Il Trial costa €3,49 (pagamento unico), dura 14 giorni o fino a 3 ricerche (quale arriva prima), e include 5 CV adattati e 5 lettere di presentazione. Non si rinnova mai automaticamente — alla scadenza, se vuoi continuare, scegli tu se passare a un piano Individual o Professional. Nessuna sorpresa, nessun addebito a tua insaputa."
+        },
+        {
+          "question": "Cosa fate con il mio CV? È sicuro?",
+          "answer": "Il tuo CV viene usato solo per valutare la compatibilità con le offerte e generare versioni adattate su tua richiesta. Il trattamento dei dati è descritto in dettaglio nella nostra <link>Privacy Policy</link> — in sintesi, i tuoi dati non vengono mai venduti né usati per scopi diversi da farti funzionare il servizio."
+        },
+        {
+          "question": "Posso disdire quando voglio?",
+          "answer": "Sì, in qualsiasi momento, senza penali. Se disdici un abbonamento, il servizio resta attivo fino alla fine del periodo già pagato — nessun addebito successivo."
+        }
+      ]
+    }
   },
   "auth": {
     "email": "Email",
