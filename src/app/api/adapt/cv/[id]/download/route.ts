@@ -17,20 +17,30 @@ export async function GET(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { data: acv } = await supabase
+  const { data: acv, error: acvError } = await supabase
     .from("adapted_cvs")
     .select("file_url, job_offers (title, company)")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
+  if (acvError) {
+    // Non blocca la risposta: se acv?.file_url manca comunque, il 404 sotto
+    // già copre il caso. Logga solo per non perdere traccia di un fallimento
+    // silenzioso della join a job_offers (es. titolo/azienda spariscono dal
+    // nome file scaricato senza nessun errore visibile altrimenti).
+    console.error(`[adapt/cv/download] errore lettura adapted_cvs id=${id}:`, acvError.message);
+  }
 
   if (!acv?.file_url) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("full_name")
     .eq("id", user.id)
     .single();
+  if (profileError) {
+    console.error(`[adapt/cv/download] errore lettura profilo per user_id=${user.id}:`, profileError.message);
+  }
 
   // Estrai il path relativo se file_url è un URL completo
   let filePath = acv.file_url;

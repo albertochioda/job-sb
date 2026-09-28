@@ -6,6 +6,7 @@ import { getTierLimits } from "@/lib/usage-limits";
 import { isTemplateAllowed } from "@/lib/cv-templates";
 import { reserveUsage, releaseUsage } from "@/lib/usage-counter";
 import { normalizePhotoPath } from "@/lib/storage-path";
+import { buildFileName } from "@/lib/file-naming";
 
 const adminSupabase = createAdminClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -192,7 +193,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (existing?.file_url) {
-      const { data: signed } = await adminSupabase.storage.from("cvs").createSignedUrl(existing.file_url, 3600);
+      // Stesso buildFileName() della route dedicata di download (nome
+      // candidato + azienda + titolo) — offer/profile sono già stati letti
+      // sopra per altri scopi, nessuna query aggiuntiva necessaria qui.
+      const downloadName = buildFileName(profile?.full_name ?? "", offer.company ?? "", offer.title ?? "");
+      const { data: signed } = await adminSupabase.storage
+        .from("cvs")
+        .createSignedUrl(existing.file_url, 3600, { download: downloadName });
       return NextResponse.json({ adapted_cv_id: existing.id, file_url: signed?.signedUrl ?? existing.file_url, cached: true });
     }
   }
@@ -342,8 +349,13 @@ export async function POST(request: NextRequest) {
   // Nessun incremento qui: la quota è già stata riservata atomicamente
   // sopra, prima della chiamata a Claude — non un incremento post-hoc.
 
-  // Genera URL firmato valido 1 ora per il download immediato
-  const { data: signed } = await adminSupabase.storage.from("cvs").createSignedUrl(fileName, 3600);
+  // Genera URL firmato valido 1 ora per il download immediato — stesso
+  // buildFileName() della route dedicata di download, offer/profile già
+  // letti sopra.
+  const downloadName = buildFileName(profile?.full_name ?? "", offer.company ?? "", offer.title ?? "");
+  const { data: signed } = await adminSupabase.storage
+    .from("cvs")
+    .createSignedUrl(fileName, 3600, { download: downloadName });
 
   return NextResponse.json({ adapted_cv_id: saved.id, file_url: signed?.signedUrl ?? "", cached: false });
 }
