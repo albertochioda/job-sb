@@ -34,7 +34,7 @@ export async function GET(
 
   const { data: letter } = await supabase
     .from("generated_letters")
-    .select("id, offer_id, letter_text, template_id, file_url, job_offers (title, company, description)")
+    .select("id, offer_id, letter_text, language, template_id, file_url, job_offers (title, company, description)")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
@@ -88,7 +88,7 @@ export async function GET(
           candidate_name: profile?.full_name ?? "",
           company: jobOffer?.company ?? "",
           letter_text: letter.letter_text,
-          language: "it",
+          language: letter.language || "it",
         }),
       });
       if (!res.ok) {
