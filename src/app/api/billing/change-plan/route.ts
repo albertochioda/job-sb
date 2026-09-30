@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     // logica upgrade/downgrade: va deciso a parte se debba essere immediato
     // con proration o pianificato a fine periodo, non va indovinato qui.
     return NextResponse.json(
-      { error: "Cambio di sola cadenza a parità di piano non ancora supportato — contatta Alberto per questo caso." },
+      { error: "Cambio di sola cadenza a parità di piano non ancora supportato — contatta il supporto per questo caso." },
       { status: 400 }
     );
   }

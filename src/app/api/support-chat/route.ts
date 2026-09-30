@@ -12,6 +12,10 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 // anti-abuso, non pensata per limitare l'uso normale.
 const DAILY_MESSAGE_LIMIT = 30;
 
+// Limite di lunghezza per messaggio — anti-abuso (payload enormi verso
+// Claude), non pensato per limitare una domanda normale.
+const MAX_MESSAGE_LENGTH = 1000;
+
 // Marcatori che Haiku antepone invece di rispondere nel merito — usati per
 // popolare was_redirected senza dover indovinare dal testo della risposta
 // (fragile su parafrasi). Rimossi prima di restituire la risposta
@@ -60,6 +64,12 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const message = typeof body?.message === "string" ? body.message.trim() : "";
   if (!message) return NextResponse.json({ error: "Messaggio mancante" }, { status: 400 });
+  if (message.length > MAX_MESSAGE_LENGTH) {
+    return NextResponse.json(
+      { error: `Il messaggio è troppo lungo (massimo ${MAX_MESSAGE_LENGTH} caratteri).` },
+      { status: 400 }
+    );
+  }
 
   // Rate limit leggero: conta i messaggi delle ultime 24h per questo utente.
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();

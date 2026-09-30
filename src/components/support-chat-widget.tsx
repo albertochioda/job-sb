@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { MessageCircleQuestion, X, Send } from "lucide-react";
 
+// Stesso limite del server (api/support-chat/route.ts) — qui blocca la
+// digitazione oltre soglia invece di far scoprire l'errore solo all'invio.
+const MAX_MESSAGE_LENGTH = 1000;
+
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
@@ -209,6 +213,7 @@ export default function SupportChatWidget({ isOpen, onOpenChange, initialMessage
               onKeyDown={handleKeyDown}
               placeholder="Scrivi un messaggio..."
               rows={1}
+              maxLength={MAX_MESSAGE_LENGTH}
               className="flex-1 resize-none text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary max-h-24"
             />
             <button

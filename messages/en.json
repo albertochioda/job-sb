@@ -179,7 +179,10 @@
     "requestNewReset": "Request a new link",
     "resetSuccessMessage": "Password updated. Log in with your new password.",
     "authLinkError": "This link is invalid or has expired. If you just confirmed your registration, try logging in; otherwise request a new link.",
-    "sessionExpiredInactivity": "Session expired due to inactivity, please log in again."
+    "sessionExpiredInactivity": "Session expired due to inactivity, please log in again.",
+    "registrationClosedTitle": "Registration closed",
+    "registrationClosedMessage": "Sign-ups will open soon.",
+    "registrationClosedContact": "For any questions, email us at"
   },
   "inactivity": {
     "warningTitle": "Still there?",

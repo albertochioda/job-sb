@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { TRIAL_LOOKUP_KEY } from "@/lib/billing/plans";
+import { isRegistrationOpen } from "@/lib/registration-gate";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -27,7 +28,15 @@ function randomSuffix(length = 8): string {
  * del pagamento, non provare a "bloccarlo" dopo.
  */
 export async function POST(request: NextRequest) {
-  const { fullName, email, termsAccepted, termsAcceptedAt, termsVersion, marketingConsent, locale } = await request.json();
+  const { fullName, email, termsAccepted, termsAcceptedAt, termsVersion, marketingConsent, locale, registrationKey } = await request.json();
+
+  // Blocco pre-live — applicato QUI indipendentemente dal fatto che
+  // register/page.tsx abbia già mostrato il modulo: un client potrebbe
+  // chiamare questa API direttamente, saltando la pagina. registrationKey
+  // non va mai loggato (vedi isRegistrationOpen, confronto a tempo costante).
+  if (!isRegistrationOpen(registrationKey)) {
+    return NextResponse.json({ error: "registration_closed" }, { status: 403 });
+  }
 
   if (typeof fullName !== "string" || !fullName.trim()) {
     return NextResponse.json({ error: "missing_full_name" }, { status: 400 });

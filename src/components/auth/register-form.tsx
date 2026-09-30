@@ -9,6 +9,11 @@ import { TRIAL_PRICE_EUR } from "@/lib/billing/plans";
 interface Props {
   locale: string;
   t: Record<string, string>;
+  // Preview key dell'URL (?key=...) che ha sbloccato il modulo — ripassata
+  // all'API così il controllo lato server (registration-gate.ts) è
+  // indipendente dal fatto che la pagina l'abbia già validata: un client
+  // potrebbe chiamare l'API direttamente saltando la pagina.
+  previewKey?: string;
 }
 
 // 2026-09-23 — Opzione A ("paga-prima"): il Trial è ora un pagamento one-time
@@ -26,7 +31,7 @@ interface Props {
 // MOMENTO STESSO in cui un utente Supabase viene creato — un signUp() qui,
 // anche seguito da un blocco "a valle", avrebbe già regalato il Trial prima
 // che qualunque controllo potesse scattare.
-export default function RegisterForm({ locale, t }: Props) {
+export default function RegisterForm({ locale, t, previewKey }: Props) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -53,6 +58,7 @@ export default function RegisterForm({ locale, t }: Props) {
           termsVersion: CURRENT_TERMS_VERSION,
           marketingConsent,
           locale,
+          registrationKey: previewKey,
         }),
       });
       const data = await res.json();
@@ -65,7 +71,13 @@ export default function RegisterForm({ locale, t }: Props) {
         return;
       }
 
-      setError(data.error === "email_already_registered" ? t.emailAlreadyRegistered : t.genericError);
+      setError(
+        data.error === "email_already_registered"
+          ? t.emailAlreadyRegistered
+          : data.error === "registration_closed"
+          ? t.registrationClosedMessage
+          : t.genericError
+      );
       setLoading(false);
     } catch (err) {
       console.error("[register-form] errore avvio checkout trial:", err);

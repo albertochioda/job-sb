@@ -179,7 +179,10 @@
     "requestNewReset": "Richiedi un nuovo link",
     "resetSuccessMessage": "Password aggiornata. Accedi con la nuova password.",
     "authLinkError": "Il link non è valido o è scaduto. Se hai appena confermato la registrazione, prova ad accedere; altrimenti richiedi un nuovo link.",
-    "sessionExpiredInactivity": "Sessione scaduta per inattività, accedi di nuovo."
+    "sessionExpiredInactivity": "Sessione scaduta per inattività, accedi di nuovo.",
+    "registrationClosedTitle": "Iscrizioni chiuse",
+    "registrationClosedMessage": "Le iscrizioni apriranno a breve.",
+    "registrationClosedContact": "Per qualsiasi domanda scrivici a"
   },
   "inactivity": {
     "warningTitle": "Sei ancora lì?",
