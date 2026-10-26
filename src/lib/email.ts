@@ -40,6 +40,20 @@ function getClient(): Resend | null {
   return client;
 }
 
+/**
+ * Indirizzo "nudo" del mittente reale (EMAIL_FROM può essere "Nome <indirizzo>"),
+ * da mostrare all'utente perché sappia quale mittente cercare nella posta
+ * indesiderata. Letto dalla stessa variabile usata da sendEmail(), così non
+ * può divergere dall'indirizzo con cui le email partono davvero. null se
+ * EMAIL_FROM non è configurata.
+ */
+export function getSenderAddress(): string | null {
+  const from = process.env.EMAIL_FROM?.trim();
+  if (!from) return null;
+  const bracketed = from.match(/<([^<>]+)>/);
+  return (bracketed ? bracketed[1] : from).trim() || null;
+}
+
 export interface SendEmailParams {
   to: string | string[];
   subject: string;

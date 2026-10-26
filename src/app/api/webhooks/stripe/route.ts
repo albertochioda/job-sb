@@ -4,6 +4,7 @@ import { track } from "@vercel/analytics/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, escapeHtml } from "@/lib/email";
 import { SITE_URL } from "@/lib/site-url";
+import { SUPPORT_EMAIL } from "@/lib/support-contact";
 import { CADENCE_LABELS } from "@/lib/billing/plans";
 
 const TIER_LABELS: Record<string, string> = {
@@ -175,7 +176,9 @@ export async function POST(request: NextRequest) {
             html: `<p>Ciao ${safeName},</p>` +
               `<p>Il pagamento è andato a buon fine: il tuo Trial di 14 giorni è attivo.</p>` +
               `<p><a href="${link}">Clicca qui per accedere al tuo account</a></p>` +
-              `<p>Il link è valido per un tempo limitato e usabile una sola volta — se scade, richiedine uno nuovo dalla pagina di accesso.</p>`,
+              `<p>Il link è valido per un tempo limitato e usabile una sola volta — se scade, richiedine uno nuovo dalla pagina di accesso.</p>` +
+              `<hr><p style="font-size:12px;color:#666;">Se hai trovato questa email nella posta indesiderata, segnalala come "non indesiderata": così i prossimi messaggi di Job Search Bridge arriveranno nella posta in arrivo.</p>`,
+            replyTo: SUPPORT_EMAIL,
           });
 
           await track("trial_pagato");

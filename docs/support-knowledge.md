@@ -18,6 +18,10 @@ Job Search Bridge offre 4 template per il CV: Professional, Two Column, Bold Hea
 
 Il trial è un pagamento singolo di €3,49, valido 14 giorni — non si rinnova mai automaticamente. Include 3 ricerche, 5 CV adattati e 5 lettere di motivazione, con accesso a tutti e 4 i template: sono limiti indipendenti, non un unico blocco. Se esaurisci le 3 ricerche prima dei 14 giorni, non puoi avviarne di nuove, ma puoi continuare ad adattare CV e generare lettere (fino ai tuoi 5+5) per le offerte già trovate. Alla scadenza dei 14 giorni, per continuare a usare Job Search Bridge serve sottoscrivere un piano a pagamento.
 
+## Non ho ricevuto l'email di attivazione
+
+Dopo il pagamento del Trial ricevi una email con il link per accedere al tuo account: di solito arriva entro pochi istanti. Se non la trovi entro qualche minuto, controlla la posta indesiderata (spam) e cerca il mittente Job Search Bridge. Se è finita lì, segnalala come "non indesiderata": così le prossime email di Job Search Bridge arriveranno nella posta in arrivo. Se l'email non c'è nemmeno nello spam, scrivi a support@jobsearchbridge.com.
+
 ## Limiti per tier
 
 Individual: 10 ricerche e 15 CV/lettere al mese, solo template Minimal Smart. Professional: 20 ricerche e 30 CV/lettere al mese, tutti e 4 i template. Sono disponibili anche piani trimestrali e annuali con sconto. Per i prezzi esatti, consulta la sezione Prezzi. Puoi controllare quanto hai usato in qualsiasi momento nella sezione Profilo.

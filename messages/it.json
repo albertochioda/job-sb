@@ -184,6 +184,13 @@
     "registrationClosedMessage": "Le iscrizioni apriranno a breve.",
     "registrationClosedContact": "Per qualsiasi domanda scrivici a"
   },
+  "trialSuccess": {
+    "title": "Pagamento completato ✅",
+    "body": "Stiamo attivando il tuo Trial — entro qualche istante riceverai un'email con il link per accedere al tuo account.",
+    "spamHint": "Non trovi l'email entro qualche minuto? Controlla la posta indesiderata (spam) e cerca il mittente {sender}, oppure scrivi a",
+    "spamHintNoSender": "Non trovi l'email entro qualche minuto? Controlla la posta indesiderata (spam), oppure scrivi a",
+    "login": "Vai alla pagina di accesso"
+  },
   "inactivity": {
     "warningTitle": "Sei ancora lì?",
     "warningMessage": "Verrai disconnesso tra {seconds} secondi per inattività.",

@@ -184,6 +184,13 @@
     "registrationClosedMessage": "Sign-ups will open soon.",
     "registrationClosedContact": "For any questions, email us at"
   },
+  "trialSuccess": {
+    "title": "Payment completed ✅",
+    "body": "We're activating your Trial — within a few moments you'll receive an email with the link to access your account.",
+    "spamHint": "Can't find the email after a few minutes? Check your junk or spam folder and look for the sender {sender}, or email us at",
+    "spamHintNoSender": "Can't find the email after a few minutes? Check your junk or spam folder, or email us at",
+    "login": "Go to the login page"
+  },
   "inactivity": {
     "warningTitle": "Still there?",
     "warningMessage": "You'll be logged out in {seconds} seconds due to inactivity.",
