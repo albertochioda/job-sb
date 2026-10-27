@@ -69,6 +69,23 @@ export function localeFromNext(next: string, locales: readonly string[], fallbac
   return first && locales.includes(first) ? first : fallback;
 }
 
+export interface CallbackRedirectInput {
+  next: string | null | undefined;
+  /** true solo se il code è stato scambiato con successo per una sessione. */
+  exchanged: boolean;
+  defaultNext: string;
+  loginErrorPath: string;
+}
+
+/**
+ * Percorso (senza origin) su cui /api/auth/callback manda l'utente. Con uno scambio riuscito va a `next`,
+ * ma SOLO se è un percorso interno (safeNext): `${origin}${next}` con next="@evil.com" diventa
+ * "https://sito@evil.com" e porta fuori dal sito. Se lo scambio fallisce, `next` non conta nulla.
+ */
+export function resolveCallbackRedirect({ next, exchanged, defaultNext, loginErrorPath }: CallbackRedirectInput): string {
+  return exchanged ? safeNext(next, defaultNext) : loginErrorPath;
+}
+
 export interface ResetRedirectInput {
   user: ExchangedUser | null | undefined;
   next: string | null | undefined;

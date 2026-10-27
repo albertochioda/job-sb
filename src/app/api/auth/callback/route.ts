@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { resolveCallbackRedirect } from "@/lib/reset-redirect";
 import { NextRequest, NextResponse } from "next/server";
 
 // Handles email confirmation redirect from Supabase (signUp() con
@@ -27,18 +28,26 @@ import { NextRequest, NextResponse } from "next/server";
 // riproducibile da qui via API dirette (che è quanto ho invece verificato:
 // un link generato via Admin API, senza contesto PKCE, atterra in stile
 // frammento, confermando che il limite sopra è reale se mai si presentasse).
+//
+// `next` arriva dalla query string, quindi è input non fidato: resolveCallbackRedirect() accetta solo
+// percorsi interni (lo stesso controllo di /api/auth/reset-password). Qui il difetto si sfruttava solo
+// con uno scambio riuscito, perché in caso di fallimento `next` non veniva usato.
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/it/dashboard";
 
+  let exchanged = false;
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
-    }
+    exchanged = !error;
   }
 
-  return NextResponse.redirect(`${origin}/it/login?error=auth`);
+  const path = resolveCallbackRedirect({
+    next: searchParams.get("next"),
+    exchanged,
+    defaultNext: "/it/dashboard",
+    loginErrorPath: "/it/login?error=auth",
+  });
+  return NextResponse.redirect(`${origin}${path}`);
 }

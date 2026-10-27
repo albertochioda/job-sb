@@ -5,7 +5,7 @@
 // Le forme degli utenti qui sotto sono quelle MISURATE dal vivo su Supabase il 2026-10-27 (utenti di prova
 // poi eliminati): createUser(email_confirm:true) -> confirmation_sent_at null; resetPasswordForEmail ->
 // recovery_sent_at valorizzato; conferma signUp -> confirmation_sent_at valorizzato, recovery_sent_at null.
-import { resolveResetRedirect, isFreshSignupConfirmation, safeNext, localeFromNext, FRESH_SIGNUP_WINDOW_MS } from "./reset-redirect.ts";
+import { resolveResetRedirect, resolveCallbackRedirect, isFreshSignupConfirmation, safeNext, localeFromNext, FRESH_SIGNUP_WINDOW_MS } from "./reset-redirect.ts";
 
 let ok = true;
 function check(label, condition) {
@@ -63,6 +63,19 @@ for (const bad of ["@evil.com", "//evil.com", "/\\evil.com", "https://evil.com",
 }
 check("next ostile + utente signup recente -> mai fuori dal sito", go(signupUser(120, 10), "@evil.com") === "/it/onboarding");
 check("next ostile + utente webhook -> fallback /it/reset-password", go(webhookUser(30, 10), "//evil.com") === "/it/reset-password");
+
+console.log("\n=== /api/auth/callback: resolveCallbackRedirect ===");
+{
+  const cb = (next, exchanged) => resolveCallbackRedirect({ next, exchanged, defaultNext: "/it/dashboard", loginErrorPath: "/it/login?error=auth" });
+  check("scambio riuscito + percorso interno -> quel percorso", cb("/en/dashboard", true) === "/en/dashboard");
+  check("scambio riuscito + percorso con query -> invariato", cb("/it/onboarding?step=2", true) === "/it/onboarding?step=2");
+  check("scambio riuscito, senza next -> /it/dashboard", cb(null, true) === "/it/dashboard" && cb(undefined, true) === "/it/dashboard");
+  for (const bad of ["@evil.com", "//evil.com", "/\\evil.com", "https://evil.com", "javascript:alert(1)", "evil.com", "/it/x\r\nSet-Cookie: a=b", ""]) {
+    check(`scambio riuscito + next ostile ${JSON.stringify(bad)} -> /it/dashboard (mai fuori dal sito)`, cb(bad, true) === "/it/dashboard");
+  }
+  check("l'URL finale resta sul nostro sito per ogni next ostile", ["@evil.com", "//evil.com", "/\\evil.com", "https://evil.com"].every((bad) => new URL(`https://jobsearchbridge.com${cb(bad, true)}`).host === "jobsearchbridge.com"));
+  check("scambio fallito -> login con errore, qualunque next", cb("/en/dashboard", false) === "/it/login?error=auth" && cb("@evil.com", false) === "/it/login?error=auth" && cb(null, false) === "/it/login?error=auth");
+}
 
 console.log("\n=== localeFromNext ===");
 check("/en/... -> en", localeFromNext("/en/reset-password", LOCALES, "it") === "en");
