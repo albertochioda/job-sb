@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { routing } from "@/i18n/routing";
+import { resolveResetRedirect, safeNext } from "@/lib/reset-redirect";
 import { NextRequest, NextResponse } from "next/server";
 
 // Route Handler dedicato invece del bridge condiviso /api/auth/callback: un
@@ -15,53 +17,41 @@ import { NextRequest, NextResponse } from "next/server";
 // falliva poi con "Auth session missing!". Qui invece siamo in un Route
 // Handler, dove cookies().set() è consentito e funziona davvero.
 //
-// SECONDA RESPONSABILITÀ, aggiunta quando "Confirm email" è stato valutato
-// per l'attivazione — questa route non riceve "code" solo dal proprio flusso
-// di reset password: proxy.ts dirotta qui ANCHE il caso "code atterrato sulla
-// home nuda" causato dal troncamento (inconsistente, noto) di redirect_to
-// nell'allowlist Redirect URLs di Supabase — e quel caso può derivare tanto
-// da un reset password quanto da una CONFERMA REGISTRAZIONE (signUp() con
-// emailRedirectTo verso /api/auth/callback, anch'esso soggetto allo stesso
-// troncamento). proxy.ts non ha modo di distinguere i due flussi PRIMA dello
-// scambio: il "code" è un token opaco senza contenuto semantico, e il
-// Referer che il browser manda arrivando da Supabase è ridotto alla sola
-// origin dalla referrer-policy cross-origin di default — identico in
-// entrambi i casi, quindi inutile. L'unico segnale utile emerge SOLO dopo
-// aver scambiato il code (e uno stesso code PKCE è scambiabile una sola
-// volta: non possiamo "sbirciare" qui e poi scambiarlo di nuovo altrove) —
-// per questo la distinzione va fatta qui, subito dopo l'exchange, non in
-// proxy.ts.
+// SECONDA RESPONSABILITÀ — questa route non riceve "code" solo dal proprio
+// flusso di reset password: proxy.ts dirotta qui ANCHE il caso "code atterrato
+// sulla home nuda" causato dal troncamento (inconsistente, noto) di
+// redirect_to nell'allowlist Redirect URLs di Supabase — e quel caso può
+// derivare tanto da un reset password quanto dalla CONFERMA di una
+// registrazione signUp() (oggi nessun flusso dell'app chiama più signUp(): la
+// registrazione passa dal pagamento e dal webhook, ma un vecchio link di
+// conferma potrebbe ancora arrivare). Il "code" è un token opaco, quindi la
+// distinzione si può fare solo DOPO lo scambio, sui dati dell'utente — vedi
+// reset-redirect.ts per il segnale usato (confirmation_sent_at) e perché NON
+// bastano né la data di conferma né `amr`: un utente creato dal webhook ha
+// email_confirmed_at = istante del pagamento, quindi un reset entro 5 minuti
+// veniva scambiato per una conferma e mandato all'onboarding senza passare
+// dal form della nuova password.
 //
-// Segnale usato: email_confirmed_at dell'utente appena valorizzato (entro
-// gli ultimi 5 minuti) significa che questo exchange ha appena confermato
-// una registrazione mai confermata prima — non un recovery su un account
-// confermato da tempo (con "Confirm email" prima disattivato, ogni account
-// esistente è già confermato dalla creazione, quindi questo ramo non si
-// attiva mai per loro). Falso positivo teorico solo se un utente richiede un
-// reset password entro 5 minuti dall'aver confermato la propria
-// registrazione — nel peggiore dei casi atterra su /onboarding invece che
-// sul form nuova password, non un errore bloccante.
-const SIGNUP_CONFIRMATION_WINDOW_MS = 5 * 60 * 1000;
-
+// `next` è input non fidato (query string): safeNext() accetta solo percorsi
+// interni, anche nel ramo di fallimento.
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/it/reset-password";
+  const fallbackNext = `/${routing.defaultLocale}/reset-password`;
+  const next = safeNext(searchParams.get("next"), fallbackNext);
 
   if (code) {
     const supabase = await createClient();
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      const confirmedAt = data.user?.email_confirmed_at
-        ? new Date(data.user.email_confirmed_at).getTime()
-        : null;
-      const isFreshSignupConfirmation =
-        confirmedAt !== null && Date.now() - confirmedAt < SIGNUP_CONFIRMATION_WINDOW_MS;
-
-      if (isFreshSignupConfirmation) {
-        return NextResponse.redirect(`${origin}/it/onboarding`);
-      }
-      return NextResponse.redirect(`${origin}${next}`);
+      const path = resolveResetRedirect({
+        user: data.user,
+        next,
+        locales: routing.locales,
+        defaultLocale: routing.defaultLocale,
+        now: Date.now(),
+      });
+      return NextResponse.redirect(`${origin}${path}`);
     }
   }
 
