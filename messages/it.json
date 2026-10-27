@@ -183,7 +183,9 @@
     "registrationClosedTitle": "Iscrizioni chiuse",
     "registrationClosedMessage": "Le iscrizioni apriranno a breve.",
     "registrationClosedContact": "Per qualsiasi domanda scrivici a",
-    "activationEmailHint": "Dopo il pagamento riceverai un'email con il link per attivare l'account. Se non arriva entro 5 minuti, controlla la posta indesiderata (spam) oppure scrivi a"
+    "activationEmailHint": "Dopo il pagamento riceverai un'email con il link per attivare l'account. Se non arriva entro 5 minuti, controlla la posta indesiderata (spam) oppure scrivi a",
+    "confirmEmail": "Conferma email",
+    "emailMismatch": "Le due email non coincidono. Controlla l'indirizzo: ti mandiamo il link di attivazione lì."
   },
   "trialSuccess": {
     "title": "Pagamento completato ✅",

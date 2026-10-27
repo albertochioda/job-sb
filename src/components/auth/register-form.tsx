@@ -6,6 +6,7 @@ import { track } from "@vercel/analytics";
 import { CURRENT_TERMS_VERSION } from "@/lib/terms-version";
 import { TRIAL_PRICE_EUR } from "@/lib/billing/plans";
 import { SUPPORT_EMAIL } from "@/lib/support-contact";
+import { emailsMatch } from "@/lib/email-confirmation";
 
 interface Props {
   locale: string;
@@ -35,6 +36,7 @@ interface Props {
 export default function RegisterForm({ locale, t, previewKey }: Props) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -43,6 +45,14 @@ export default function RegisterForm({ locale, t, previewKey }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    // Un refuso qui = l'utente paga e l'email di attivazione va a un indirizzo sbagliato.
+    // Stesso controllo ripetuto dall'API (create-trial-signup-session).
+    if (!emailsMatch(email, confirmEmail)) {
+      setError(t.emailMismatch);
+      return;
+    }
+
     setLoading(true);
 
     track("trial_checkout_iniziato");
@@ -54,6 +64,7 @@ export default function RegisterForm({ locale, t, previewKey }: Props) {
         body: JSON.stringify({
           fullName,
           email,
+          confirmEmail,
           termsAccepted,
           termsAcceptedAt: new Date().toISOString(),
           termsVersion: CURRENT_TERMS_VERSION,
@@ -75,6 +86,8 @@ export default function RegisterForm({ locale, t, previewKey }: Props) {
       setError(
         data.error === "email_already_registered"
           ? t.emailAlreadyRegistered
+          : data.error === "email_mismatch"
+          ? t.emailMismatch
           : data.error === "registration_closed"
           ? t.registrationClosedMessage
           : t.genericError
@@ -105,6 +118,16 @@ export default function RegisterForm({ locale, t, previewKey }: Props) {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
+          className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+      <div className="space-y-1">
+        <label className="text-sm font-medium">{t.confirmEmail}</label>
+        <input
+          type="email"
+          value={confirmEmail}
+          onChange={(e) => setConfirmEmail(e.target.value)}
           required
           className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         />

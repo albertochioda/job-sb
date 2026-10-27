@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { TRIAL_LOOKUP_KEY } from "@/lib/billing/plans";
 import { isRegistrationOpen } from "@/lib/registration-gate";
+import { emailsMatch } from "@/lib/email-confirmation";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -28,7 +29,7 @@ function randomSuffix(length = 8): string {
  * del pagamento, non provare a "bloccarlo" dopo.
  */
 export async function POST(request: NextRequest) {
-  const { fullName, email, termsAccepted, termsAcceptedAt, termsVersion, marketingConsent, locale, registrationKey } = await request.json();
+  const { fullName, email, confirmEmail, termsAccepted, termsAcceptedAt, termsVersion, marketingConsent, locale, registrationKey } = await request.json();
 
   // Blocco pre-live — applicato QUI indipendentemente dal fatto che
   // register/page.tsx abbia già mostrato il modulo: un client potrebbe
@@ -43,6 +44,12 @@ export async function POST(request: NextRequest) {
   }
   if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return NextResponse.json({ error: "invalid_email" }, { status: 400 });
+  }
+  // La conferma dell'email è richiesta anche qui, non solo nel modulo: un client potrebbe
+  // chiamare l'API direttamente. Un refuso = pagamento su un indirizzo che non riceverà mai
+  // l'email di attivazione.
+  if (!emailsMatch(email, confirmEmail)) {
+    return NextResponse.json({ error: "email_mismatch" }, { status: 400 });
   }
   if (termsAccepted !== true) {
     return NextResponse.json({ error: "terms_not_accepted" }, { status: 400 });
