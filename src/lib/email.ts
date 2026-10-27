@@ -86,9 +86,12 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
 
   const resend = getClient();
   if (!resend) {
+    // Né destinatari né oggetto nei log: sono dati personali (l'oggetto di alcune email contiene
+    // l'indirizzo dell'utente, es. le segnalazioni di supporto). Basta sapere QUANTE email sono saltate.
+    const recipientCount = Array.isArray(to) ? to.length : 1;
     console.warn(
       "[email] RESEND_API_KEY non configurata — invio saltato (nessuna email inviata). " +
-      `Destinatario previsto: ${Array.isArray(to) ? to.join(", ") : to}, oggetto: "${subject}"`
+      `Destinatari saltati: ${recipientCount}`
     );
     return { success: false, error: "RESEND_API_KEY non configurata" };
   }

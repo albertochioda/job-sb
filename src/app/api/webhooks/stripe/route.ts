@@ -119,10 +119,12 @@ export async function POST(request: NextRequest) {
             }
             const { data: existing } = await supabase.from("profiles").select("id").eq("email", email).maybeSingle();
             newUserId = existing?.id;
-            console.warn("[stripe-webhook] trial_signup: utente già esistente, riuso:", email);
+            // Niente email nei log (dato personale): la sessione Stripe basta a ritrovare il caso.
+            console.warn(`[stripe-webhook] trial_signup: utente già esistente, riuso (session=${session.id})`);
           }
           if (!newUserId) {
-            throw new Error(`trial_signup: impossibile determinare user_id per ${email}`);
+            // Il messaggio finisce nei log tramite il catch generale: niente email.
+            throw new Error(`trial_signup: impossibile determinare user_id (session=${session.id})`);
           }
 
           const { error: updErr } = await supabase

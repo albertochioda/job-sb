@@ -132,6 +132,28 @@ console.log("\n=== sendEmail: chiave di idempotenza (avvisi 'al massimo uno al g
   check("la chiave non finisce nel corpo della richiesta", !JSON.stringify(captured[0]?.body).includes("chiave-del-giorno"));
 }
 
+console.log("\n=== sendEmail senza RESEND_API_KEY: il log non contiene destinatari né oggetto ===");
+{
+  const warnings = [];
+  const realWarn = console.warn;
+  console.warn = (...args) => warnings.push(args.join(" "));
+  let single, multi;
+  try {
+    single = await withEnv({ RESEND_API_KEY: undefined, EMAIL_FROM: "alerts@jobsearchbridge.com" }, () =>
+      sendEmail({ to: "mario.rossi@example.com", subject: "Segnalazione da mario.rossi@example.com", html: "<p>x</p>" }));
+    multi = await withEnv({ RESEND_API_KEY: undefined, EMAIL_FROM: "alerts@jobsearchbridge.com" }, () =>
+      sendEmail({ to: ["anna@example.org", "luca@example.net"], subject: "Oggetto con Anna Bianchi", text: "x" }));
+  } finally {
+    console.warn = realWarn;
+  }
+  const all = warnings.join("\n");
+  check("nessuna email parte e l'errore resta esplicito", single.success === false && /RESEND_API_KEY non configurata/.test(single.error) && multi.success === false);
+  check("un avviso nei log per ogni invio saltato", warnings.length === 2 && warnings.every((w) => /RESEND_API_KEY non configurata/.test(w)));
+  check("il log dice QUANTI destinatari (1 e 2)", /Destinatari saltati: 1\b/.test(warnings[0] ?? "") && /Destinatari saltati: 2\b/.test(warnings[1] ?? ""));
+  check("nel log nessun indirizzo email (nessuna chiocciola)", !all.includes("@"));
+  check("nel log né nomi né il testo dell'oggetto", !/mario|rossi|anna|luca|bianchi|Segnalazione|Oggetto/i.test(all));
+}
+
 console.log("\n=== sendEmail: senza EMAIL_FROM non parte nulla ===");
 {
   const { result, captured } = await captureSend({ EMAIL_FROM: undefined }, { to: "utente@example.com", subject: "S", html: "<p>x</p>" });

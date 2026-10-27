@@ -141,7 +141,8 @@ export async function GET(request: NextRequest) {
     });
 
     if (!result.success) {
-      console.error(`[cron/trial-end-check] invio fallito per ${profile.email}:`, result.error);
+      // user_id come nelle righe vicine, mai l'email (dato personale).
+      console.error(`[cron/trial-end-check] invio fallito per user_id=${row.user_id}:`, result.error);
       failed += 1;
       continue; // non marcato notified: ritentato al prossimo giro
     }
