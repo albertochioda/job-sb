@@ -182,13 +182,14 @@
     "sessionExpiredInactivity": "Session expired due to inactivity, please log in again.",
     "registrationClosedTitle": "Registration closed",
     "registrationClosedMessage": "Sign-ups will open soon.",
-    "registrationClosedContact": "For any questions, email us at"
+    "registrationClosedContact": "For any questions, email us at",
+    "activationEmailHint": "After payment you'll receive an email with the link to activate your account. If it doesn't arrive within 5 minutes, check your junk or spam folder, or email us at"
   },
   "trialSuccess": {
     "title": "Payment completed ✅",
     "body": "We're activating your Trial — within a few moments you'll receive an email with the link to access your account.",
-    "spamHint": "Can't find the email after a few minutes? Check your junk or spam folder and look for the sender {sender}, or email us at",
-    "spamHintNoSender": "Can't find the email after a few minutes? Check your junk or spam folder, or email us at",
+    "spamHint": "Can't find the email after 5 minutes? Check your junk or spam folder and look for the sender {sender}, or email us at",
+    "spamHintNoSender": "Can't find the email after 5 minutes? Check your junk or spam folder, or email us at",
     "login": "Go to the login page"
   },
   "inactivity": {

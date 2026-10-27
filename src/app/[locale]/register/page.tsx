@@ -56,6 +56,7 @@ export default async function RegisterPage({
     genericError: t("genericError"),
     emailAlreadyRegistered: t("emailAlreadyRegistered"),
     registrationClosedMessage: t("registrationClosedMessage"),
+    activationEmailHint: t("activationEmailHint"),
   };
 
   return (

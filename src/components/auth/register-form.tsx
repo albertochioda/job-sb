@@ -5,6 +5,7 @@ import Link from "next/link";
 import { track } from "@vercel/analytics";
 import { CURRENT_TERMS_VERSION } from "@/lib/terms-version";
 import { TRIAL_PRICE_EUR } from "@/lib/billing/plans";
+import { SUPPORT_EMAIL } from "@/lib/support-contact";
 
 interface Props {
   locale: string;
@@ -144,6 +145,13 @@ export default function RegisterForm({ locale, t, previewKey }: Props) {
       </button>
       <p className="text-center text-xs text-muted-foreground">
         Reindirizzamento sicuro a Stripe per il pagamento. Nessun rinnovo automatico.
+      </p>
+      <p className="text-center text-sm text-muted-foreground">
+        {t.activationEmailHint}{" "}
+        <a href={`mailto:${SUPPORT_EMAIL}`} className="underline text-foreground">
+          {SUPPORT_EMAIL}
+        </a>
+        .
       </p>
       <p className="text-center text-sm text-muted-foreground">
         {t.alreadyAccount}{" "}
