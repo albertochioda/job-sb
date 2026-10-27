@@ -6,7 +6,7 @@
 // (id crescente, outcome 'pending' alla prenotazione): i limiti vengono provati su sequenze reali di richieste.
 import {
   processResend, isEligibleForResend, ipBucket, normalizeEmail, isValidEmailFormat,
-  deriveHashKey, hashIdentifier, RESEND_LIMITS,
+  deriveHashKey, hashIdentifier, RESEND_LIMITS, storeAlertIdempotencyKey, createDailyGate,
 } from "./activation-resend.ts";
 
 let ok = true;
@@ -27,11 +27,11 @@ const account = (over = {}) => ({
   passwordSet: false, firstPaymentAt: new Date(T0 - 2 * HOUR).toISOString(), ...over,
 });
 
-function makeWorld({ accounts = { "mario@example.com": account() }, store: storeOpts = {}, sendFails = false, findFails = false, alertFails = false } = {}) {
+function makeWorld({ accounts = { "mario@example.com": account() }, store: storeOpts = {}, sendFails = false, findFails = false, alertFails = false, storeAlertFails = false } = {}) {
   const clock = { now: T0 };
   const rows = [];
   let nextId = 1;
-  const calls = { sent: [], alerts: 0, warnings: [], finalized: [] };
+  const calls = { sent: [], alerts: 0, storeAlerts: 0, warnings: [], finalized: [] };
   const store = {
     async reserve(emailHash, ipHash) {
       if (storeOpts.failReserve) throw new Error("db giu'");
@@ -65,8 +65,9 @@ function makeWorld({ accounts = { "mario@example.com": account() }, store: store
     async findAccount(email) { if (findFails) throw new Error("lookup"); return accounts[email] ?? null; },
     async sendActivation(acc, email, locale) { if (sendFails) throw new Error("resend giu'"); calls.sent.push({ email, locale, id: acc.id }); },
     async alertGlobalCap() { calls.alerts++; if (alertFails) throw new Error("alert"); },
+    async alertStoreFailure() { calls.storeAlerts++; if (storeAlertFails) throw new Error("resend giu'"); },
     now: () => clock.now,
-    warn: (m) => calls.warnings.push(m),
+    warn: (m, e) => calls.warnings.push(e instanceof Error ? `${m} | ${e.message}` : m),
   };
   return { clock, rows, calls, deps, run: (over = {}) => processResend({ email: "mario@example.com", ip: "203.0.113.7", locale: "it", ...over }, deps) };
 }
@@ -235,6 +236,62 @@ console.log("\n=== contatori non disponibili: nessuna email (fail closed), mai u
 {
   const w = makeWorld({ findFails: true });
   check("ricerca account fallita -> error, nessun invio", (await w.run()) === "error" && w.calls.sent.length === 0);
+}
+
+// ── avviso quando i contatori non ci sono (tabella mancante) ──────────────
+console.log("\n=== contatori non disponibili: errore nei log + avviso, mai in silenzio ===");
+{
+  const w = makeWorld({ store: { failReserve: true } });
+  const out = await w.run();
+  check("tabella mancante (riserva fallita): store_error, nessun invio", out === "store_error" && w.calls.sent.length === 0);
+  check("avviso inviato (una chiamata)", w.calls.storeAlerts === 1);
+  check("errore scritto nei log, con causa e rimedio", w.calls.warnings.some((m) => /ERRORE: contatori non scrivibili/.test(m) && /activation_resend_log/.test(m) && /sql-activation-resend-log\.sql/.test(m) && /db giu'/.test(m)));
+}
+{
+  const w = makeWorld({ store: { failRead: true } });
+  const out = await w.run();
+  check("lettura dei contatori fallita: store_error + avviso", out === "store_error" && w.calls.storeAlerts === 1 && w.calls.sent.length === 0);
+  check("errore nei log (non leggibili)", w.calls.warnings.some((m) => /ERRORE: contatori non leggibili/.test(m)));
+}
+{
+  const w = makeWorld({ store: { failReserve: true }, storeAlertFails: true });
+  let threw = false; let out; try { out = await w.run(); } catch { threw = true; }
+  check("se l'avviso non parte (Resend giù) non lancia e non invia nulla", !threw && out === "store_error" && w.calls.sent.length === 0);
+  check("anche l'avviso fallito finisce nei log", w.calls.warnings.some((m) => /avviso di indisponibilità dei contatori NON inviato/.test(m) && /resend giu'/.test(m)));
+}
+{
+  const w = makeWorld();
+  await w.run();                                                           // normale: inviata
+  await w.run({ ip: "203.0.113.99" });                                     // limite per email
+  const w2 = makeWorld({ accounts: {} }); await w2.run();                  // non idonea
+  const w3 = makeWorld({ sendFails: true }); await w3.run();               // invio fallito
+  const w4 = makeWorld({ store: { failFinalize: true } }); await w4.run(); // solo la scrittura dell'esito fallisce
+  check("nessun avviso per invio riuscito, limiti, non idonei, invio fallito o esito non scritto", [w, w2, w3, w4].every((x) => x.calls.storeAlerts === 0));
+}
+{
+  const w = makeWorld({ store: { failReserve: true } });
+  for (let i = 0; i < 5; i++) await w.run({ ip: `198.51.100.${i}` });
+  check("ogni richiesta fallita è registrata come errore (5 su 5)", w.calls.warnings.filter((m) => /ERRORE: contatori non scrivibili/.test(m)).length === 5);
+  check("nessuna email, nemmeno dopo 5 richieste", w.calls.sent.length === 0);
+}
+
+console.log("\n=== 'al massimo un avviso al giorno': cancello in memoria e chiave di idempotenza ===");
+{
+  const d = (iso) => Date.parse(iso);
+  const gate = createDailyGate();
+  check("primo avviso del giorno: dovuto", gate.due(d("2026-10-27T08:00:00Z")) === true);
+  check("senza invio riuscito resta dovuto (si riprova)", gate.due(d("2026-10-27T08:00:05Z")) === true);
+  gate.done(d("2026-10-27T08:00:10Z"));
+  check("dopo l'invio, stesso giorno: non più dovuto", gate.due(d("2026-10-27T09:00:00Z")) === false && gate.due(d("2026-10-27T23:59:59.999Z")) === false);
+  check("a mezzanotte UTC torna dovuto", gate.due(d("2026-10-28T00:00:00Z")) === true);
+  gate.done(d("2026-10-28T00:00:01Z"));
+  check("il giorno dopo vale lo stesso schema", gate.due(d("2026-10-28T12:00:00Z")) === false && gate.due(d("2026-10-29T00:00:00Z")) === true);
+
+  const k1 = storeAlertIdempotencyKey(d("2026-10-27T08:00:00Z"), "avvisi@example.com");
+  check("stessa chiave per due istanti dello stesso giorno UTC", k1 === storeAlertIdempotencyKey(d("2026-10-27T23:59:59Z"), "avvisi@example.com"));
+  check("chiave diversa il giorno dopo", k1 !== storeAlertIdempotencyKey(d("2026-10-28T00:00:00Z"), "avvisi@example.com"));
+  check("chiave diversa per un altro destinatario (nessun conflitto con avvisi altrui)", k1 !== storeAlertIdempotencyKey(d("2026-10-27T08:00:00Z"), "altro@example.com"));
+  check("la chiave non contiene dati degli utenti (solo giorno e destinatario degli avvisi)", /^activation-resend-store-failure-2026-10-27-avvisi@example\.com$/.test(k1));
 }
 
 // ── formati ───────────────────────────────────────────────────────────────

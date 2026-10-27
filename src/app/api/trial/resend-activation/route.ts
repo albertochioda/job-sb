@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { routing } from "@/i18n/routing";
 import { isValidEmailFormat, processResend } from "@/lib/activation-resend";
-import { createResendDeps } from "@/lib/activation-resend-server";
+import { alertResendStoreFailure, createResendDeps } from "@/lib/activation-resend-server";
 import { verifyCaptcha } from "@/lib/captcha";
 
 /**
@@ -78,7 +78,14 @@ export async function POST(request: NextRequest) {
       // Solo l'esito: mai email o IP nei log.
       console.log(`[activation-resend] esito=${outcome}`);
     } catch (err) {
-      console.error("[activation-resend] errore inatteso:", err instanceof Error ? err.message : err);
+      // Qui si arriva solo se createResendDeps() fallisce (es. variabili Supabase mancanti): processResend()
+      // non lancia mai. Stesso trattamento dei contatori non disponibili: errore nei log + avviso (1 al giorno).
+      console.error("[activation-resend] ERRORE inatteso — nessuna email inviata:", err instanceof Error ? err.message : err);
+      try {
+        await alertResendStoreFailure();
+      } catch (alertErr) {
+        console.error("[activation-resend] avviso NON inviato:", alertErr instanceof Error ? alertErr.message : alertErr);
+      }
     }
   });
 

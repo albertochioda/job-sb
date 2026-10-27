@@ -65,6 +65,12 @@ export interface ResendDeps {
   /** Genera un nuovo link e spedisce l'email. Deve lanciare se qualcosa va storto. */
   sendActivation(account: ResendAccount, email: string, locale: string): Promise<void>;
   alertGlobalCap(): Promise<void>;
+  /**
+   * Avvisa chi gestisce il servizio che i contatori non sono disponibili (tabella mancante, database
+   * non raggiungibile): in quel caso la route non invia nulla e, senza avviso, nessuno se ne accorgerebbe.
+   * L'implementazione deve limitarsi a UN avviso al giorno. Può lanciare: processResend() lo intercetta.
+   */
+  alertStoreFailure(): Promise<void>;
   now(): number;
   warn(message: string, err?: unknown): void;
 }
@@ -133,6 +139,35 @@ export function isEligibleForResend(account: ResendAccount | null, now: number):
   return age >= 0 && age <= RESEND_LIMITS.accountMaxAgeDays * DAY;
 }
 
+// ── avviso "contatori non disponibili": al massimo uno al giorno ───────────
+
+const utcDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+
+/**
+ * Chiave di idempotenza dell'avviso: una per giorno UTC e per destinatario. Con la stessa chiave
+ * Resend non spedisce una seconda email (e restituisce lo stesso id) per 24 ore, quindi il limite
+ * "uno al giorno" regge anche tra istanze serverless diverse. Include il destinatario per non
+ * entrare in conflitto con un avviso identico mandato altrove (stessa chiave, contenuto diverso).
+ */
+export function storeAlertIdempotencyKey(nowMs: number, recipient: string): string {
+  return `activation-resend-store-failure-${utcDay(nowMs)}-${recipient}`;
+}
+
+/**
+ * Cancello in memoria (per istanza) che evita di richiamare Resend a ogni richiesta fallita nello stesso
+ * giorno UTC. `done()` va chiamato solo dopo un invio riuscito: se Resend non risponde, la richiesta
+ * successiva riprova invece di restare in silenzio fino a domani.
+ */
+export function createDailyGate() {
+  let doneDay: string | null = null;
+  return {
+    due: (nowMs: number) => doneDay !== utcDay(nowMs),
+    done: (nowMs: number) => {
+      doneDay = utcDay(nowMs);
+    },
+  };
+}
+
 // ── elaborazione ──────────────────────────────────────────────────────────
 
 const countSince = (rows: LoggedRow[], from: number) => rows.filter((r) => r.at >= from).length;
@@ -150,12 +185,23 @@ export async function processResend(input: ResendInput, deps: ResendDeps): Promi
   const ipHash = deps.hash(`ip:${ipBucket(input.ip)}`);
   const now = deps.now();
 
+  // Contatori non disponibili: si scrive un ERRORE nei log e si avvisa (una volta al giorno),
+  // oltre a non inviare nulla. Mai in silenzio: la causa tipica è la tabella non ancora creata.
+  const storeUnavailable = async (what: string, err: unknown): Promise<"store_error"> => {
+    deps.warn(`ERRORE: contatori ${what} — nessuna email inviata (fail closed). Verifica che la tabella activation_resend_log esista (scripts/sql-activation-resend-log.sql)`, err);
+    try {
+      await deps.alertStoreFailure();
+    } catch (alertErr) {
+      deps.warn("avviso di indisponibilità dei contatori NON inviato", alertErr);
+    }
+    return "store_error";
+  };
+
   let id: number;
   try {
     id = await deps.store.reserve(emailHash, ipHash);
   } catch (err) {
-    deps.warn("contatori non scrivibili: nessun invio (fail closed)", err);
-    return "store_error";
+    return storeUnavailable("non scrivibili", err);
   }
 
   const finish = async (outcome: FinalOutcome): Promise<FinalOutcome> => {
@@ -177,9 +223,8 @@ export async function processResend(input: ResendInput, deps: ResendDeps): Promi
       deps.store.globalActive(now - HOUR),
     ]);
   } catch (err) {
-    deps.warn("contatori non leggibili: nessun invio (fail closed)", err);
     await finish("error");
-    return "store_error";
+    return storeUnavailable("non leggibili", err);
   }
   const before = (rows: LoggedRow[]) => rows.filter((r) => r.id < id);
 

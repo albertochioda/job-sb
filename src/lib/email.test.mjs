@@ -77,7 +77,7 @@ async function captureSend(env, params) {
   const realFetch = globalThis.fetch;
   const captured = [];
   globalThis.fetch = async (url, init) => {
-    captured.push({ url: String(url), body: JSON.parse(init.body) });
+    captured.push({ url: String(url), body: JSON.parse(init.body), idempotencyKey: init.headers.get("Idempotency-Key") });
     return new Response(JSON.stringify({ id: "test-id" }), { status: 200, headers: { "content-type": "application/json" } });
   };
   try {
@@ -118,6 +118,18 @@ console.log("\n=== sendEmail: replyTo arriva a Resend ===");
   );
   const rt = captured[0]?.body.reply_to;
   check("reply_to = support@jobsearchbridge.com", rt === "support@jobsearchbridge.com" || (Array.isArray(rt) && rt[0] === "support@jobsearchbridge.com"));
+}
+
+console.log("\n=== sendEmail: chiave di idempotenza (avvisi 'al massimo uno al giorno') ===");
+{
+  const { captured } = await captureSend(
+    { EMAIL_FROM: "alerts@jobsearchbridge.com" },
+    { to: "avvisi@example.com", subject: "S", html: "<p>x</p>", idempotencyKey: "chiave-del-giorno-2026-10-27" }
+  );
+  check("header Idempotency-Key = chiave passata", captured[0]?.idempotencyKey === "chiave-del-giorno-2026-10-27");
+  const { captured: plain } = await captureSend({ EMAIL_FROM: "alerts@jobsearchbridge.com" }, { to: "utente@example.com", subject: "S", html: "<p>x</p>" });
+  check("nessun header di idempotenza se non richiesto (tutte le altre email invariate)", plain[0]?.idempotencyKey === null);
+  check("la chiave non finisce nel corpo della richiesta", !JSON.stringify(captured[0]?.body).includes("chiave-del-giorno"));
 }
 
 console.log("\n=== sendEmail: senza EMAIL_FROM non parte nulla ===");

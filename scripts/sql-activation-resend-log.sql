@@ -17,8 +17,10 @@
 -- authenticated possono leggere o scrivere la tabella.
 --
 -- ESECUZIONE: a mano dal SQL Editor di Supabase, UNA volta. Idempotente (if not exists).
--- Finché la tabella non esiste, la route risponde comunque 200 ma NON invia nessuna
--- email (fail closed) e il cron registra solo un errore nei log, senza interrompersi.
+-- Finché la tabella non esiste, la route risponde comunque 200 ma NON invia nessuna email
+-- (fail closed), scrive un ERRORE nei log di Vercel ("[activation-resend] ERRORE: contatori ...")
+-- e manda un avviso a ALERT_EMAIL_TO, al massimo uno al giorno. Il cron registra solo un errore
+-- nei log, senza interrompersi.
 
 create table if not exists activation_resend_log (
   id bigint generated always as identity primary key,

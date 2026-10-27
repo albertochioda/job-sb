@@ -6,9 +6,11 @@ import { SUPPORT_EMAIL } from "@/lib/support-contact";
 import { buildActivationEmail } from "@/lib/activation-email";
 import { generateActivationLink } from "@/lib/activation-link";
 import {
+  createDailyGate,
   deriveHashKey,
   hashIdentifier,
   RESEND_LIMITS,
+  storeAlertIdempotencyKey,
   type FinalOutcome,
   type LoggedRow,
   type ResendAccount,
@@ -22,6 +24,38 @@ import {
 
 const TABLE = "activation_resend_log";
 const ALERT_EMAIL_TO = process.env.ALERT_EMAIL_TO || "alberto.chioda@orvendecision.com";
+
+/**
+ * Avviso "il reinvio non sta funzionando": i contatori (tabella activation_resend_log) non sono
+ * disponibili, quindi la route non invia nulla. Al massimo UNO al giorno:
+ *  - per istanza, dal cancello in memoria (evita di richiamare Resend a ogni richiesta);
+ *  - tra istanze, dalla chiave di idempotenza di Resend (una per giorno UTC): una seconda email con
+ *    la stessa chiave non parte e Resend restituisce lo stesso id.
+ * Il contenuto è VOLUTAMENTE costante (niente messaggio d'errore, orari o dati): con la stessa chiave
+ * Resend rifiuta un contenuto diverso. Il dettaglio dell'errore sta nei log di Vercel.
+ * Non contiene né email né IP degli utenti.
+ */
+const storeAlertGate = createDailyGate();
+
+export async function alertResendStoreFailure(): Promise<void> {
+  const now = Date.now();
+  if (!storeAlertGate.due(now)) return;
+  const result = await sendEmail({
+    to: ALERT_EMAIL_TO,
+    subject: "🚨 Reinvio email di attivazione NON funzionante: contatori non disponibili",
+    html:
+      `<p>La pagina di reinvio dell'email di attivazione (/trial/resend) non sta inviando nulla: i contatori anti-abuso ` +
+      `non sono leggibili o scrivibili e la route si ferma per sicurezza (nessun invio senza limiti).</p>` +
+      `<p>Causa più probabile: la tabella <code>activation_resend_log</code> non esiste ancora. Eseguire ` +
+      `<code>scripts/sql-activation-resend-log.sql</code> nel SQL Editor di Supabase. Altrimenti controllare i log di Vercel ` +
+      `(ricerca: <code>[activation-resend]</code>) per il messaggio d'errore.</p>` +
+      `<p>Questo avviso parte al massimo una volta al giorno.</p>`,
+    idempotencyKey: storeAlertIdempotencyKey(now, ALERT_EMAIL_TO),
+  });
+  if (!result.success) throw new Error(result.error);
+  storeAlertGate.done(now);
+  console.error(`[activation-resend] avviso di indisponibilità inviato a ALERT_EMAIL_TO (id=${result.id})`);
+}
 
 type Row = { id: number | string; created_at: string };
 const toRows = (data: Row[] | null): LoggedRow[] => (data ?? []).map((r) => ({ id: Number(r.id), at: Date.parse(r.created_at) }));
@@ -128,6 +162,8 @@ export function createResendDeps(): ResendDeps {
       });
       if (!result.success) throw new Error(result.error);
     },
+
+    alertStoreFailure: alertResendStoreFailure,
 
     now: () => Date.now(),
     warn: (message, err) => console.error(`[activation-resend] ${message}`, err instanceof Error ? err.message : (err ?? "")),

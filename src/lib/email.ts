@@ -61,6 +61,14 @@ export interface SendEmailParams {
   text?: string;
   from?: string;
   replyTo?: string;
+  /**
+   * Chiave di idempotenza di Resend (header Idempotency-Key, valida 24 ore): una seconda
+   * richiesta con la stessa chiave e lo stesso contenuto NON spedisce un'altra email e
+   * restituisce lo stesso id. Serve agli avvisi "al massimo uno al giorno" anche tra istanze
+   * serverless diverse e senza un database. Con la stessa chiave il contenuto deve restare
+   * identico, altrimenti Resend risponde con un errore.
+   */
+  idempotencyKey?: string;
 }
 
 export interface SendEmailResult {
@@ -70,7 +78,7 @@ export interface SendEmailResult {
 }
 
 export async function sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
-  const { to, subject, html, text, from, replyTo } = params;
+  const { to, subject, html, text, from, replyTo, idempotencyKey } = params;
 
   if (!html && !text) {
     return { success: false, error: "sendEmail: serve almeno uno tra 'html' e 'text'" };
@@ -96,14 +104,17 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
     // fatta a runtime sopra — il tipo union di CreateEmailOptions (richiede
     // esplicitamente html/text/react) non è esprimibile con una spread
     // condizionale senza perdere quella garanzia già verificata.
-    const { data, error } = await resend.emails.send({
-      from: fromAddress,
-      to,
-      subject,
-      ...(html ? { html } : {}),
-      ...(text ? { text } : {}),
-      ...(replyTo ? { replyTo } : {}),
-    } as CreateEmailOptions);
+    const { data, error } = await resend.emails.send(
+      {
+        from: fromAddress,
+        to,
+        subject,
+        ...(html ? { html } : {}),
+        ...(text ? { text } : {}),
+        ...(replyTo ? { replyTo } : {}),
+      } as CreateEmailOptions,
+      idempotencyKey ? { idempotencyKey } : undefined
+    );
 
     if (error) {
       console.error("[email] invio fallito:", error);
