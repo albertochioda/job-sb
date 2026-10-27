@@ -5,6 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, escapeHtml } from "@/lib/email";
 import { SITE_URL } from "@/lib/site-url";
 import { SUPPORT_EMAIL } from "@/lib/support-contact";
+import { generateActivationLink } from "@/lib/activation-link";
+import { buildActivationEmail } from "@/lib/activation-email";
 import { CADENCE_LABELS } from "@/lib/billing/plans";
 
 const TIER_LABELS: Record<string, string> = {
@@ -157,28 +159,28 @@ export async function POST(request: NextRequest) {
           // un Client Component fatto apposta per leggerlo (vedi il file
           // per il perché) e far scegliere una password prima di procedere
           // — verificato il 2026-09-24 con un utente reale usa-e-getta.
-          const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
-            type: "magiclink",
-            email,
-            options: { redirectTo: `${SITE_URL}/${locale}/trial/activate` },
-          });
-          if (linkErr || !linkData?.properties?.action_link) {
-            console.error("[stripe-webhook] trial_signup: errore generazione magic link:", linkErr?.message);
+          // Il link e il testo dell'email vivono in lib/activation-link.ts e
+          // lib/activation-email.ts: gli stessi usati dal reinvio
+          // (/api/trial/resend-activation), così i due invii non divergono.
+          const { link, error: linkError } = await generateActivationLink(supabase, email, locale);
+          if (!link) {
+            console.error("[stripe-webhook] trial_signup: errore generazione magic link:", linkError);
             break; // pagamento e account restano validi; l'utente può comunque
                     // accedere da /login con "password dimenticata" sulla sua email
+                    // o chiedere un nuovo link da /trial/resend
           }
 
-          const safeName = escapeHtml(fullName);
-          const link = linkData.properties.action_link;
+          const activationEmail = buildActivationEmail({
+            safeName: escapeHtml(fullName),
+            link,
+            resendUrl: `${SITE_URL}/${locale}/trial/resend`,
+            supportEmail: SUPPORT_EMAIL,
+          });
           await sendEmail({
             to: email,
-            subject: "Il tuo Trial di Job Search Bridge è pronto",
-            html: `<p>Ciao ${safeName},</p>` +
-              `<p>Il pagamento è andato a buon fine: il tuo Trial di 14 giorni è attivo.</p>` +
-              `<p><a href="${link}">Clicca qui per accedere al tuo account</a></p>` +
-              `<p>Il link è valido per un tempo limitato e usabile una sola volta — se scade, richiedine uno nuovo dalla pagina di accesso.</p>` +
-              `<hr><p style="font-size:12px;color:#666;">Se hai trovato questa email nella posta indesiderata, segnalala come "non indesiderata": così i prossimi messaggi di Job Search Bridge arriveranno nella posta in arrivo.</p>`,
-            replyTo: SUPPORT_EMAIL,
+            subject: activationEmail.subject,
+            html: activationEmail.html,
+            replyTo: activationEmail.replyTo,
           });
 
           await track("trial_pagato");

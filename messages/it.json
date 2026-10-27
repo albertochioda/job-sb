@@ -190,7 +190,19 @@
     "body": "Stiamo attivando il tuo Trial — entro qualche istante riceverai un'email con il link per accedere al tuo account.",
     "spamHint": "Non trovi l'email entro 5 minuti? Controlla la posta indesiderata (spam) e cerca il mittente {sender}, oppure scrivi a",
     "spamHintNoSender": "Non trovi l'email entro 5 minuti? Controlla la posta indesiderata (spam), oppure scrivi a",
+    "resendLink": "Non hai ricevuto l'email? Richiedi un nuovo link",
     "login": "Vai alla pagina di accesso"
+  },
+  "trialResend": {
+    "title": "Reinvia l'email di attivazione",
+    "intro": "Inserisci l'email con cui hai pagato il Trial: se c'è un account ancora da attivare, ti mandiamo un nuovo link.",
+    "email": "Email",
+    "submit": "Invia di nuovo il link",
+    "done": "Se esiste un Trial da attivare per questo indirizzo, ti abbiamo mandato un nuovo link. Se non arriva entro 5 minuti, controlla la posta indesiderata (spam) oppure scrivi a",
+    "newLinkWarning": "Il nuovo link annulla quello precedente: usa sempre l'ultima email ricevuta.",
+    "error": "Si è verificato un problema, riprova tra qualche istante.",
+    "captchaFailed": "Verifica non riuscita, riprova.",
+    "backToLogin": "Vai alla pagina di accesso"
   },
   "inactivity": {
     "warningTitle": "Sei ancora lì?",

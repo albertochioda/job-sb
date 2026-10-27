@@ -26,7 +26,9 @@ import { SITE_URL } from "@/lib/site-url";
  * (audit privacy 2026-09-24, punto 7) come passo AGGIUNTIVO, non un cron
  * a sé — consolidamento deciso per restare sotto il limite di 2 cron job
  * del piano Vercel Hobby (rimandato l'upgrade a Pro finché Stripe non
- * passa in modalità live). Stesso giorno/orario di esecuzione di questo
+ * passa in modalità live). Stesso criterio per la retention a 7 giorni di
+ * activation_resend_log (contatori anti-abuso del reinvio dell'email di
+ * attivazione). Stesso giorno/orario di esecuzione di questo
  * cron, ma completamente isolato: un fallimento nella pulizia diagnostica
  * non deve mai impedire l'invio delle email di fine Trial, e viceversa —
  * per questo il blocco sotto ha il proprio try/catch indipendente ed è
@@ -35,6 +37,7 @@ import { SITE_URL } from "@/lib/site-url";
 
 const TRIAL_RUNS_LIMIT = 3; // usage_limits.runs_per_month per tier='trial' — vedi nota sotto
 const DIAGNOSTIC_LOG_RETENTION_DAYS = 30;
+const RESEND_LOG_RETENTION_DAYS = 7;
 
 export async function GET(request: NextRequest) {
   const auth = request.headers.get("Authorization");
@@ -62,6 +65,26 @@ export async function GET(request: NextRequest) {
     }
   } catch (diagException) {
     console.error("[cron/trial-end-check] retention diagnostic_search_params_log — eccezione:", diagException);
+  }
+
+  // Retention dei contatori del reinvio email di attivazione (solo hash di email/IP, ma
+  // pur sempre dati personali: 7 giorni). Stesso criterio del passo sopra: indipendente,
+  // best-effort. Se la tabella non esiste ancora (scripts/sql-activation-resend-log.sql
+  // non eseguito) è solo un errore nei log. Nessun cron nuovo: il piano Hobby ne ammette 2.
+  let resendLogDeleted: number | null = null;
+  try {
+    const cutoff = new Date(Date.now() - RESEND_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    const { error: resendLogError, count } = await supabase
+      .from("activation_resend_log")
+      .delete({ count: "exact" })
+      .lt("created_at", cutoff);
+    if (resendLogError) {
+      console.error("[cron/trial-end-check] retention activation_resend_log fallita:", resendLogError.message);
+    } else {
+      resendLogDeleted = count ?? 0;
+    }
+  } catch (resendLogException) {
+    console.error("[cron/trial-end-check] retention activation_resend_log — eccezione:", resendLogException);
   }
 
   // TRIAL_RUNS_LIMIT è oggi una costante locale, non letta da usage_limits:
@@ -135,5 +158,5 @@ export async function GET(request: NextRequest) {
     sent += 1;
   }
 
-  return NextResponse.json({ checked: rows.length, sent, failed, diagnosticLogDeleted });
+  return NextResponse.json({ checked: rows.length, sent, failed, diagnosticLogDeleted, resendLogDeleted });
 }

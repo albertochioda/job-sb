@@ -91,7 +91,10 @@ export default function TrialActivateForm({ locale }: { locale: string }) {
 
     setLoading(true);
     const supabase = createClient();
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    // password_set: il reinvio dell'email di attivazione (api/trial/resend-activation) manda
+    // un nuovo link solo a chi NON lo ha — vedi scripts/sql-backfill-password-set.sql per
+    // gli utenti che la password l'hanno già impostata prima di questo flag.
+    const { error: updateError } = await supabase.auth.updateUser({ password, data: { password_set: true } });
 
     if (updateError) {
       setLoading(false);
@@ -119,7 +122,10 @@ export default function TrialActivateForm({ locale }: { locale: string }) {
         <p className="text-sm text-muted-foreground">
           Se hai appena pagato il Trial, controlla di aver usato il link più recente ricevuto via email — ogni link è utilizzabile una sola volta.
         </p>
-        <Link href={`/${locale}/login`} className="text-sm underline text-foreground">
+        <Link href={`/${locale}/trial/resend`} className="block text-sm underline text-foreground">
+          Richiedi un nuovo link di attivazione
+        </Link>
+        <Link href={`/${locale}/login`} className="block text-sm underline text-foreground">
           Vai alla pagina di accesso
         </Link>
       </div>

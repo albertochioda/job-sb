@@ -34,7 +34,10 @@ export default function ResetPasswordForm({ locale, t }: Props) {
 
     setLoading(true);
     const supabase = createClient();
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    // password_set: vedi trial-activate-form.tsx — chi imposta la password da qui (anche un
+    // utente del Trial che non ha mai usato il link di attivazione) non deve più ricevere
+    // email di reinvio dell'attivazione.
+    const { error: updateError } = await supabase.auth.updateUser({ password, data: { password_set: true } });
 
     if (updateError) {
       setLoading(false);

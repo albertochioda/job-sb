@@ -190,7 +190,19 @@
     "body": "We're activating your Trial — within a few moments you'll receive an email with the link to access your account.",
     "spamHint": "Can't find the email after 5 minutes? Check your junk or spam folder and look for the sender {sender}, or email us at",
     "spamHintNoSender": "Can't find the email after 5 minutes? Check your junk or spam folder, or email us at",
+    "resendLink": "Didn't get the email? Request a new link",
     "login": "Go to the login page"
+  },
+  "trialResend": {
+    "title": "Resend the activation email",
+    "intro": "Enter the email you paid the Trial with: if there's an account waiting to be activated, we'll send you a new link.",
+    "email": "Email",
+    "submit": "Send the link again",
+    "done": "If there's a Trial waiting to be activated for this address, we've sent you a new link. If it doesn't arrive within 5 minutes, check your junk or spam folder, or email us at",
+    "newLinkWarning": "The new link cancels the previous one: always use the latest email you received.",
+    "error": "Something went wrong. Please try again in a moment.",
+    "captchaFailed": "Verification failed, please try again.",
+    "backToLogin": "Go to the login page"
   },
   "inactivity": {
     "warningTitle": "Still there?",

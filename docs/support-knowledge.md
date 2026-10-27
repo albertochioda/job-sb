@@ -20,7 +20,7 @@ Il trial è un pagamento singolo di €3,49, valido 14 giorni — non si rinnova
 
 ## Non ho ricevuto l'email di attivazione
 
-Dopo il pagamento del Trial ricevi una email con il link per accedere al tuo account: di solito arriva entro pochi istanti. Se non la trovi entro qualche minuto, controlla la posta indesiderata (spam) e cerca il mittente Job Search Bridge. Se è finita lì, segnalala come "non indesiderata": così le prossime email di Job Search Bridge arriveranno nella posta in arrivo. Se l'email non c'è nemmeno nello spam, scrivi a support@jobsearchbridge.com.
+Dopo il pagamento del Trial ricevi una email con il link per accedere al tuo account: di solito arriva entro pochi istanti. Se non la trovi entro qualche minuto, controlla la posta indesiderata (spam) e cerca il mittente Job Search Bridge. Se è finita lì, segnalala come "non indesiderata": così le prossime email di Job Search Bridge arriveranno nella posta in arrivo. Se l'email non c'è nemmeno nello spam, puoi chiederne una nuova dalla pagina "Reinvia l'email di attivazione": ci scrivi l'email con cui hai pagato e, se c'è un account ancora da attivare, ti arriva un nuovo link (il link precedente smette di funzionare, quindi usa sempre l'ultima email ricevuta; puoi richiederlo più volte, ma con qualche limite di tempo tra una richiesta e l'altra). La pagina risponde allo stesso modo anche se l'indirizzo non corrisponde a nessun account. Se nemmeno così arriva nulla, scrivi a support@jobsearchbridge.com.
 
 ## Limiti per tier
 

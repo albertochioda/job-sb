@@ -36,6 +36,11 @@ export default async function CheckoutTrialSuccessPage({
           </a>
           .
         </p>
+        <p className="text-sm">
+          <Link href={`/${locale}/trial/resend`} className="underline text-foreground">
+            {t("resendLink")}
+          </Link>
+        </p>
         <Link
           href={`/${locale}/login`}
           className="inline-flex items-center justify-center rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
