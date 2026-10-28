@@ -97,7 +97,9 @@ export async function POST(request: NextRequest) {
       sent += 1;
     } else {
       failures.push(recipient.email);
-      console.error(`[notify-terms-change] invio fallito per ${recipient.email}:`, result.error);
+      // user_id, mai l'email (dato personale). L'elenco completo dei destinatari falliti
+      // (failures) resta solo nella risposta JSON all'amministratore, non nei log.
+      console.error(`[notify-terms-change] invio fallito per user_id=${recipient.id}:`, result.error);
     }
     await sleep(SEND_DELAY_MS);
   }

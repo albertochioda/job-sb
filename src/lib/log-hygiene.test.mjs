@@ -60,7 +60,9 @@ function codeOfCall(src, start) {
 function scan(src) {
   const found = [];
   for (const m of src.matchAll(STARTERS)) {
-    const code = codeOfCall(src, m.index + m[0].length);
+    // Un conteggio (`recipients.length`) e gli identificativi tecnici (`recipient.id`, `row.user_id`, `session.id`) non sono
+    // email né nomi: si tolgono prima del controllo, così `recipient.id` non fa scattare il divieto su `recipient`.
+    const code = codeOfCall(src, m.index + m[0].length).replace(/[\w$.]+\.(?:length|id|user_id)\b/g, " ");
     found.push({ line: src.slice(0, m.index).split("\n").length, kind: m[0].startsWith("console") ? "console" : "new Error", bad: BANNED.exec(code)?.[0] ?? null });
   }
   return found;
@@ -79,12 +81,19 @@ check("testo fisso con la parola email NON è un falso positivo", !flagged('cons
 check("template con solo user_id e messaggio d'errore", !flagged("console.error(`invio fallito per user_id=${row.user_id}:`, result.error);"));
 check("virgolette e parentesi dentro le stringhe non rompono la lettura", !flagged("console.log(\"a (b) 'c' email\", x); const email = 1;"));
 check("conteggio destinatari (variabile calcolata fuori) ammesso", !flagged("console.warn(`Destinatari: ${recipientCount}`);"));
+check("un conteggio (.length) non è un dato personale", !flagged("console.log(`completato: ${sent}/${recipients.length} inviate, ${failures.length} fallite`);"));
+check("ma la lista dei destinatari passata per intero SI", flagged("console.log(recipients);") && flagged("console.error(`falliti: ${failures}`, recipient);"));
+check("e l'email di un destinatario di un ciclo SI", flagged("console.error(`invio fallito per ${recipient.email}:`, result.error);"));
+check("user_id di un destinatario è ammesso (come nelle righe vicine)", !flagged("console.error(`invio fallito per user_id=${recipient.id}:`, result.error);"));
+check("ma .id non 'copre' un altro campo personale nella stessa chiamata", flagged("console.error(`per ${recipient.id} (${recipient.email})`);"));
 
 // ── i file del lavoro ──────────────────────────────────────────────────────
 console.log("\n=== nessuna email/destinatario/oggetto/nome nei log dei file toccati ===");
 const FILES = [
   "src/app/api/webhooks/stripe/route.ts",
   "src/app/api/cron/trial-end-check/route.ts",
+  "src/app/api/cron/renewal-reminder/route.ts",
+  "src/app/api/admin/notify-terms-change/route.ts",
   "src/lib/email.ts",
   "src/app/api/trial/resend-activation/route.ts",
   "src/lib/activation-resend-server.ts",
