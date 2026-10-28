@@ -32,7 +32,7 @@ L'abbonamento si rinnova automaticamente alla scadenza di ogni periodo (mensile,
 
 ## Politica di rimborso
 
-La finestra di 14 giorni parte dall'attivazione del trial. Se sottoscrivi un piano prima che il trial finisca, la finestra non riparte da zero — resta comunque calcolata sui 14 giorni totali dall'attivazione del trial. Rimborsiamo sempre in caso di addebito errato o doppio addebito, indipendentemente da questa finestra.
+Per il Trial (€3,49 una tantum) non possiamo dirti qui se e come sia rimborsabile. Cancellare l'account non attiva un rimborso automatico del Trial. Per qualsiasi richiesta di rimborso o recesso scrivi a support@jobsearchbridge.com indicando l'indirizzo email usato per la registrazione: la valutiamo. Rimborsiamo sempre in caso di addebito errato o doppio addebito.
 
 ## Cambiare piano
 
@@ -41,6 +41,8 @@ Puoi passare da un piano all'altro in qualsiasi momento dalla sezione Profilo. S
 ## Cancellazione account
 
 Cancellare l'account è diverso da cancellare l'abbonamento: elimina definitivamente tutti i tuoi dati, non solo l'accesso al servizio. Vengono eliminati il CV caricato, tutti i CV adattati generati, le lettere di motivazione, le ricerche effettuate, le candidature salvate nel tracker e i dati del tuo profilo. La richiesta parte dalla sezione Profilo: ricevi prima una email di conferma, e solo dopo aver confermato la cancellazione diventa definitiva e irreversibile.
+
+Se hai pagato il Trial (€3,49 una tantum), cancellare l'account non attiva un rimborso automatico del Trial. Per qualsiasi richiesta di rimborso o recesso scrivi a support@jobsearchbridge.com indicando l'indirizzo email usato per la registrazione: la valutiamo.
 
 ## Nascondi/archivia offerte
 
