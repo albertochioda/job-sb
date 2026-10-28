@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail, escapeHtml } from "@/lib/email";
+import { withEmailHeader } from "@/lib/email-layout";
 import { SUPPORT_EMAIL } from "@/lib/support-contact";
 
 // Finestra rolling di 24h come in support-chat, ma soglia più bassa: una
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
   const emailResult = await sendEmail({
     to: SUPPORT_EMAIL,
     subject: `${emoji} Job Search Bridge — ${label} da ${userEmail}`,
-    html,
+    html: withEmailHeader(html),
   });
   // sendEmail() non lancia mai eccezioni per design (fail-safe per il
   // chiamante) — va quindi controllato esplicitamente, altrimenti un

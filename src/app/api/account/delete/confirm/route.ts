@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
+import { withEmailHeader } from "@/lib/email-layout";
 import { releaseScheduleIfPresent } from "@/lib/billing/stripe-schedule";
 import { hashDeletionToken } from "@/lib/account-deletion-token";
 
@@ -273,11 +274,13 @@ export async function POST(request: NextRequest) {
   await sendEmail({
     to: userEmail,
     subject: "Il tuo account Job Search Bridge è stato eliminato",
-    html: `<p>Confermiamo che il tuo account e tutti i dati associati sono stati eliminati come richiesto.</p>` +
-      (refundIssued
-        ? `<p>Il rimborso pro-rata (${((refundAmountCents ?? 0) / 100).toFixed(2)}€) è stato elaborato sul metodo di pagamento originale.</p>`
-        : "") +
-      `<p>Se non hai richiesto tu questa cancellazione, scrivi immediatamente a support@jobsearchbridge.com.</p>`,
+    html: withEmailHeader(
+      `<p>Confermiamo che il tuo account e tutti i dati associati sono stati eliminati come richiesto.</p>` +
+        (refundIssued
+          ? `<p>Il rimborso pro-rata (${((refundAmountCents ?? 0) / 100).toFixed(2)}€) è stato elaborato sul metodo di pagamento originale.</p>`
+          : "") +
+        `<p>Se non hai richiesto tu questa cancellazione, scrivi immediatamente a support@jobsearchbridge.com.</p>`
+    ),
   });
 
   return NextResponse.json({ success: true });

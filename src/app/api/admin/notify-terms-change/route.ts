@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, escapeHtml } from "@/lib/email";
+import { withEmailHeader } from "@/lib/email-layout";
 import { SUPPORT_EMAIL } from "@/lib/support-contact";
 import { SITE_URL } from "@/lib/site-url";
 import { OWNER_EMAIL } from "@/lib/owner";
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
   const failures: string[] = [];
 
   for (const recipient of recipients) {
-    const result = await sendEmail({ to: recipient.email, subject, html, replyTo: SUPPORT_EMAIL });
+    const result = await sendEmail({ to: recipient.email, subject, html: withEmailHeader(html), replyTo: SUPPORT_EMAIL });
     if (result.success) {
       sent += 1;
     } else {

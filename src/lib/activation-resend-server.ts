@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, escapeHtml } from "@/lib/email";
+import { withEmailHeader } from "@/lib/email-layout";
 import { SITE_URL } from "@/lib/site-url";
 import { SUPPORT_EMAIL } from "@/lib/support-contact";
 import { buildActivationEmail } from "@/lib/activation-email";
@@ -145,7 +146,7 @@ export function createResendDeps(): ResendDeps {
         resendUrl: `${SITE_URL}/${locale}/trial/resend`,
         supportEmail: SUPPORT_EMAIL,
       });
-      const result = await sendEmail({ to: email, subject: mail.subject, html: mail.html, replyTo: mail.replyTo });
+      const result = await sendEmail({ to: email, subject: mail.subject, html: withEmailHeader(mail.html), replyTo: mail.replyTo });
       if (!result.success) throw new Error(`sendEmail: ${result.error}`);
     },
 

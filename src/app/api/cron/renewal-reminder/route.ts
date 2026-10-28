@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, escapeHtml } from "@/lib/email";
+import { withEmailHeader } from "@/lib/email-layout";
 import { SITE_URL } from "@/lib/site-url";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -179,7 +180,7 @@ export async function GET(request: NextRequest) {
     const result = await sendEmail({
       to: profile.email,
       subject: `Il tuo abbonamento Job Search Bridge si rinnoverà il ${renewalDateLabel}`,
-      html,
+      html: withEmailHeader(html),
     });
 
     if (!result.success) {

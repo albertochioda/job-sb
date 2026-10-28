@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, escapeHtml } from "@/lib/email";
+import { withEmailHeader } from "@/lib/email-layout";
 import { generateDeletionToken, hashDeletionToken, ACCOUNT_DELETION_TOKEN_TTL_MS } from "@/lib/account-deletion-token";
 import { SITE_URL } from "@/lib/site-url";
 
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
   const emailResult = await sendEmail({
     to: user.email,
     subject: "Conferma cancellazione account Job Search Bridge",
-    html,
+    html: withEmailHeader(html),
   });
   if (!emailResult.success) {
     console.error("[account/delete/request] invio email fallito:", emailResult.error);

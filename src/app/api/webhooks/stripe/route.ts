@@ -7,6 +7,7 @@ import { SITE_URL } from "@/lib/site-url";
 import { SUPPORT_EMAIL } from "@/lib/support-contact";
 import { generateActivationLink } from "@/lib/activation-link";
 import { buildActivationEmail } from "@/lib/activation-email";
+import { withEmailHeader } from "@/lib/email-layout";
 import { CADENCE_LABELS } from "@/lib/billing/plans";
 
 const TIER_LABELS: Record<string, string> = {
@@ -181,7 +182,7 @@ export async function POST(request: NextRequest) {
           await sendEmail({
             to: email,
             subject: activationEmail.subject,
-            html: activationEmail.html,
+            html: withEmailHeader(activationEmail.html),
             replyTo: activationEmail.replyTo,
           });
 
@@ -346,7 +347,7 @@ export async function POST(request: NextRequest) {
             const emailResult = await sendEmail({
               to: profile.email,
               subject: `Il tuo abbonamento Job Search Bridge ${planLabel} è attivo`,
-              html,
+              html: withEmailHeader(html),
             });
             if (!emailResult.success) {
               console.error(`[stripe-webhook] email conferma abbonamento mensile fallita per user_id=${userId}:`, emailResult.error);
@@ -444,9 +445,11 @@ export async function POST(request: NextRequest) {
             await sendEmail({
               to: profile.email,
               subject: "Non siamo riusciti ad addebitare il rinnovo — Job Search Bridge",
-              html: `<p>Ciao ${safeName || ""},</p>` +
+              html: withEmailHeader(
+                `<p>Ciao ${safeName || ""},</p>` +
                 `<p>Il pagamento per il rinnovo del tuo abbonamento non è andato a buon fine. Il tuo accesso resta attivo nel frattempo, ma ti consigliamo di aggiornare il metodo di pagamento dal tuo profilo per evitare interruzioni.</p>` +
-                `<p>Se il problema persiste, scrivici a support@jobsearchbridge.com.</p>`,
+                `<p>Se il problema persiste, scrivici a support@jobsearchbridge.com.</p>`
+              ),
             });
           }
         }

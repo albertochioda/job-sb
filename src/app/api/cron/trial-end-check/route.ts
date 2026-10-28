@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, escapeHtml } from "@/lib/email";
+import { withEmailHeader } from "@/lib/email-layout";
 import { SITE_URL } from "@/lib/site-url";
 
 /**
@@ -137,7 +138,7 @@ export async function GET(request: NextRequest) {
     const result = await sendEmail({
       to: profile.email,
       subject: reason === "runs" ? "Hai esaurito le ricerche del tuo Trial" : "Il tuo Trial è terminato",
-      html,
+      html: withEmailHeader(html),
     });
 
     if (!result.success) {
